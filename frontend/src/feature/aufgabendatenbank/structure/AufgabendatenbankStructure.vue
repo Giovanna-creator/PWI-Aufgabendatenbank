@@ -6,7 +6,7 @@
     <v-card-text class="adb-structure-text pa-0">
       <v-list density="compact" nav>
         <AdbTreeItem
-          :items="adb?.rootItems"
+          :items="items"
           :is-draggable="true"
           @update-items="updateRootItems"
         />
@@ -16,12 +16,15 @@
 </template>
 
 <script setup lang="ts">
-import { inject } from 'vue'
+import { inject, computed, type Ref } from 'vue'
 import AdbTreeItem from './components/AdbTreeItem.vue'
+import type { Item, Collection } from '@/lib/types'
 
-const adb = inject<any>('adb')
+const adb = inject<{ rootItems: Ref<(Item | Collection)[]> }>('adb')
 
-const updateRootItems = (newItems: any[]) => {
+const items = computed(() => adb?.rootItems?.value || [])
+
+const updateRootItems = (newItems: (Item | Collection)[]) => {
   if (adb && adb.rootItems) {
     adb.rootItems.value = newItems
   }

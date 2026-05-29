@@ -33,8 +33,9 @@
 
 <script setup lang="ts">
 import { inject } from 'vue'
+import type { Item, Collection } from '@/lib/types'
 
-const adb = inject<any>('adb')
+const adb = inject<{ createItem: (rootItemId?: string | null) => Item, createCollection: () => Collection }>('adb')
 </script>
 
 <style lang="scss" scoped>

@@ -1,6 +1,6 @@
 export interface Item {
   id?: string;
-  // TODO: Define the properties of the Exercise interface
+  // Exercise properties (First Iteration)
   /**
    * The properties of Exercise (Item) do not influence the creation of items itself
    * and their organisation in diffrently ordered collections. Therefore it is possible to
@@ -17,25 +17,28 @@ export interface Item {
    * no tags,
    */
   // dependencies
-  item_type: 'todo'
-  author: 'todo'
-  representationTemplate: 'todo'
-  license: 'todo'
-
+  item_type: string
+  author: string
+  representationTemplate: string | null
+  license: string | null
+  tags: string[]
+  validators: any[]
+  modifiers: any[]
 
   // ------------------------------------------------------------------------------
   // Exercise can have no root item
   rootItem: Item | null
+  rootItemId?: string | null
 
   contents: Content[]
 }
 
 export interface Content {
   id?: string
-  license: string | 'todo'
-  contentType: string | 'todo'
-  author: string | 'todo'
-  tags: string | 'todo'
+  license: string | null
+  contentType: string
+  author: string
+  tags: string[]
 
   // content itself
   purpose: string; // e.g. "description", "task", "title"
@@ -64,6 +67,7 @@ export interface CollectionItem {
  * 
  * Exercise Title (purpose)
  * Exercise Discription: JSON {"text": "This is a description of the exercise"} (jsonContent)
+ * BLOB: image (blobContent)
  * 
  */
 
@@ -96,21 +100,20 @@ export interface CollectionItem {
  * "Creation of unordered group of exercises" 
  * and adds first item to the collection with position = 1, 2, 3
  * 
- * 1. // POST /collections
+ * 1. // POST /collections mit order = true
  * 
  * creates item and then creates collection
  * 
  * 2. // POST /collections/{collectionId}/items
  * 
  *  creates item and then creates collectionItem with position 1, 2, 3 ...
- * 
  */
 
 /**
  * Creation ordered list of exercises (second possible implementation):
  * 
  * 1. User Creates Item with no root item
- * 2. User adds another Item with the first item as root item
+ * 2. User adds another Item with the first item as rootItem
  * 3. repeat
  * 
  * 1. POST /items for root item
@@ -120,7 +123,7 @@ export interface CollectionItem {
  */
 
 /**
- * Extending existed ordered List of Exercises addind Horzontal vector:
+ * Extending existed ordered List of Exercises addind Horizontal vector:
  * 
  * Existing Exercise get collections that is goint to be appended with unordered items
  * 

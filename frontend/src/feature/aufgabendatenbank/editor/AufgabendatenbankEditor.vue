@@ -15,7 +15,7 @@
         ></v-text-field>
 
         <v-switch
-          v-if="selectedItem.item_type === 'collection' || selectedItem.parent"
+          v-if="isCollection"
           v-model="isOrdered"
           label="Kollektion sequenziell (geordnet) machen"
           color="primary"
@@ -32,40 +32,49 @@
 </template>
 
 <script setup lang="ts">
-import { inject, computed } from 'vue'
+import { inject, computed, type Ref } from 'vue'
+import type { Item, Collection, CollectionItem } from '@/lib/types'
 
-const adb = inject<any>('adb')
-const selectedItem = computed(() => adb?.selectedItem?.value)
+const adb = inject<{ selectedItem: Ref<Item | Collection | CollectionItem | null> }>('adb')
+const selectedItem = computed<Item | Collection | CollectionItem | null>(() => adb?.selectedItem?.value || null)
+
+const isCollection = computed(() => {
+  return selectedItem.value && 'parent' in selectedItem.value && 'items' in selectedItem.value
+})
 
 const itemTitle = computed({
   get: () => {
     const item = selectedItem.value
     if (!item) return ''
-    if (item.parent) return item.parent.contents[0]?.jsonContent?.text || ''
-    if (item.item) return item.item.contents[0]?.jsonContent?.text || ''
-    return item.contents?.[0]?.jsonContent?.text || ''
+    if ('parent' in item && item.parent) return item.parent.contents[0]?.jsonContent?.text || ''
+    if ('item' in item && item.item) return item.item.contents[0]?.jsonContent?.text || ''
+    const exercise = item as Item
+    return exercise.contents?.[0]?.jsonContent?.text || ''
   },
   set: (val) => {
     const item = selectedItem.value
     if (!item) return
-    if (item.parent && item.parent.contents[0]) {
+    if ('parent' in item && item.parent && item.parent.contents[0]) {
       item.parent.contents[0].jsonContent.text = val
-    } else if (item.item && item.item.contents[0]) {
+    } else if ('item' in item && item.item && item.item.contents[0]) {
       item.item.contents[0].jsonContent.text = val
-    } else if (item.contents && item.contents[0]) {
-      item.contents[0].jsonContent.text = val
+    } else {
+      const exercise = item as Item
+      if (exercise.contents && exercise.contents[0]) {
+        exercise.contents[0].jsonContent.text = val
+      }
     }
   }
 })
 
 const isOrdered = computed({
   get: () => {
-    return selectedItem.value?.order === true
+    return isCollection.value && (selectedItem.value as Collection)?.order === true
   },
   set: (val: boolean) => {
-    if (selectedItem.value) {
-      selectedItem.value.order = val
-      updatePositions(selectedItem.value)
+    if (isCollection.value && selectedItem.value) {
+      (selectedItem.value as Collection).order = val
+      updatePositions(selectedItem.value as Collection)
     }
   }
 })
@@ -74,9 +83,9 @@ const toggleOrder = () => {
   // Is handled in setter
 }
 
-const updatePositions = (collection: any) => {
+const updatePositions = (collection: Collection) => {
   if (collection && collection.items) {
-    collection.items.forEach((child: any, index: number) => {
+    collection.items.forEach((child: CollectionItem, index: number) => {
       child.position = collection.order ? index + 1 : null
     })
   }

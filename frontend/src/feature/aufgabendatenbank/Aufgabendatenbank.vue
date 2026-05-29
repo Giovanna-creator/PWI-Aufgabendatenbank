@@ -33,53 +33,57 @@ const selectItem = (item: Item | Collection) => {
   selectedItem.value = item
 }
 
-const createItem = () => {
+const createItem = (rootItemId: string | null = null) => {
   const newItem: Item = {
     id: 'item-' + Date.now().toString(),
-    item_type: 'todo',
+    item_type: 'exercise',
     author: 'author',
-    representationTemplate: 'todo',
-    license: 'todo',
-    tags: 'todo',
-    validators: 'todo',
-    modifiers: 'todo',
+    representationTemplate: null,
+    license: null,
+    tags: [],
+    validators: [],
+    modifiers: [],
     rootItem: null,
+    rootItemId: rootItemId,
     contents: [
       {
         id: 'content-' + Date.now().toString(),
-        license: 'todo',
-        contentType: 'todo',
-        author: 'todo',
-        tags: 'todo',
+        license: null,
+        contentType: 'text',
+        author: 'author',
+        tags: [],
         purpose: 'title',
-        jsonContent: { text: `New Task ${rootItems.value.length + 1}` },
+        jsonContent: { text: `New Task` },
         blobContent: ''
       }
     ]
   }
-  rootItems.value.push(newItem)
+  if (!rootItemId) {
+    rootItems.value.push(newItem)
+  }
+  return newItem
 }
 
 const createCollection = () => {
   const parentItem: Item = {
     id: 'item-coll-' + Date.now().toString(),
-    item_type: 'collection',
+    item_type: 'collection_parent',
     author: 'author',
-    representationTemplate: 'todo',
-    license: 'todo',
-    tags: 'todo',
-    validators: 'todo',
-    modifiers: 'todo',
+    representationTemplate: null,
+    license: null,
+    tags: [],
+    validators: [],
+    modifiers: [],
     rootItem: null,
     contents: [
       {
         id: 'content-coll-' + Date.now().toString(),
-        license: 'todo',
-        contentType: 'todo',
-        author: 'todo',
-        tags: 'todo',
+        license: null,
+        contentType: 'text',
+        author: 'author',
+        tags: [],
         purpose: 'title',
-        jsonContent: { text: `New Collection ${rootItems.value.length + 1}` },
+        jsonContent: { text: `New Collection` },
         blobContent: ''
       }
     ]
@@ -93,6 +97,18 @@ const createCollection = () => {
   }
 
   rootItems.value.push(newCollection)
+  return newCollection
+}
+
+const addItemToCollection = (collection: Collection) => {
+  const newItem = createItem()
+  const collectionItem: CollectionItem = {
+    id: 'coll-item-' + Date.now().toString(),
+    collectionId: collection.id,
+    item: newItem,
+    position: collection.order ? collection.items.length + 1 : null
+  }
+  collection.items.push(collectionItem)
 }
 
 provide('adb', {
@@ -100,8 +116,9 @@ provide('adb', {
   selectedItem,
   selectItem,
   createItem,
-  createCollection
-})
+  createCollection,
+  addItemToCollection
+} as const)
 
 /*
  * Feature logic for Aufgabendatenbank goes here.
