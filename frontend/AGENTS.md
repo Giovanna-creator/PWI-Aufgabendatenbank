@@ -8,7 +8,13 @@ workflow choices when making changes here.
 - Limit changes to `frontend/` unless explicitly requested.
 - Keep refactors minimal and scoped to the task at hand.
 
+## Folder Structure
+- `src/feature/`: Feature-based folder structure. Each distinct feature (e.g., `aufgabendatenbank`) gets its own subfolder containing its specific components, composables, and logic.
+- `src/views/`: Strict routing wrappers. These components should generally just import and render the top-level feature components.
+- Other folders (`src/components/`, `src/services/`, `src/stores/`, etc.): Reserved for globally shared logic, shared UI components, and common utilities used across multiple features.
+
 ## Coding Style & Maintainability
+- Component Architecture: Keep all complex logic, templating, and composition inside the `src/feature/<feature-name>/` directory. The `src/views/` folder should be reserved solely for routing structural wrappers and entry points that import feature components.
 - Keep Vue components small and focused on a single responsibility. Aim for under 200-300 lines of `<template>` and `<script>` combined.
 - Extract complex logic into composables (Vue 3 Composition API) or Pinia stores.
 - Extract large UI segments into smaller child components.

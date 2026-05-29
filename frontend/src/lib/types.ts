@@ -1,4 +1,5 @@
-interface Item {
+export interface Item {
+  id?: string;
   // TODO: Define the properties of the Exercise interface
   /**
    * The properties of Exercise (Item) do not influence the creation of items itself
@@ -21,10 +22,6 @@ interface Item {
   representationTemplate: 'todo'
   license: 'todo'
 
-  // connceted to the item with relation table
-  tags: 'todo'
-  validators: 'todo'
-  modifiers: 'todo'
 
   // ------------------------------------------------------------------------------
   // Exercise can have no root item
@@ -33,11 +30,12 @@ interface Item {
   contents: Content[]
 }
 
-interface Content {
-  license: 'todo'
-  contentType: 'todo'
-  author: 'todo'
-  tags: 'todo'
+export interface Content {
+  id?: string
+  license: string | 'todo'
+  contentType: string | 'todo'
+  author: string | 'todo'
+  tags: string | 'todo'
 
   // content itself
   purpose: string; // e.g. "description", "task", "title"
@@ -45,13 +43,15 @@ interface Content {
   blobContent: string; // images
 }
 
-interface Collection {
+export interface Collection {
+    id: string;
     parent: Item | null;
     items: CollectionItem[];
     order: boolean;
 }
-interface CollectionItem {
-    collection: Collection;
+export interface CollectionItem {
+    id: string;
+    collectionId: string;
     item: Item;
     position: number | null;
 }
@@ -173,6 +173,4 @@ interface CollectionItem {
  * 
  * 
  */
-
-
 
