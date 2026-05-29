@@ -15,6 +15,7 @@
     "@popperjs/core": "^2.11.8",
     "@tailwindcss/vite": "^4.3.0",
     "@types/webfontloader": "^1.6.38",
+    "@vue-dnd-kit/core": "^2.4.6",
     "axios": "^1.6.7",
     "bootstrap": "^5.3.3",
     "pinia": "^3.0.4",

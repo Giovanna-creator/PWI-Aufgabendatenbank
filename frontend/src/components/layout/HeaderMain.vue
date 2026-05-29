@@ -16,6 +16,7 @@
       <v-list-item to="/" active-class="active" prepend-icon="mdi-human-greeting" title="Willkommen" value="introduction" />
       <v-list-item to="/home" active-class="active" prepend-icon="mdi-home-variant" title="Startseite" value="home" />
       <v-list-item to="/course" active-class="active" prepend-icon="mdi-file-multiple" title="Alle Kurse" value="course" />
+      <v-list-item to="/aufgabendatenbank" active-class="active" prepend-icon="mdi-database" title="Aufgabendatenbank" value="aufgabendatenbank" />
       <v-list-item v-if="isLoggedIn" to="/profile" active-class="active" prepend-icon="mdi-account" title="Profil" value="profile" />
     </v-list>
   </v-navigation-drawer>
@@ -31,6 +32,10 @@
       <v-btn to="/course" active-class="active" prepend-icon="mdi-file-multiple">
         <span v-if="!smAndDown"> Alle Kurse </span>
         <v-tooltip v-if="smAndDown" activator="parent" location="bottom"> Alle Kurse </v-tooltip>
+      </v-btn>
+      <v-btn to="/aufgabendatenbank" active-class="active" prepend-icon="mdi-database">
+        <span v-if="!smAndDown"> Aufgabendatenbank </span>
+        <v-tooltip v-if="smAndDown" activator="parent" location="bottom"> Aufgabendatenbank </v-tooltip>
       </v-btn>
       <v-btn v-if="isLoggedIn" to="/profile" active-class="active" prepend-icon="mdi-account">
         <span v-if="!smAndDown"> Profil </span>
