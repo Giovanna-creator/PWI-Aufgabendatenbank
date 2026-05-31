@@ -5,24 +5,27 @@
     </v-card-title>
     <v-card-text class="adb-editor-text">
       <div v-if="selectedItem">
-        <h3 class="text-h6 mb-2">Edit: {{ itemTitle }}</h3>
+        <h3 class="text-h6 mb-2">
+          Edit: {{ itemTitle }}
+        </h3>
 
         <v-text-field
           v-model="itemTitle"
           label="Titel / Aufgabe"
           variant="outlined"
           class="mb-4"
-        ></v-text-field>
+        />
 
         <v-switch
           v-if="isCollection"
           v-model="isOrdered"
           label="Kollektion sequenziell (geordnet) machen"
           color="primary"
-          @change="toggleOrder"
-        ></v-switch>
+        />
 
-        <p class="text-caption text-grey">ID: {{ selectedItem.id }}</p>
+        <p class="text-caption text-grey">
+          ID: {{ selectedItem.id }}
+        </p>
       </div>
       <div v-else>
         Bitte wählen Sie eine Aufgabe oder Kollektion aus dem Struktur-Baum aus.
@@ -33,63 +36,54 @@
 
 <script setup lang="ts">
 import { inject, computed, type Ref } from 'vue'
-import type { Item, Collection, CollectionItem } from '@/lib/types'
+import { isCollection as checkIsCollection, getInnerItem, type Item, type Collection, type CollectionItem } from '@/lib/types'
 
-const adb = inject<{ selectedItem: Ref<Item | Collection | CollectionItem | null> }>('adb')
+const adb = inject<{ 
+  selectedItem: Ref<Item | Collection | CollectionItem | null>,
+  toggleCollectionOrder: (collection: Collection) => void
+}>('adb')
+
 const selectedItem = computed<Item | Collection | CollectionItem | null>(() => adb?.selectedItem?.value || null)
 
 const isCollection = computed(() => {
-  return selectedItem.value && 'parent' in selectedItem.value && 'items' in selectedItem.value
+  return selectedItem.value ? checkIsCollection(getInnerItem(selectedItem.value)) : false
 })
 
 const itemTitle = computed({
   get: () => {
     const item = selectedItem.value
     if (!item) return ''
-    if ('parent' in item && item.parent) return item.parent.contents[0]?.jsonContent?.text || ''
-    if ('item' in item && item.item) return item.item.contents[0]?.jsonContent?.text || ''
-    const exercise = item as Item
-    return exercise.contents?.[0]?.jsonContent?.text || ''
+    const innerItem = getInnerItem(item)
+    return innerItem.contents?.[0]?.jsonContent?.text || ''
   },
   set: (val) => {
     const item = selectedItem.value
     if (!item) return
-    if ('parent' in item && item.parent && item.parent.contents[0]) {
-      item.parent.contents[0].jsonContent.text = val
-    } else if ('item' in item && item.item && item.item.contents[0]) {
-      item.item.contents[0].jsonContent.text = val
-    } else {
-      const exercise = item as Item
-      if (exercise.contents && exercise.contents[0]) {
-        exercise.contents[0].jsonContent.text = val
-      }
+    const innerItem = getInnerItem(item)
+    if (innerItem.contents && innerItem.contents[0]) {
+      innerItem.contents[0].jsonContent.text = val
     }
   }
 })
 
 const isOrdered = computed({
   get: () => {
-    return isCollection.value && (selectedItem.value as Collection)?.order === true
+    const item = selectedItem.value
+    if (!item) return false
+    const innerItem = getInnerItem(item)
+    return checkIsCollection(innerItem) && innerItem.order === true
   },
   set: (val: boolean) => {
-    if (isCollection.value && selectedItem.value) {
-      (selectedItem.value as Collection).order = val
-      updatePositions(selectedItem.value as Collection)
+    const item = selectedItem.value
+    if (!item) return
+    const innerItem = getInnerItem(item)
+    if (checkIsCollection(innerItem)) {
+      if (innerItem.order !== val) {
+        adb?.toggleCollectionOrder(innerItem)
+      }
     }
   }
 })
-
-const toggleOrder = () => {
-  // Is handled in setter
-}
-
-const updatePositions = (collection: Collection) => {
-  if (collection && collection.items) {
-    collection.items.forEach((child: CollectionItem, index: number) => {
-      child.position = collection.order ? index + 1 : null
-    })
-  }
-}
 </script>
 
 <style lang="scss" scoped>

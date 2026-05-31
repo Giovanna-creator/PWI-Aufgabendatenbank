@@ -1,38 +1,3 @@
-export interface Item {
-  id?: string;
-  // Exercise properties (First Iteration)
-  /**
-   * The properties of Exercise (Item) do not influence the creation of items itself
-   * and their organisation in diffrently ordered collections. Therefore it is possible to
-   * implement the exercises logic independently to avoid complexity for fitst interation.
-   *
-   * Such exercises will have:
-   *
-   * common item_type,
-   * common license ?null
-   * common global author
-   * common default representation template ?null
-   * no validators, ?null
-   * no modifiers, ?null
-   * no tags,
-   */
-  // dependencies
-  item_type: string
-  author: string
-  representationTemplate: string | null
-  license: string | null
-  tags: string[]
-  validators: any[]
-  modifiers: any[]
-
-  // ------------------------------------------------------------------------------
-  // Exercise can have no root item
-  rootItem: Item | null
-  rootItemId?: string | null
-
-  contents: Content[]
-}
-
 export interface Content {
   id?: string
   license: string | null
@@ -46,11 +11,45 @@ export interface Content {
   blobContent: string; // images
 }
 
-export interface Collection {
-    id: string;
-    parent: Item | null;
-    items: CollectionItem[];
-    order: boolean;
+export interface Item {
+  id: string;
+  item_type: string
+  author: string
+  representationTemplate: string | null
+  license: string | null
+  tags: string[]
+  validators: any[]
+  modifiers: any[]
+  rootItemId?: string | null
+  contents: Content[]
+  // Collection properties (optional, if item_type is 'collection')
+  items?: CollectionItem[];
+  order?: boolean;
+}
+
+export type Collection = Item & {
+  item_type: 'collection';
+  items: CollectionItem[];
+  order: boolean;
+}
+
+export function isItem(object: any): object is Item {
+  return object && typeof object.id === 'string' && 'item_type' in object && !('collectionId' in object);
+}
+
+export function isCollection(object: any): object is Collection {
+  return isItem(object) && object.item_type === 'collection';
+}
+
+export function isCollectionItem(object: any): object is CollectionItem {
+  return object && typeof object.id === 'string' && 'collectionId' in object && 'item' in object;
+}
+
+export function getInnerItem(element: Item | Collection | CollectionItem): Item {
+  if (isCollectionItem(element)) {
+    return element.item;
+  }
+  return element;
 }
 export interface CollectionItem {
     id: string;

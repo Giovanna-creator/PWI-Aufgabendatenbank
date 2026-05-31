@@ -1,5 +1,9 @@
 <template>
-  <v-breadcrumbs class="breadcrumbs" bg-color="primary-dark" :items="items" />
+  <v-breadcrumbs
+    class="breadcrumbs"
+    bg-color="primary-dark"
+    :items="items"
+  />
 </template>
 
 <script setup lang="ts">

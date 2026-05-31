@@ -4,7 +4,10 @@
       <span>Struktur</span>
     </v-card-title>
     <v-card-text class="adb-structure-text pa-0">
-      <v-list density="compact" nav>
+      <v-list
+        density="compact"
+        nav
+      >
         <AdbTreeItem
           :items="items"
           :is-draggable="true"
@@ -18,16 +21,27 @@
 <script setup lang="ts">
 import { inject, computed, type Ref } from 'vue'
 import AdbTreeItem from './components/AdbTreeItem.vue'
-import type { Item, Collection } from '@/lib/types'
+import type { Item, Collection, CollectionItem } from '@/lib/types'
 
-const adb = inject<{ rootItems: Ref<(Item | Collection)[]> }>('adb')
+const adb = inject<{ 
+  rootItems: Ref<(Item | Collection)[]>,
+  updateRootItems: (newItems: (Item | Collection)[]) => void,
+  getInnerItem: (element: Item | Collection | CollectionItem) => Item
+}>('adb')
 
-const items = computed(() => adb?.rootItems?.value || [])
+const items = computed(() => {
+  if (!adb?.rootItems?.value) return []
+  return adb.rootItems.value.filter(item => {
+    const inner = adb.getInnerItem(item)
+    // Hide items that have a rootItemId (Implementation B children OR items in collections)
+    if (inner.rootItemId) return false
+    
+    return true
+  })
+})
 
 const updateRootItems = (newItems: (Item | Collection)[]) => {
-  if (adb && adb.rootItems) {
-    adb.rootItems.value = newItems
-  }
+  adb?.updateRootItems(newItems)
 }
 </script>
 

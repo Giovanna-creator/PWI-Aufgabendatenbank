@@ -1,20 +1,75 @@
 <template>
   <div class="container">
-    <v-alert class="mb-4" type="info" variant="tonal" density="comfortable"> Diese Liste nutzt Mock-Daten. Tausche die Service-Schicht später gegen echte Backend-Calls aus. </v-alert>
-    <v-text-field v-model="search" label="Search" density="compact" prepend-icon="mdi-magnify" variant="underlined" hide-details class="search-bar" />
+    <v-alert
+      class="mb-4"
+      type="info"
+      variant="tonal"
+      density="comfortable"
+    >
+      Diese Liste nutzt Mock-Daten. Tausche die Service-Schicht später gegen echte Backend-Calls aus.
+    </v-alert>
+    <v-text-field
+      v-model="search"
+      label="Search"
+      density="compact"
+      prepend-icon="mdi-magnify"
+      variant="underlined"
+      hide-details
+      class="search-bar"
+    />
     <v-row>
-      <v-checkbox v-model="checkboxActive" label="Nur aktive Kurse anzeigen" @change="filterCourseList" />
-      <v-checkbox v-model="checkboxFriedberg" label="Friedberg" @change="filterCourseList" @click="checkboxGießen = false" />
-      <v-checkbox v-model="checkboxGießen" label="Gießen" @change="filterCourseList" @click="checkboxFriedberg = false" />
-      <v-checkbox v-model="checkboxParticipation" label="Teilnahme" @change="filterCourseList" />
+      <v-checkbox
+        v-model="checkboxActive"
+        label="Nur aktive Kurse anzeigen"
+        @change="filterCourseList"
+      />
+      <v-checkbox
+        v-model="checkboxFriedberg"
+        label="Friedberg"
+        @change="filterCourseList"
+        @click="checkboxGießen = false"
+      />
+      <v-checkbox
+        v-model="checkboxGießen"
+        label="Gießen"
+        @change="filterCourseList"
+        @click="checkboxFriedberg = false"
+      />
+      <v-checkbox
+        v-model="checkboxParticipation"
+        label="Teilnahme"
+        @change="filterCourseList"
+      />
     </v-row>
-    <v-data-table :headers="headers" :items="displayedCourses" :sort-by="sortBy" item-value="name" class="elevation-1" :search="search" density="default" height="480px" @click:row="openCourseOrSignUp">
+    <v-data-table
+      :headers="headers"
+      :items="displayedCourses"
+      :sort-by="sortBy"
+      item-value="name"
+      class="elevation-1"
+      :search="search"
+      density="default"
+      height="480px"
+      @click:row="openCourseOrSignUp"
+    >
       <template #[`item.course.active`]="{ item }">
-        <v-icon v-if="!ifActiveSemester(item.course.semester as Semester)" icon="mdi-close-circle" color="gray" />
-        <v-icon v-if="ifActiveSemester(item.course.semester as Semester)" icon="mdi-check-circle" color="success" />
+        <v-icon
+          v-if="!ifActiveSemester(item.course.semester as Semester)"
+          icon="mdi-close-circle"
+          color="gray"
+        />
+        <v-icon
+          v-if="ifActiveSemester(item.course.semester as Semester)"
+          icon="mdi-check-circle"
+          color="success"
+        />
       </template>
       <template #[`item.member`]="{ item }">
-        <v-icon v-if="item.member == true" icon="mdi-check-bold" color="success" />
+        <v-icon
+          v-if="item.member == true"
+          icon="mdi-check-bold"
+          color="success"
+        />
       </template>
     </v-data-table>
   </div>

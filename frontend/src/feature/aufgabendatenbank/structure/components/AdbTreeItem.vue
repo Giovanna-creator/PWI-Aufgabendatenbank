@@ -1,76 +1,82 @@
 <template>
-  <component
-    :is="isDraggable ? Draggable : 'div'"
+  <Draggable
     v-bind="dragOptions"
     v-model="internalItems"
-    @change="onChange"
     item-key="id"
     class="pl-4"
+    :disabled="!isDraggable"
+    @change="onChange"
   >
     <template #item="{ element }">
       <div class="tree-node">
         <!-- Implementation A: Collection -->
-        <v-list-group v-if="isCollection(element)" :value="element.id">
-          <template v-slot:activator="{ props }">
-            <v-list-item v-bind="props" prepend-icon="mdi-folder" @click="selectItem(element)">
-              <v-list-item-title>
-                {{ getTitle(element) }}
-              </v-list-item-title>
-              <template v-slot:append>
-                <v-icon v-if="element.order" size="small" color="primary" class="mr-2">mdi-format-list-numbered</v-icon>
-                <v-btn icon="mdi-plus" variant="text" size="small" @click.stop="addChild(element)"></v-btn>
-              </template>
-            </v-list-item>
-          </template>
-
-          <!-- Nested items in collection -->
+        <AdbTreeFolder
+          v-if="isCollection(element)"
+          :element="getCollection(element)"
+          :title="getTitle(element)"
+          :position="'position' in element ? element.position : null"
+          :is-sub-item="!!element.rootItemId || ('collectionId' in element && !!element.collectionId)"
+          @toggle-expand="toggleExpand(element.id)"
+        >
           <AdbTreeItem
-            v-if="element.items"
-            :items="element.items"
+            :items="getCollection(element).items"
             :is-draggable="true"
-            @update-items="(newItems) => updateCollectionChildren(element, newItems)"
+            :parent-item="getCollection(element)"
+            class="nested-drop-zone"
+            @update-items="(newItems) => updateCollectionChildren(getCollection(element), newItems)"
           />
-        </v-list-group>
-
-        <!-- Implementation B or Simple Item -->
-        <div v-else>
-          <v-list-item
-            :prepend-icon="element.item ? 'mdi-file-document-outline' : 'mdi-file-document'"
-            @click="selectItem(element)"
-          >
-            <v-list-item-title>
-              <span v-if="element.position" class="mr-2 text-primary font-weight-bold">{{ element.position }}.</span>
-              {{ getTitle(element) }}
-            </v-list-item-title>
-            <template v-slot:append v-if="!element.collectionId">
-              <v-btn icon="mdi-plus" variant="text" size="small" @click.stop="addChild(element)"></v-btn>
-            </template>
-          </v-list-item>
 
           <!-- Nested items via rootItem (Implementation B) -->
           <AdbTreeItem
-            v-if="hasChildren(element)"
+            v-if="isExpanded(element.id)"
             :items="getChildren(element)"
             :is-draggable="true"
+            :parent-item="getInnerItem(element)"
+            class="nested-drop-zone"
+            @update-items="(newItems) => updateItemChildren(element, newItems)"
+          />
+        </AdbTreeFolder>
+
+        <!-- Implementation B or Simple Item -->
+        <div v-else>
+          <AdbTreeFile
+            :element="element"
+            :title="getTitle(element)"
+            :position="element.position"
+            :is-sub-item="!!element.collectionId || !!element.rootItemId"
+            :has-children="hasChildren(element)"
+            :is-open="isExpanded(element.id)"
+            @toggle-expand="toggleExpand(element.id)"
+          />
+
+          <!-- Nested items via rootItem (Implementation B) -->
+          <AdbTreeItem
+            v-if="isExpanded(element.id)"
+            :items="getChildren(element)"
+            :is-draggable="true"
+            :parent-item="getInnerItem(element)"
+            class="nested-drop-zone"
             @update-items="(newItems) => updateItemChildren(element, newItems)"
           />
         </div>
       </div>
     </template>
-  </component>
+  </Draggable>
 </template>
 
 <script setup lang="ts">
-import { computed, inject, type Ref } from 'vue'
+import { computed, inject, ref, type Ref } from 'vue'
 import draggable from 'vuedraggable'
+import AdbTreeFile from './tree/AdbTreeFile.vue'
+import AdbTreeFolder from './tree/AdbTreeFolder.vue'
+import { type Item, type Collection, type CollectionItem } from '@/lib/types'
 
 const Draggable = draggable
-
-import type { Item, Collection, CollectionItem } from '@/lib/types'
 
 const props = defineProps<{
   items: (Item | Collection | CollectionItem)[]
   isDraggable?: boolean
+  parentItem?: Item | null
 }>()
 
 const emit = defineEmits(['update-items'])
@@ -84,90 +90,81 @@ const dragOptions = computed(() => ({
   animation: 200,
   group: 'tree',
   disabled: false,
-  ghostClass: 'ghost'
+  ghostClass: 'ghost',
+  itemKey: 'id'
 }))
+
+// Expansion state for Implementation B items
+const expandedItems = ref<Record<string, boolean>>({})
+
+const toggleExpand = (id: string) => {
+  expandedItems.value[id] = !expandedItems.value[id]
+}
+
+const isExpanded = (id: string) => !!expandedItems.value[id]
 
 const adb = inject<{
   rootItems: Ref<(Item | Collection)[]>,
   selectItem: (item: Item | Collection | CollectionItem) => void,
   addItemToCollection: (collection: Collection) => void,
-  createItem: (rootItemId?: string | null) => Item
+  createItem: (rootItemId?: string | null) => Item,
+  makeItemACollection: (item: Item) => Collection,
+  deleteItem: (item: Item) => void,
+  deleteCollection: (collection: Collection) => void,
+  updateCollectionItems: (collection: Collection, newItems: (CollectionItem | Item | Collection)[]) => void,
+  updateItemChildren: (parent: Item, children: (Item | Collection | CollectionItem)[]) => void,
+  updateRootItems: (newItems: (Item | Collection | CollectionItem)[]) => void,
+  getInnerItem: (element: Item | Collection | CollectionItem) => Item,
+  isCollectionItem: (object: any) => object is CollectionItem,
+  checkIsCollection: (object: any) => object is Collection
 }>('adb')
 
-const selectItem = (item: Item | Collection | CollectionItem) => {
-  if (adb && adb.selectItem) {
-    adb.selectItem(item)
-  }
+const onChange = () => {
+  // Logic is now mostly handled by the setters of internalItems and specific update methods
+  // But we can add extra logic here if needed for cross-container moves
 }
 
-const onChange = (evt: any) => {
-  console.log('Tree change', evt)
+const isCollection = (element: Item | Collection | CollectionItem): element is Collection => {
+  return adb?.checkIsCollection(adb.getInnerItem(element)) ?? false
 }
 
-const isCollection = (element: any): element is Collection => {
-  return (element as Collection).parent !== undefined && (element as Collection).items !== undefined
+const getCollection = (element: Item | Collection | CollectionItem): Collection => {
+  return adb?.getInnerItem(element) as Collection
+}
+
+const getInnerItem = (element: Item | Collection | CollectionItem): Item => {
+  return adb?.getInnerItem(element) as Item
 }
 
 const getTitle = (element: Item | Collection | CollectionItem) => {
-  if ('parent' in element && element.parent) {
-    return element.parent.contents?.[0]?.jsonContent?.text || 'Collection ' + element.id
-  }
-  if ('item' in element && element.item) {
-    return element.item.contents?.[0]?.jsonContent?.text || 'Item ' + element.id
-  }
-  const item = element as Item
-  return item.contents?.[0]?.jsonContent?.text || 'Exercise ' + item.id
-}
-
-const addChild = (element: Item | Collection | CollectionItem) => {
-  if (isCollection(element)) {
-    adb?.addItemToCollection(element)
-  } else {
-    // Implementation B: Root Item
-    let itemId: string | undefined
-    if ('item' in element) {
-        itemId = element.item.id
-    } else {
-        itemId = (element as Item).id
-    }
-    
-    if (itemId) {
-        const newItem = adb?.createItem(itemId)
-        if (adb && adb.rootItems) {
-            // New item is already added to rootItems by createItem if rootItemId is null
-            // but for implementation B we need it in rootItems with rootItemId
-            if (newItem && !adb.rootItems.value.includes(newItem)) {
-                adb.rootItems.value.push(newItem)
-            }
-        }
-    }
-  }
+  const item = adb?.getInnerItem(element)
+  return item?.contents?.[0]?.jsonContent?.text || (item?.item_type === 'collection' ? 'New Collection' : 'New Task')
 }
 
 const hasChildren = (element: Item | Collection | CollectionItem) => {
   if (!adb?.rootItems?.value) return false
-  const itemId = 'item' in element ? element.item.id : (element as Item).id
-  return adb.rootItems.value.some((item: any) => item.rootItemId === itemId)
+  const item = getInnerItem(element)
+  if (!item?.id) return false
+  return adb.rootItems.value.some((ri) => ri.rootItemId === item.id)
 }
 
 const getChildren = (element: Item | Collection | CollectionItem) => {
   if (!adb?.rootItems?.value) return []
-  const itemId = 'item' in element ? element.item.id : (element as Item).id
-  return adb.rootItems.value.filter((item: any) => item.rootItemId === itemId)
+  const item = getInnerItem(element)
+  if (!item?.id) return []
+  return adb.rootItems.value.filter((ri) => ri.rootItemId === item.id)
 }
 
-const updateCollectionChildren = (element: Collection, newItems: CollectionItem[]) => {
-  element.items = newItems
-  if (element.order) {
-    element.items.forEach((child: CollectionItem, index: number) => {
-      child.position = index + 1
-    })
-  }
+
+const updateCollectionChildren = (element: Collection, newItems: (Item | Collection | CollectionItem)[]) => {
+  // If we receive a list that contains both CollectionItems and raw Items, 
+  // the adb action will handle wrapping/normalization.
+  adb?.updateCollectionItems(element, newItems)
 }
 
-const updateItemChildren = (element: Item | Collection | CollectionItem, newItems: Item[]) => {
-  // Logic to handle reordering of items with same rootItemId in the flat rootItems list
-  console.log('Update item children', element, newItems)
+const updateItemChildren = (element: Item | Collection | CollectionItem, newItems: (Item | Collection | CollectionItem)[]) => {
+  const parentItem = getInnerItem(element)
+  adb?.updateItemChildren(parentItem, newItems)
 }
 </script>
 
@@ -175,6 +172,10 @@ const updateItemChildren = (element: Item | Collection | CollectionItem, newItem
 .ghost {
   opacity: 0.5;
   background: #c8ebfb;
+}
+
+.nested-drop-zone {
+  min-height: 10px;
 }
 </style>
 

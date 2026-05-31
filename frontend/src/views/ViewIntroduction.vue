@@ -6,10 +6,18 @@
 
         <!-- <span> <IconEWiLL /> </span> -->
       </v-card-title>
-      <v-card-text class="text"> Dieses Projekt ist als Ausgangslage für studentische Folgeprojekte gedacht. Es zeigt die Kursverwaltung mit lokalen Beispiel-Daten und bewusst einfachen Services. </v-card-text>
+      <v-card-text class="text">
+        Dieses Projekt ist als Ausgangslage für studentische Folgeprojekte gedacht. Es zeigt die Kursverwaltung mit lokalen Beispiel-Daten und bewusst einfachen Services.
+      </v-card-text>
       <v-card-actions>
         <v-spacer>
-          <v-btn variant="flat" color="primary-dark" to="/course"> Zu den Kursen </v-btn>
+          <v-btn
+            variant="flat"
+            color="primary-dark"
+            to="/course"
+          >
+            Zu den Kursen
+          </v-btn>
         </v-spacer>
       </v-card-actions>
     </v-card>

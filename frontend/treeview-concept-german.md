@@ -29,11 +29,11 @@ Um die Backend-Datenmodelle in einer Treeview darzustellen:
 
 ## 4. Benutzerinteraktionen & Integration in den Datenfluss
 
-### Primäre Tree-Navigation (Chevron vs. Node-Klick)
+### Primäre Tree-Navigation (Node-Klick zum Erweitern)
 
-- **Sammlungen erweitern:** Da jedes Item potenziell selbst eine Sammlung sein kann und gleichzeitig eigene Inhalte/Daten besitzt, darf ein Klick auf den eigentlichen Node-Körper das Item **nicht** erweitern.
-  - Ein Klick auf den Node-Körper dient ausschließlich dazu, die Details des Items auszuwählen, zu öffnen oder in einer Vorschau anzuzeigen (Inhalte und Metadaten).
-  - Das Erweitern einer Sammlung, um Child-Items sichtbar zu machen, darf ausschließlich durch einen Klick auf das Chevron-/Pfeil-Icon neben dem Node ausgelöst werden.
+- **Sammlungen erweitern:** Ein Klick auf den **Node-Körper** (den Titel oder Hintergrund des Elements) erweitert das Item, sofern es untergeordnete Elemente besitzt.
+  - Ein Klick auf den Node-Körper dient gleichzeitig dazu, das Item auszuwählen und seine Details (Inhalte und Metadaten) im Editor zu öffnen.
+  - Das **Chevron-/Pfeil-Icon** dient als visueller Indikator für den Erweiterungszustand, ist jedoch nicht mehr der exklusive Auslöser für das Erweitern.
 
 ### A. Drag-and-Drop-Neuanordnung (innerhalb einer geordneten Sammlung)
 

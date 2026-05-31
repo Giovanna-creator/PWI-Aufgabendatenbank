@@ -1,14 +1,17 @@
 <template>
-  <v-dialog v-model="compDialog" width="50%">
+  <v-dialog
+    v-model="compDialog"
+    width="50%"
+  >
     <v-card>
       <v-card-title>
         <span class="text-h5">Kompatibilitätsproblem</span>
         <v-card-text class="comp-text">
           <strong>Leider haben wir festgestellt, dass dein aktuelles Browser- oder Betriebssystem nicht mit unserem Modellierungstool kompatibel ist. Zusätzlich erfordert unser Tool eine Mindestbildschirmgröße!</strong>
-          <br />
-          <br />
+          <br>
+          <br>
           Für die beste Benutzererfahrung und volle Funktionalität, stelle bitte sicher, dass du ein unterstütztes Desktop-Betriebssystem und einen kompatiblen Browser benutzt und dass dein Bildschirm die erforderliche Mindestgröße aufweist:
-          <br />
+          <br>
           <ul>
             <li><strong>Betriebssysteme:</strong> <i>Windows, macOS, oder Linux</i></li>
             <li><strong>Browser:</strong> <i>Chromium basiert oder Mozilla Firefox</i></li>
@@ -16,10 +19,10 @@
           </ul>
           Bitte beachte, dass unser Tool <strong>nicht</strong> für die Nutzung auf <strong>mobilen Geräten oder Tablets</strong> optimiert ist.
 
-          <br />
-          <br />
+          <br>
+          <br>
           <strong>
-            Ihr System: <br />
+            Ihr System: <br>
             <ul>
               <li>
                 <strong>Betriebssystem/Browser:</strong> <i>{{ sysSpecs.browser }}</i>
@@ -33,7 +36,12 @@
       </v-card-title>
       <v-card-actions>
         <v-spacer />
-        <v-btn variant="text" @click="_close"> Schließen </v-btn>
+        <v-btn
+          variant="text"
+          @click="_close"
+        >
+          Schließen
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

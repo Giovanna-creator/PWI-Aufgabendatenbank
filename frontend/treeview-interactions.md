@@ -10,22 +10,21 @@ This document outlines how the creation, management, and structuring of exercise
 ## 3. Visual Mapping
 To translate the backend data models into a tree view:
 
-- **Unified Item Architecture:** It must be absolutely clear that **each item can be a collection, and a collection is always an item as well**. There is no distinct "folder" vs. "file" entity in the core schema—an item merely acts as a "folder" (expandable node) when it has child items, or as a "file" (leaf node) when it does not.
-- **Naming Convention:** All entities in the tree view (both files and folders) should simply be labeled generically as "Item" (or display their `item_type` / ID) since items lack a direct "title" field in the root database schema (titles are stored as Content blocks).
-- **Single Exercises (Leaf Items):** Represented as "files" (leaf nodes) when they currently have no child items attached.
-- **Collections (Parent Items):** When an item acts as a parent (contains other items), it is represented as a "folder" (expandable node). 
-  - **Unordered Collections:** Indicated by a standard folder icon or bullet points. Child items have no visible sequence numbers (since `position = null`).
-  - **Ordered Collections:** Indicated by a specific "sequence" folder icon (e.g., list-numbered). Child items display their sequential `position` (1, 2, 3...) prominently next to their names.
-  - **Default State (Unordered):** Items placed inside a collection of another item are **unordered by default**. They are indicated by a standard folder icon or bullet points, with no visible sequence numbers (`position = null`).
-  - **Changing to Ordered:** An unordered collection can be explicitly changed into an ordered sequence **only via a context menu option** on the parent node. Once ordered (e.g., indicated by a list-numbered icon), the child items display their sequential `position` (1, 2, 3...) prominently next to their names.
+- **Unified Item Architecture:** Each item can be a collection. An item acts as a "folder" (expandable node) when it has child items (either via `rootItemId` or via a collection's `items`), or as a "file" (leaf node) when it does not.
+- **Inheritance:** The `Collection` type inherits from `Item`. This ensures that a collection is always an item and can be edited, moved, or deleted like any other task.
+- **Naming Convention:** All entities in the tree view (both files and folders) should display their title from the first `Content` block.
+- **Single Exercises (Leaf Items):** Represented as "files" (leaf nodes) when they currently have no child items or collection items attached.
+- **Collections (Items with children):** When an item contains other items, it is represented as a "folder" (expandable node). 
+  - **Unordered Collections:** Indicated by a standard folder icon.
+  - **Ordered Collections:** Indicated by a specific "sequence" folder icon. Child items display their sequential `position`.
 
 
 ## 4. User Interactions & Data Flow Integration
 
-### Primary Tree Navigation (Chevron vs. Node Click)
-- **Expanding Collections:** Because every item can potentially act as a collection and inherently contains its own content/data, clicking the **node body** itself should NOT expand the item.
-  - Clicking the node body is reserved for selecting, opening, or previewing the item's details (its contents and metadata).
-  - Expanding the collection to reveal child tree items must strictly be triggered by clicking the **chevron/arrow icon** next to the node.
+### Primary Tree Navigation (Node Click for Expansion)
+- **Expanding Collections:** Clicking the **node body** (the item title or background) should expand the item if it has children.
+  - Clicking the node body also selects the item, opening its details (contents and metadata) in the editor.
+  - The **chevron/arrow icon** serves as a visual indicator of the expansion state but is no longer the exclusive trigger for expansion.
 
 ### A. Drag-and-Drop Reordering (Inside an Ordered Collection)
 - **Action:** User drags an exercise up or down within the same ordered collection.

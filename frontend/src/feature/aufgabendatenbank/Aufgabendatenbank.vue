@@ -21,95 +21,31 @@
 <script setup lang="ts">
 import { ref, provide } from 'vue'
 import type { Item, Collection, CollectionItem } from '@/lib/types'
+import { useAdbActions } from './composables/useAdbActions'
 import AufgabendatenbankStructure from './structure/AufgabendatenbankStructure.vue'
 import AufgabendatenbankEditor from './editor/AufgabendatenbankEditor.vue'
 import AufgabendatenbankToolbar from './toolbar/AufgabendatenbankToolbar.vue'
 
 // --- Local Data State ---
 const rootItems = ref<(Item | Collection)[]>([])
-const selectedItem = ref<Item | Collection | null>(null)
+const selectedItem = ref<Item | Collection | CollectionItem | null>(null)
 
-const selectItem = (item: Item | Collection) => {
-  selectedItem.value = item
-}
-
-const createItem = (rootItemId: string | null = null) => {
-  const newItem: Item = {
-    id: 'item-' + Date.now().toString(),
-    item_type: 'exercise',
-    author: 'author',
-    representationTemplate: null,
-    license: null,
-    tags: [],
-    validators: [],
-    modifiers: [],
-    rootItem: null,
-    rootItemId: rootItemId,
-    contents: [
-      {
-        id: 'content-' + Date.now().toString(),
-        license: null,
-        contentType: 'text',
-        author: 'author',
-        tags: [],
-        purpose: 'title',
-        jsonContent: { text: `New Task` },
-        blobContent: ''
-      }
-    ]
-  }
-  if (!rootItemId) {
-    rootItems.value.push(newItem)
-  }
-  return newItem
-}
-
-const createCollection = () => {
-  const parentItem: Item = {
-    id: 'item-coll-' + Date.now().toString(),
-    item_type: 'collection_parent',
-    author: 'author',
-    representationTemplate: null,
-    license: null,
-    tags: [],
-    validators: [],
-    modifiers: [],
-    rootItem: null,
-    contents: [
-      {
-        id: 'content-coll-' + Date.now().toString(),
-        license: null,
-        contentType: 'text',
-        author: 'author',
-        tags: [],
-        purpose: 'title',
-        jsonContent: { text: `New Collection` },
-        blobContent: ''
-      }
-    ]
-  }
-
-  const newCollection: Collection = {
-    id: 'coll-' + Date.now().toString(),
-    parent: parentItem,
-    items: [],
-    order: false
-  }
-
-  rootItems.value.push(newCollection)
-  return newCollection
-}
-
-const addItemToCollection = (collection: Collection) => {
-  const newItem = createItem()
-  const collectionItem: CollectionItem = {
-    id: 'coll-item-' + Date.now().toString(),
-    collectionId: collection.id,
-    item: newItem,
-    position: collection.order ? collection.items.length + 1 : null
-  }
-  collection.items.push(collectionItem)
-}
+const {
+  selectItem,
+  createItem,
+  createCollection,
+  addItemToCollection,
+  toggleCollectionOrder,
+  makeItemACollection,
+  deleteItem,
+  deleteCollection,
+  updateCollectionItems,
+  updateItemChildren,
+  updateRootItems,
+  getInnerItem,
+  isCollectionItem,
+  checkIsCollection
+} = useAdbActions(rootItems, selectedItem)
 
 provide('adb', {
   rootItems,
@@ -117,8 +53,18 @@ provide('adb', {
   selectItem,
   createItem,
   createCollection,
-  addItemToCollection
-} as const)
+  addItemToCollection,
+  toggleCollectionOrder,
+  makeItemACollection,
+  deleteItem,
+  deleteCollection,
+  updateCollectionItems,
+  updateItemChildren,
+  updateRootItems,
+  getInnerItem,
+  isCollectionItem,
+  checkIsCollection
+})
 
 /*
  * Feature logic for Aufgabendatenbank goes here.

@@ -27,7 +27,7 @@
     >
       Kollektion erstellen
     </v-btn>
-    <v-btn icon="mdi-dots-vertical"/>
+    <v-btn icon="mdi-dots-vertical" />
   </v-toolbar>
 </template>
 

@@ -5,21 +5,55 @@
         <v-card-title>Für den Kurs {{ course?.name }} einschreiben</v-card-title>
 
         <v-card-subtitle>
-          Semester: {{ course?.semester.name }} <br />
+          Semester: {{ course?.semester.name }} <br>
           Standort: {{ course?.location }}
         </v-card-subtitle>
-        <v-alert class="mt-4" type="info" variant="tonal" density="comfortable"> Einschreiben funktioniert hier nur gegen lokale Beispieldaten. Ersetze die Services später durch die gewünschte Backend-Implementierung. </v-alert>
+        <v-alert
+          class="mt-4"
+          type="info"
+          variant="tonal"
+          density="comfortable"
+        >
+          Einschreiben funktioniert hier nur gegen lokale Beispieldaten. Ersetze die Services später durch die gewünschte Backend-Implementierung.
+        </v-alert>
       </v-card-item>
 
-      <v-text-field v-if="course?.keyPassword != ''" v-model="key" label="Einschreibeschlüssel" class="textfield" variant="solo" />
+      <v-text-field
+        v-if="course?.keyPassword != ''"
+        v-model="key"
+        label="Einschreibeschlüssel"
+        class="textfield"
+        variant="solo"
+      />
       <v-card-actions>
-        <v-btn class="button mb-3" color="warning" @click="signup"> Einschreiben </v-btn>
+        <v-btn
+          class="button mb-3"
+          color="warning"
+          @click="signup"
+        >
+          Einschreiben
+        </v-btn>
       </v-card-actions>
     </v-card>
   </div>
-  <v-snackbar v-model="snackbarSuccess" :timeout="2500"> Einschreibung erfolgreich </v-snackbar>
-  <v-snackbar v-model="snackbarPassword" :timeout="2500"> Passwort falsch, bitte versuchen Sie es erneut </v-snackbar>
-  <v-snackbar v-model="snackbarError" :timeout="2500"> Oops, something went wrong </v-snackbar>
+  <v-snackbar
+    v-model="snackbarSuccess"
+    :timeout="2500"
+  >
+    Einschreibung erfolgreich
+  </v-snackbar>
+  <v-snackbar
+    v-model="snackbarPassword"
+    :timeout="2500"
+  >
+    Passwort falsch, bitte versuchen Sie es erneut
+  </v-snackbar>
+  <v-snackbar
+    v-model="snackbarError"
+    :timeout="2500"
+  >
+    Oops, something went wrong
+  </v-snackbar>
 </template>
 
 <script setup lang="ts">

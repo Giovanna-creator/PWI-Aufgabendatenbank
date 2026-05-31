@@ -7,7 +7,14 @@
         <p>Benutzername: {{ firstName }}</p>
         <p>Email: {{ email }}</p>
         <p>Rollen: {{ role }}</p>
-        <v-alert class="mt-4" type="info" variant="tonal" density="comfortable"> Das Profil wird aktuell aus dem lokalen Demo-Login gespeist. </v-alert>
+        <v-alert
+          class="mt-4"
+          type="info"
+          variant="tonal"
+          density="comfortable"
+        >
+          Das Profil wird aktuell aus dem lokalen Demo-Login gespeist.
+        </v-alert>
       </v-card-text>
     </v-card>
   </div>

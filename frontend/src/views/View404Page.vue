@@ -5,13 +5,21 @@
         <span>
           <IconEWiLL class="icon" />
         </span>
-        <br />
+        <br>
         <span>404</span>
       </v-card-title>
-      <v-card-text class="text"> UH OH! Verirrt? </v-card-text>
+      <v-card-text class="text">
+        UH OH! Verirrt?
+      </v-card-text>
       <v-card-actions>
         <v-spacer>
-          <v-btn color="primary-dark" variant="flat" to="/"> Hier geht es zurück nach Hause </v-btn>
+          <v-btn
+            color="primary-dark"
+            variant="flat"
+            to="/"
+          >
+            Hier geht es zurück nach Hause
+          </v-btn>
         </v-spacer>
       </v-card-actions>
     </v-card>

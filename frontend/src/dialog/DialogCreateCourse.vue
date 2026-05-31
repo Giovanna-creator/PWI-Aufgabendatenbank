@@ -1,35 +1,108 @@
 <template>
-  <v-dialog v-model="courseDialog" width="70%">
+  <v-dialog
+    v-model="courseDialog"
+    width="70%"
+  >
     <v-card>
       <v-card-title>
         <span v-if="newCourse">Neuen Kurs erstellen</span>
         <span v-if="!newCourse">Kurs bearbeiten: {{ course.name }}</span>
       </v-card-title>
       <v-card-subtitle>Die Daten landen nur in der lokalen Demo-Schicht und sollten später durch ein Backend ersetzt werden.</v-card-subtitle>
-      <v-form ref="form" v-model="valid" @submit.prevent>
+      <v-form
+        ref="form"
+        v-model="valid"
+        @submit.prevent
+      >
         <v-card-text>
           <v-row>
             <v-col>
-              <v-text-field v-model="course.name" color="primary" variant="underlined" label="Name" :rules="[(v: any) => !!v || 'Name is required']" required />
-              <v-text-field v-model="course.description" color="primary" variant="underlined" label="Beschreibung" />
-              <v-text-field v-model="course.keyPassword" color="primary" variant="underlined" label="Passwort (Keep empty for public course)" />
+              <v-text-field
+                v-model="course.name"
+                color="primary"
+                variant="underlined"
+                label="Name"
+                :rules="[(v: any) => !!v || 'Name is required']"
+                required
+              />
+              <v-text-field
+                v-model="course.description"
+                color="primary"
+                variant="underlined"
+                label="Beschreibung"
+              />
+              <v-text-field
+                v-model="course.keyPassword"
+                color="primary"
+                variant="underlined"
+                label="Passwort (Keep empty for public course)"
+              />
             </v-col>
             <v-col>
-              <v-select v-model="course.semester" color="primary" variant="underlined" label="Semester" :rules="[(v: any) => !!v || 'Semester is required']" required :items="semesters" item-title="name" return-object />
-              <v-select v-model="course.location" color="primary" variant="underlined" label="Standort" :items="['Friedberg', 'Gießen']" :rules="[(v: any) => !!v || 'Standort is required']" required />
+              <v-select
+                v-model="course.semester"
+                color="primary"
+                variant="underlined"
+                label="Semester"
+                :rules="[(v: any) => !!v || 'Semester is required']"
+                required
+                :items="semesters"
+                item-title="name"
+                return-object
+              />
+              <v-select
+                v-model="course.location"
+                color="primary"
+                variant="underlined"
+                label="Standort"
+                :items="['Friedberg', 'Gießen']"
+                :rules="[(v: any) => !!v || 'Standort is required']"
+                required
+              />
             </v-col>
           </v-row>
         </v-card-text>
         <v-card-actions class="card-actions">
-          <v-btn v-if="!newCourse" color="error" variant="flat" @click="deleteCourse"> Kurs löschen </v-btn>
+          <v-btn
+            v-if="!newCourse"
+            color="error"
+            variant="flat"
+            @click="deleteCourse"
+          >
+            Kurs löschen
+          </v-btn>
           <v-spacer />
-          <v-btn color="error" variant="flat" @click="_cancel"> Abbrechen </v-btn>
-          <v-btn v-show="!loading" color="primary" variant="flat" type="submit" @click="_confirm"> Speichern </v-btn>
-          <v-progress-circular v-if="loading" color="primary" indeterminate size="40" />
+          <v-btn
+            color="error"
+            variant="flat"
+            @click="_cancel"
+          >
+            Abbrechen
+          </v-btn>
+          <v-btn
+            v-show="!loading"
+            color="primary"
+            variant="flat"
+            type="submit"
+            @click="_confirm"
+          >
+            Speichern
+          </v-btn>
+          <v-progress-circular
+            v-if="loading"
+            color="primary"
+            indeterminate
+            size="40"
+          />
         </v-card-actions>
       </v-form>
     </v-card>
-    <v-snackbar v-model="snackbarFail" :timeout="2500"> Kurs konnte nicht erstellt werden, bitte versuchen Sie es erneut </v-snackbar>
+    <v-snackbar
+      v-model="snackbarFail"
+      :timeout="2500"
+    >
+      Kurs konnte nicht erstellt werden, bitte versuchen Sie es erneut
+    </v-snackbar>
   </v-dialog>
   <DialogConfirmVue ref="dialogConfirm" />
 </template>
