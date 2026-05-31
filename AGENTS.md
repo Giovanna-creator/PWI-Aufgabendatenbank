@@ -53,8 +53,8 @@ Based on the defined types, the creation and management of exercises and collect
    - Add Items: Create a new `Item`, then add to collection via `CollectionItem` with `position = null`. (`POST /collections/{collectionId}/items`)
 
 3. **Ordered Collections (Sequences of exercises):**
-   - *Implementation A (Via Collections):* Same as unordered, but `Collection` has `order = true` and `CollectionItem`s are added with sequential `position`s (1, 2, 3...).
-   - *Implementation B (Via Root Items):* Create an `Item`, then subsequent `Item`s are created setting `rootItem` to the first item's ID.
+   - Via `Collection.order = true` and `CollectionItem.position`s (1, 2, 3...).
+   - Via `rootItemId`: Items referencing the same root are grouped visually in the tree.
 
 4. **Extending and Modifying Collections:**
    - *Horizontal Vector:* An existing exercise can be extended by attaching a new collection to it. (`POST /items/{id}/collections` -> `POST /collections/{collectionId}/items`)
