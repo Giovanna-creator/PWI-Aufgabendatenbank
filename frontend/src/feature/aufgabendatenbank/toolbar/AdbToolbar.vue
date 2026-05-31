@@ -4,7 +4,7 @@
     color="surface"
   >
     <v-toolbar-title class="adb-toolbar-title">
-      Aufgabendatenbank
+      Aufgaben
     </v-toolbar-title>
     <v-spacer />
 
@@ -14,7 +14,7 @@
       variant="flat"
       prepend-icon="mdi-plus"
       class="adb-btn-spacing"
-      @click="adb?.createItem()"
+      @click="store.createItem()"
     >
       Aufgabe erstellen
     </v-btn>
@@ -23,7 +23,7 @@
       variant="flat"
       prepend-icon="mdi-folder-plus"
       class="adb-btn-spacing"
-      @click="adb?.createCollection()"
+      @click="store.createCollection()"
     >
       Kollektion erstellen
     </v-btn>
@@ -32,10 +32,9 @@
 </template>
 
 <script setup lang="ts">
-import { inject } from 'vue'
-import type { Item, Collection } from '@/lib/types'
+import { useExerciseStore } from '@/stores/exerciseStore'
 
-const adb = inject<{ createItem: (rootItemId?: string | null) => Item, createCollection: () => Collection }>('adb')
+const store = useExerciseStore()
 </script>
 
 <style lang="scss" scoped>

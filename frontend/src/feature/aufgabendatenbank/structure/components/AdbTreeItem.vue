@@ -61,13 +61,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, ref, type Ref } from 'vue'
+import { computed, ref } from 'vue'
 import draggable from 'vuedraggable'
 import AdbTreeFile from './tree/AdbTreeFile.vue'
 import AdbTreeFolder from './tree/AdbTreeFolder.vue'
-import { type Item, type Collection, type CollectionItem, type TreeItem } from '@/lib/types'
+import { useExerciseStore } from '@/stores/exerciseStore'
+import { type Collection, type TreeItem } from '@/lib/types'
+import { getInnerItem, isCollectionItem, isCollection as checkIsCollection } from '@/lib/types'
 
 const Draggable = draggable
+const store = useExerciseStore()
 
 const props = defineProps<{
   items: TreeItem[]
@@ -89,7 +92,6 @@ const dragOptions = computed(() => ({
   itemKey: 'id'
 }))
 
-// Expansion state for Implementation B items
 const expandedItems = ref<Record<string, boolean>>({})
 
 const toggleExpand = (id: string) => {
@@ -98,84 +100,54 @@ const toggleExpand = (id: string) => {
 
 const isExpanded = (id: string) => !!expandedItems.value[id]
 
-const adb = inject<{
-  rootItems: Ref<Item[]>
-  selectItem: (item: TreeItem) => void
-  addItemToCollection: (collection: Collection) => void
-  createItem: (rootItemId?: string | null) => Item
-  makeItemACollection: (item: Item) => Collection
-  deleteItem: (item: Item) => void
-  deleteCollection: (collection: Collection) => void
-  updateCollectionItems: (collection: Collection, newItems: TreeItem[]) => void
-  updateItemChildren: (parent: Item, children: TreeItem[]) => void
-  updateRootItems: (newItems: TreeItem[]) => void
-  getInnerItem: (element: TreeItem) => Item
-  isCollectionItem: (object: any) => object is CollectionItem
-  checkIsCollection: (object: any) => object is Collection
-}>('adb')
-
-const asItem = (element: unknown): TreeItem => element as TreeItem
+const toItem = (element: unknown): TreeItem => element as TreeItem
 
 const isCollection = (element: unknown): element is Collection => {
-  return adb?.checkIsCollection(adb.getInnerItem(asItem(element))) ?? false
+  return checkIsCollection(getInnerItem(toItem(element)))
 }
 
 const getCollection = (element: unknown): Collection => {
-  return adb?.getInnerItem(asItem(element)) as Collection
-}
-
-const getInnerItem = (element: unknown): Item => {
-  return adb?.getInnerItem(asItem(element)) as Item
+  return getInnerItem(toItem(element)) as Collection
 }
 
 const getId = (element: unknown): string => {
-  return asItem(element).id
+  return toItem(element).id
 }
 
 const getTitle = (element: unknown) => {
-  const item = getInnerItem(element)
-  return item?.contents?.[0]?.jsonContent?.text || (item?.item_type === 'collection' ? 'New Collection' : 'New Task')
+  const inner = getInnerItem(toItem(element))
+  return inner?.contents?.[0]?.jsonContent?.text || (inner?.item_type === 'collection' ? 'New Collection' : 'New Task')
 }
 
 const getPosition = (element: unknown): number | null | undefined => {
-  const e = asItem(element)
-  if ('position' in e) {
-    return (e as CollectionItem).position
-  }
-  return null
+  const e = toItem(element)
+  return isCollectionItem(e) ? e.position : null
 }
 
 const isSubItem = (element: unknown): boolean => {
-  const e = asItem(element)
+  const e = toItem(element)
   const inner = getInnerItem(e)
   if (inner.rootItemId) return true
-  if ('collectionId' in e) {
-    return !!(e as CollectionItem).collectionId
-  }
+  if (isCollectionItem(e)) return !!e.collectionId
   return false
 }
 
 const hasChildren = (element: unknown) => {
-  if (!adb?.rootItems?.value) return false
-  const item = getInnerItem(element)
-  if (!item?.id) return false
-  return adb.rootItems.value.some((ri) => ri.rootItemId === item.id)
+  const inner = getInnerItem(toItem(element))
+  return inner?.id ? store.rootItems.some((ri) => ri.rootItemId === inner.id) : false
 }
 
 const getChildren = (element: unknown) => {
-  if (!adb?.rootItems?.value) return []
-  const item = getInnerItem(element)
-  if (!item?.id) return []
-  return adb.rootItems.value.filter((ri) => ri.rootItemId === item.id)
+  const inner = getInnerItem(toItem(element))
+  return inner?.id ? store.rootItems.filter((ri) => ri.rootItemId === inner.id) : []
 }
 
 const updateCollectionChildren = (element: Collection, newItems: TreeItem[]) => {
-  adb?.updateCollectionItems(element, newItems)
+  store.updateCollectionItems(element, newItems)
 }
 
 const updateItemChildren = (element: unknown, newItems: TreeItem[]) => {
-  const parentItem = getInnerItem(element)
-  adb?.updateItemChildren(parentItem, newItems)
+  store.updateItemChildren(getInnerItem(toItem(element)), newItems)
 }
 </script>
 

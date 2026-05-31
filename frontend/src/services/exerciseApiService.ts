@@ -2,7 +2,7 @@ import axios, { type AxiosInstance } from 'axios'
 import type { Item, Collection, CollectionItem, Content } from '@/lib/types'
 
 /**
- * ## Aufgabendatenbank API Service
+ * ## Adb API Service
  *
  * Geplante REST-Kommunikation zwischen Frontend und Spring-Boot-Backend.
  * Der Service bildet alle aktuellen Operationen aus `useAdbActions` auf API-Aufrufe ab.

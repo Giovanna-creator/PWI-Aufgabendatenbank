@@ -62,11 +62,11 @@
         value="course"
       />
       <v-list-item
-        to="/aufgabendatenbank"
+        to="/adb"
         active-class="active"
         prepend-icon="mdi-database"
-        title="Aufgabendatenbank"
-        value="aufgabendatenbank"
+        title="Aufgaben"
+        value="adb"
       />
       <v-list-item
         v-if="isLoggedIn"
@@ -105,17 +105,17 @@
         </v-tooltip>
       </v-btn>
       <v-btn
-        to="/aufgabendatenbank"
+        to="/adb"
         active-class="active"
         prepend-icon="mdi-database"
       >
-        <span v-if="!smAndDown"> Aufgabendatenbank </span>
+        <span v-if="!smAndDown"> Aufgaben </span>
         <v-tooltip
           v-if="smAndDown"
           activator="parent"
           location="bottom"
         >
-          Aufgabendatenbank
+          Aufgaben
         </v-tooltip>
       </v-btn>
       <v-btn

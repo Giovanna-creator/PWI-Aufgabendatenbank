@@ -4,7 +4,7 @@
       <span>Editor</span>
     </v-card-title>
     <v-card-text class="adb-editor-text">
-      <div v-if="selectedItem">
+      <div v-if="store.selectedItem">
         <h3 class="text-h6 mb-2">
           Edit: {{ itemTitle }}
         </h3>
@@ -24,7 +24,7 @@
         />
 
         <p class="text-caption text-grey">
-          ID: {{ selectedItem.id }}
+          ID: {{ store.selectedItem.id }}
         </p>
       </div>
       <div v-else>
@@ -35,52 +35,24 @@
 </template>
 
 <script setup lang="ts">
-import { inject, computed, type Ref } from 'vue'
-import { isCollection as checkIsCollection, getInnerItem, type Collection, type TreeItem } from '@/lib/types'
+import { computed } from 'vue'
+import { useExerciseStore } from '@/stores/exerciseStore'
 
-const adb = inject<{ 
-  selectedItem: Ref<TreeItem | null>,
-  toggleCollectionOrder: (collection: Collection) => void
-}>('adb')
+const store = useExerciseStore()
 
-const selectedItem = computed<TreeItem | null>(() => adb?.selectedItem?.value || null)
-
-const isCollection = computed(() => {
-  return selectedItem.value ? checkIsCollection(getInnerItem(selectedItem.value)) : false
-})
+const isCollection = computed(() => store.isCollectionSelected)
 
 const itemTitle = computed({
-  get: () => {
-    const item = selectedItem.value
-    if (!item) return ''
-    const innerItem = getInnerItem(item)
-    return innerItem.contents?.[0]?.jsonContent?.text || ''
-  },
-  set: (val) => {
-    const item = selectedItem.value
-    if (!item) return
-    const innerItem = getInnerItem(item)
-    if (innerItem.contents && innerItem.contents[0]) {
-      innerItem.contents[0].jsonContent.text = val
-    }
-  }
+  get: () => store.itemTitle,
+  set: (val) => store.setItemTitle(val)
 })
 
 const isOrdered = computed({
-  get: () => {
-    const item = selectedItem.value
-    if (!item) return false
-    const innerItem = getInnerItem(item)
-    return checkIsCollection(innerItem) && innerItem.order === true
-  },
+  get: () => store.isOrdered,
   set: (val: boolean) => {
-    const item = selectedItem.value
-    if (!item) return
-    const innerItem = getInnerItem(item)
-    if (checkIsCollection(innerItem)) {
-      if (innerItem.order !== val) {
-        adb?.toggleCollectionOrder(innerItem)
-      }
+    const coll = store.selectedCollection
+    if (coll && coll.order !== val) {
+      store.toggleCollectionOrder(coll)
     }
   }
 })

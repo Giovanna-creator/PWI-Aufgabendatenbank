@@ -8,7 +8,7 @@ import ViewCourses from '../views/ViewCourses.vue'
 import ViewCourseSignup from '../views/ViewCourseSignup.vue'
 import ViewCourse from '../views/ViewCourse.vue'
 import ViewIntroduction from '../views/ViewIntroduction.vue'
-import ViewAufgabendatenbank from '../views/ViewAufgabendatenbank.vue'
+import ViewAdb from '../views/ViewAdb.vue'
 import View404Page from '../views/View404Page.vue'
 import ViewMembers from '../views/ViewMembers.vue'
 
@@ -53,9 +53,9 @@ const router = createRouter({
       component: ViewCourseSignup
     },
     {
-      path: '/aufgabendatenbank',
-      name: 'ViewAufgabendatenbank',
-      component: ViewAufgabendatenbank
+      path: '/adb',
+      name: 'ViewAdb',
+      component: ViewAdb
     },
     {
       path: '/course/:id',

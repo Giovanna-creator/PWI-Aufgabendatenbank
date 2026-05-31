@@ -19,29 +19,18 @@
 </template>
 
 <script setup lang="ts">
-import { inject, computed, type Ref } from 'vue'
+import { computed } from 'vue'
 import AdbTreeItem from './components/AdbTreeItem.vue'
-import type { Item, TreeItem } from '@/lib/types'
+import { useExerciseStore } from '@/stores/exerciseStore'
 
-const adb = inject<{ 
-  rootItems: Ref<Item[]>,
-  updateRootItems: (newItems: Item[]) => void,
-  getInnerItem: (element: TreeItem) => Item
-}>('adb')
+const store = useExerciseStore()
 
-const items = computed(() => {
-  if (!adb?.rootItems?.value) return []
-  return adb.rootItems.value.filter(item => {
-    const inner = adb.getInnerItem(item)
-    // Hide items that have a rootItemId (Implementation B children OR items in collections)
-    if (inner.rootItemId) return false
-    
-    return true
-  })
-})
+const items = computed(() =>
+  store.rootItems.filter((item) => !item.rootItemId)
+)
 
-const updateRootItems = (newItems: Item[]) => {
-  adb?.updateRootItems(newItems)
+const updateRootItems = (newItems: typeof store.rootItems) => {
+  store.updateRootItems(newItems)
 }
 </script>
 

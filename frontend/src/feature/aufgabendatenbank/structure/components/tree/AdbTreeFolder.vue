@@ -10,7 +10,7 @@
     <template #activator="{ props: groupProps, isOpen }">
       <v-list-item
         v-bind="groupProps"
-        :active="adb?.selectedItem.value?.id === element.id"
+        :active="store.selectedItem?.id === element.id"
         class="tree-folder"
         density="compact"
         min-height="22"
@@ -52,7 +52,7 @@
               />
             </template>
             <v-list density="compact">
-              <v-list-item @click="adb?.addItemToCollection(element)">
+              <v-list-item @click="store.addItemToCollection(element)">
                 <template #prepend>
                   <v-icon size="small">
                     mdi-plus
@@ -60,7 +60,7 @@
                 </template>
                 <v-list-item-title>Aufgabe hinzufügen</v-list-item-title>
               </v-list-item>
-              <v-list-item @click="adb?.toggleCollectionOrder(element)">
+              <v-list-item @click="store.toggleCollectionOrder(element)">
                 <template #prepend>
                   <v-icon size="small">
                     {{ element.order ? 'mdi-order-alphabetical-ascending' : 'mdi-format-list-numbered' }}
@@ -71,7 +71,7 @@
               <v-divider />
               <v-list-item
                 color="error"
-                @click="adb?.deleteCollection(element)"
+                @click="store.deleteCollection(element)"
               >
                 <template #prepend>
                   <v-icon
@@ -97,12 +97,24 @@
 </template>
 
 <script setup lang="ts">
-import { inject, ref, type Ref } from 'vue'
-import type { Collection, Item, TreeItem } from '@/lib/types'
+import { ref } from 'vue'
+import { useExerciseStore } from '@/stores/exerciseStore'
+import type { Collection } from '@/lib/types'
+
+const store = useExerciseStore()
 
 const internalIsOpen = ref(false)
 const isDragOver = ref(false)
-let expansionTimeout: any = null
+let expansionTimeout: ReturnType<typeof setTimeout> | null = null
+
+const props = defineProps<{
+  element: Collection
+  title: string
+  position?: number | null
+  isSubItem?: boolean
+}>()
+
+const emit = defineEmits(['toggle-expand'])
 
 const onDragOver = () => {
   isDragOver.value = true
@@ -111,7 +123,7 @@ const onDragOver = () => {
       internalIsOpen.value = true
       emit('toggle-expand')
       expansionTimeout = null
-    }, 800) // 800ms delay to auto-expand
+    }, 800)
   }
 }
 
@@ -123,26 +135,8 @@ const onDragLeave = () => {
   }
 }
 
-const props = defineProps<{
-  element: Collection
-  title: string
-  position?: number | null
-  isSubItem?: boolean
-}>()
-
-const emit = defineEmits(['toggle-expand'])
-
-const adb = inject<{
-  selectedItem: Ref<TreeItem | null>,
-  selectItem: (item: TreeItem) => void,
-  addItemToCollection: (collection: Collection) => void,
-  toggleCollectionOrder: (collection: Collection) => void,
-  deleteCollection: (collection: Collection) => void,
-  getInnerItem: (element: TreeItem) => Item
-}>('adb')
-
 const onSelect = () => {
-  adb?.selectItem(props.element)
+  store.selectItem(props.element)
   emit('toggle-expand')
 }
 </script>

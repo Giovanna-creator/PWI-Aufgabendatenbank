@@ -1,6 +1,6 @@
 <template>
   <v-list-item
-    :active="adb?.selectedItem.value?.id === element.id"
+    :active="store.selectedItem?.id === element.id"
     :class="{ 'drop-target': isDragOver, 'tree-file': true }"
     density="compact"
     min-height="22"
@@ -82,11 +82,25 @@
 </template>
 
 <script setup lang="ts">
-import { inject, ref, type Ref } from 'vue'
-import type { Item, Collection, TreeItem } from '@/lib/types'
+import { ref } from 'vue'
+import { useExerciseStore } from '@/stores/exerciseStore'
+import { getInnerItem, type TreeItem } from '@/lib/types'
+
+const store = useExerciseStore()
 
 const isDragOver = ref(false)
-let expansionTimeout: any = null
+let expansionTimeout: ReturnType<typeof setTimeout> | null = null
+
+const props = defineProps<{
+  element: TreeItem
+  title: string
+  position?: number | null
+  isSubItem?: boolean
+  hasChildren?: boolean
+  isOpen?: boolean
+}>()
+
+const emit = defineEmits(['toggle-expand'])
 
 const onDragOver = () => {
   isDragOver.value = true
@@ -106,41 +120,21 @@ const onDragLeave = () => {
   }
 }
 
-const props = defineProps<{
-  element: TreeItem
-  title: string
-  position?: number | null
-  isSubItem?: boolean
-  hasChildren?: boolean
-  isOpen?: boolean
-}>()
-
-const emit = defineEmits(['toggle-expand'])
-
-const adb = inject<{
-  selectedItem: Ref<TreeItem | null>,
-  selectItem: (item: TreeItem) => void,
-  createItem: (rootItemId?: string | null) => Item,
-  makeItemACollection: (item: Item) => Collection,
-  deleteItem: (item: Item) => void,
-  getInnerItem: (element: TreeItem) => Item
-}>('adb')
-
 const onClick = () => {
-  adb?.selectItem(props.element)
+  store.selectItem(props.element)
   if (props.hasChildren) {
     emit('toggle-expand')
   }
 }
 
 const onMakeCollection = () => {
-  const item = adb?.getInnerItem(props.element)
-  if (item) adb?.makeItemACollection(item)
+  const item = getInnerItem(props.element)
+  store.makeItemACollection(item)
 }
 
 const onDelete = () => {
-  const item = adb?.getInnerItem(props.element)
-  if (item) adb?.deleteItem(item)
+  const item = getInnerItem(props.element)
+  store.deleteItem(item)
 }
 </script>
 
