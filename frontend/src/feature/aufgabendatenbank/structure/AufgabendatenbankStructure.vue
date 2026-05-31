@@ -1,12 +1,12 @@
 <template>
-  <v-card class="adb-structure-card">
-    <v-card-title class="adb-structure-title">
-      <span>Struktur</span>
-    </v-card-title>
-    <v-card-text class="adb-structure-text pa-0">
+  <div class="adb-structure-container">
+    <div class="adb-structure-header">
+      <span class="text-uppercase text-caption font-weight-bold">Struktur</span>
+    </div>
+    <div class="adb-structure-content">
       <v-list
         density="compact"
-        nav
+        class="tree-root"
       >
         <AdbTreeItem
           :items="items"
@@ -14,19 +14,19 @@
           @update-items="updateRootItems"
         />
       </v-list>
-    </v-card-text>
-  </v-card>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { inject, computed, type Ref } from 'vue'
 import AdbTreeItem from './components/AdbTreeItem.vue'
-import type { Item, Collection, CollectionItem } from '@/lib/types'
+import type { Item, TreeItem } from '@/lib/types'
 
 const adb = inject<{ 
-  rootItems: Ref<(Item | Collection)[]>,
-  updateRootItems: (newItems: (Item | Collection)[]) => void,
-  getInnerItem: (element: Item | Collection | CollectionItem) => Item
+  rootItems: Ref<Item[]>,
+  updateRootItems: (newItems: Item[]) => void,
+  getInnerItem: (element: TreeItem) => Item
 }>('adb')
 
 const items = computed(() => {
@@ -40,28 +40,44 @@ const items = computed(() => {
   })
 })
 
-const updateRootItems = (newItems: (Item | Collection)[]) => {
+const updateRootItems = (newItems: Item[]) => {
   adb?.updateRootItems(newItems)
 }
 </script>
 
 <style lang="scss" scoped>
-.adb-structure-card {
+.adb-structure-container {
   height: 100%;
   width: 100%;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+  background-color: #252526;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #333333;
+  color: #cccccc;
 }
 
-.adb-structure-title {
-  font-weight: 700;
-  font-size: 1rem; /* text-md */
-  border-bottom: 1px solid #e5e7eb; /* border-b */
-  padding-bottom: 0.5rem; /* pb-2 */
+.adb-structure-header {
+  padding: 8px 16px;
+  font-size: 0.75rem;
+  line-height: 16px;
+  color: #969696;
+  user-select: none;
+  background-color: #252526;
+  border-bottom: 1px solid #333333;
 }
 
-.adb-structure-text {
-  padding: 1rem; /* p-4 */
-  font-size: 1rem; /* text-base */
-  color: #374151; /* text-gray-700 */
+.adb-structure-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.tree-root {
+  background: transparent !important;
+  padding: 0 !important;
+  user-select: none;
+}
+
+:deep(.v-list) {
+  background: transparent !important;
 }
 </style>

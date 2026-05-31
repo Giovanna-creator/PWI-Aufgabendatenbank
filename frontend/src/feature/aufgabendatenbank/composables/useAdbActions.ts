@@ -5,12 +5,13 @@ import {
   getInnerItem,
   isCollection as checkIsCollection,
   isCollectionItem,
-  type Item
+  type Item,
+  type TreeItem
 } from '@/lib/types'
 
-export function useAdbActions(rootItems: Ref<(Item | Collection)[]>, selectedItem: Ref<Item | Collection | CollectionItem | null>) {
+export function useAdbActions(rootItems: Ref<Item[]>, selectedItem: Ref<TreeItem | null>) {
   // --- HELPERS ---
-  const getItemId = (item: Item | Collection | CollectionItem): string => getInnerItem(item).id
+  const getItemId = (item: TreeItem): string => getInnerItem(item).id
 
   /**
    * Detaches an item from its current parent (either a collection or root items)
@@ -32,14 +33,8 @@ export function useAdbActions(rootItems: Ref<(Item | Collection)[]>, selectedIte
     rootItems.value = rootItems.value.filter(ri => ri.id !== itemId || ri.id === excludeId)
   }
 
-  const updateItemsRootId = (items: (Item | Collection | CollectionItem)[], rootId: string | null) => {
-    items.forEach(i => {
-      getInnerItem(i).rootItemId = rootId
-    })
-  }
-
   // --- ACTIONS ---
-  const selectItem = (item: Item | Collection | CollectionItem) => {
+  const selectItem = (item: TreeItem) => {
     selectedItem.value = item
   }
 
@@ -146,7 +141,7 @@ export function useAdbActions(rootItems: Ref<(Item | Collection)[]>, selectedIte
   }
 
   // --- UPDATES / DRAG-AND-DROP ---
-  const updateCollectionItems = (collection: Collection, newItems: (CollectionItem | Item | Collection)[]) => {
+  const updateCollectionItems = (collection: Collection, newItems: TreeItem[]) => {
     // 1. Map to CollectionItems and normalize
     collection.items = newItems.map((item, index) => {
       const inner = getInnerItem(item)
@@ -167,8 +162,8 @@ export function useAdbActions(rootItems: Ref<(Item | Collection)[]>, selectedIte
     })
   }
 
-  const updateItemChildren = (parent: Item, children: (Item | Collection | CollectionItem)[]) => {
-    const rootId = parent.rootItemId || parent.id
+  const updateItemChildren = (parent: Item, children: TreeItem[]) => {
+    const parentId = parent.id
 
     // 1. Clean up and normalize
     const normalizedChildren = children.map(child => {
@@ -176,22 +171,27 @@ export function useAdbActions(rootItems: Ref<(Item | Collection)[]>, selectedIte
       if (item.id !== parent.id) {
         detachItem(item.id, parent.id)
       }
-      item.rootItemId = rootId
-      return item as Item | Collection
+      item.rootItemId = parentId
+      return item as Item
     })
 
     // 2. Update global state
-    const otherItems = rootItems.value.filter(item => item.rootItemId !== rootId || item.id === parent.id)
+    const otherItems = rootItems.value.filter(item => item.rootItemId !== parentId || item.id === parent.id)
     rootItems.value = [...otherItems, ...normalizedChildren]
   }
 
-  const updateRootItems = (newItems: (Item | Collection | CollectionItem)[]) => {
-    rootItems.value = newItems.map(item => {
+  const updateRootItems = (newItems: TreeItem[]) => {
+    const mapped = newItems.map(item => {
       const inner = getInnerItem(item)
       detachItem(inner.id)
       if (!checkIsCollection(inner)) inner.rootItemId = null
-      return inner as Item | Collection
+      return inner as Item
     })
+    const mappedIds = new Set(mapped.map(i => i.id))
+    const preserved = rootItems.value.filter(i => i.rootItemId && mappedIds.has(i.rootItemId))
+    // Keep orphaned children whose parent moved to a collection
+    const orphaned = rootItems.value.filter(i => i.rootItemId && !mappedIds.has(i.rootItemId))
+    rootItems.value = [...mapped, ...preserved, ...orphaned]
   }
 
   return {

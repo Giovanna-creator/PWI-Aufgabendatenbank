@@ -4,11 +4,23 @@
     <AufgabendatenbankToolbar />
 
     <!-- Main content area -->
-    <div class="adb-content">
+    <div
+      ref="containerRef"
+      class="adb-content"
+    >
       <!-- Sidebar for item structure -->
-      <div class="adb-sidebar">
+      <div 
+        class="adb-sidebar" 
+        :style="{ width: sidebarWidth + 'px' }"
+      >
         <AufgabendatenbankStructure />
       </div>
+
+      <!-- Resizer handle -->
+      <div 
+        class="adb-resizer" 
+        @mousedown="startResizing"
+      />
 
       <!-- Main editor area -->
       <div class="adb-editor">
@@ -19,16 +31,54 @@
 </template>
 
 <script setup lang="ts">
-import { ref, provide } from 'vue'
-import type { Item, Collection, CollectionItem } from '@/lib/types'
+import { ref, provide, onUnmounted } from 'vue'
+import type { Item, TreeItem } from '@/lib/types'
 import { useAdbActions } from './composables/useAdbActions'
+import { dummyData } from './dummy-data'
 import AufgabendatenbankStructure from './structure/AufgabendatenbankStructure.vue'
 import AufgabendatenbankEditor from './editor/AufgabendatenbankEditor.vue'
 import AufgabendatenbankToolbar from './toolbar/AufgabendatenbankToolbar.vue'
 
+// --- Resizing Logic ---
+const sidebarWidth = ref(300)
+const isResizing = ref(false)
+const containerRef = ref<HTMLElement | null>(null)
+
+const startResizing = () => {
+  isResizing.value = true
+  document.addEventListener('mousemove', handleMouseMove)
+  document.addEventListener('mouseup', stopResizing)
+  document.body.style.cursor = 'col-resize'
+  document.body.style.userSelect = 'none'
+}
+
+const handleMouseMove = (event: MouseEvent) => {
+  if (!isResizing.value || !containerRef.value) return
+  
+  const containerRect = containerRef.value.getBoundingClientRect()
+  const newWidth = event.clientX - containerRect.left
+  
+  // Constraints
+  if (newWidth > 150 && newWidth < containerRect.width - 200) {
+    sidebarWidth.value = newWidth
+  }
+}
+
+const stopResizing = () => {
+  isResizing.value = false
+  document.removeEventListener('mousemove', handleMouseMove)
+  document.removeEventListener('mouseup', stopResizing)
+  document.body.style.cursor = ''
+  document.body.style.userSelect = ''
+}
+
+onUnmounted(() => {
+  stopResizing()
+})
+
 // --- Local Data State ---
-const rootItems = ref<(Item | Collection)[]>([])
-const selectedItem = ref<Item | Collection | CollectionItem | null>(null)
+const rootItems = ref<Item[]>(dummyData.rootItems)
+const selectedItem = ref<TreeItem | null>(null)
 
 const {
   selectItem,
@@ -79,23 +129,55 @@ provide('adb', {
 
 <style lang="scss" scoped>
 .adb-container {
-  padding: 1.25rem;
+  height: calc(100vh - 64px); /* Subtract header height */
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  overflow: hidden;
+  background-color: #1e1e1e;
 }
 
 .adb-content {
   display: flex;
+  flex: 1;
+  overflow: hidden;
 }
 
 .adb-sidebar {
-  width: 33.333333%;
   height: 100%;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.adb-resizer {
+  width: 4px;
+  cursor: col-resize;
+  background-color: transparent;
+  transition: background-color 0.2s;
+  z-index: 10;
+  margin: 0 -2px;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 2px;
+    right: 1px;
+    background-color: transparent;
+    transition: background-color 0.2s;
+  }
+
+  &:hover::after, &:active::after {
+    background-color: #007fd4;
+  }
 }
 
 .adb-editor {
-  width: 66.666667%;
+  flex: 1;
   height: 100%;
+  overflow: hidden;
+  min-width: 0;
 }
 </style>

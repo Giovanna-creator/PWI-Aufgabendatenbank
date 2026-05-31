@@ -36,14 +36,14 @@
 
 <script setup lang="ts">
 import { inject, computed, type Ref } from 'vue'
-import { isCollection as checkIsCollection, getInnerItem, type Item, type Collection, type CollectionItem } from '@/lib/types'
+import { isCollection as checkIsCollection, getInnerItem, type Collection, type TreeItem } from '@/lib/types'
 
 const adb = inject<{ 
-  selectedItem: Ref<Item | Collection | CollectionItem | null>,
+  selectedItem: Ref<TreeItem | null>,
   toggleCollectionOrder: (collection: Collection) => void
 }>('adb')
 
-const selectedItem = computed<Item | Collection | CollectionItem | null>(() => adb?.selectedItem?.value || null)
+const selectedItem = computed<TreeItem | null>(() => adb?.selectedItem?.value || null)
 
 const isCollection = computed(() => {
   return selectedItem.value ? checkIsCollection(getInnerItem(selectedItem.value)) : false
@@ -90,19 +90,38 @@ const isOrdered = computed({
 .adb-editor-card {
   height: 100%;
   width: 100%;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+  border-radius: 0;
+  box-shadow: none !important;
+  background-color: #1e1e1e !important;
+  color: #cccccc !important;
 }
 
 .adb-editor-title {
-  font-weight: 700;
-  font-size: 1rem; /* text-md */
-  border-bottom: 1px solid #e5e7eb; /* border-b */
-  padding-bottom: 0.5rem; /* pb-2 */
+  font-weight: 500;
+  font-size: 0.75rem;
+  line-height: 16px;
+  text-transform: uppercase;
+  color: #969696;
+  border-bottom: 1px solid #333333;
+  padding: 8px 16px !important;
+  background-color: #252526;
+  user-select: none;
 }
 
 .adb-editor-text {
-  padding: 1rem; /* p-4 */
-  font-size: 1rem; /* text-base */
-  color: #374151; /* text-gray-700 */
+  padding: 20px;
+  font-size: 13px;
+  color: #cccccc;
+}
+
+:deep(.v-text-field) {
+  .v-field {
+    background-color: #3c3c3c !important;
+    color: #cccccc !important;
+    border-radius: 2px;
+  }
+  .v-label {
+    color: #969696 !important;
+  }
 }
 </style>
