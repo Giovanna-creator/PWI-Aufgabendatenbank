@@ -40,13 +40,17 @@ import { useExerciseStore } from '@/stores/exerciseStore'
 
 const store = useExerciseStore()
 
+/** True when the selected item is a Collection. */
 const isCollection = computed(() => store.isCollectionSelected)
 
+/** Two-way binding for the item title, read/written via the store. */
 const itemTitle = computed({
   get: () => store.itemTitle,
   set: (val) => store.setItemTitle(val)
 })
 
+/** Two-way binding for the ordered toggle.
+ *  Guards against redundant toggleCollectionOrder calls (which would reverse the setting). */
 const isOrdered = computed({
   get: () => store.isOrdered,
   set: (val: boolean) => {

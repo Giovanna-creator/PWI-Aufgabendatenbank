@@ -4,7 +4,7 @@
     color="surface"
   >
     <v-toolbar-title class="adb-toolbar-title">
-      Aufgaben
+      Aufgabendatenbank
     </v-toolbar-title>
     <v-spacer />
 

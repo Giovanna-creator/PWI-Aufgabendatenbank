@@ -55,4 +55,4 @@ To translate the backend data models into a tree view:
 ## 5. Implementation Considerations
 - **Draggable vs. Droppable:** Differentiate between sortable contexts (within the same collection) and cross-container drops (moving to a new collection). Vue DnD Kit sensors should be configured to handle nested droppable zones (folders).
 - **Optimistic UI Updates:** Because backend operations (especially position recalculations) might take time, the Vue state (via Pinia or local component state) should optimisticly update the tree view structure immediately upon drop, reverting only if the API call fails.
-- **Root Items (Implementation B for Sequences):** If sequences are managed via `rootItem` instead of explicit Collections, dragging an item to link it to another should fire `PUT /items/{id}` setting the new `rootItemId`. Displaying these might involve grouping items that share a common `rootItem` under a virtual folder node in the UI.
+- **Root Items (rootItemId):** Items linked via `rootItemId` are grouped visually under their parent. Dragging an item to link it to another fires `PUT /items/{id}` setting the new `rootItemId`.

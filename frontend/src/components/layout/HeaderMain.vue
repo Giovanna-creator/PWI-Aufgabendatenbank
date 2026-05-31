@@ -65,7 +65,7 @@
         to="/adb"
         active-class="active"
         prepend-icon="mdi-database"
-        title="Aufgaben"
+        title="Aufgabendatenbank"
         value="adb"
       />
       <v-list-item
@@ -109,13 +109,13 @@
         active-class="active"
         prepend-icon="mdi-database"
       >
-        <span v-if="!smAndDown"> Aufgaben </span>
+        <span v-if="!smAndDown"> Aufgabendatenbank </span>
         <v-tooltip
           v-if="smAndDown"
           activator="parent"
           location="bottom"
         >
-          Aufgaben
+          Aufgabendatenbank
         </v-tooltip>
       </v-btn>
       <v-btn

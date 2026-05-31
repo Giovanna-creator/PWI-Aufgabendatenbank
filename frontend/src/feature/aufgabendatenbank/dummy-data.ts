@@ -1,5 +1,10 @@
 import type { Item } from '@/lib/types'
 
+/**
+ * Hard-coded seed data for development and testing.
+ * Contains a mix of collections (ordered / unordered), stand-alone items,
+ * and items linked via rootItemId.
+ */
 export const dummyData: { rootItems: Item[] } = {
   rootItems: [
     {

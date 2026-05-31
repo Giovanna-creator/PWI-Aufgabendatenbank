@@ -83,8 +83,8 @@ Based on the defined types, the creation and management of exercises and collect
    - Add Items: Create a new `Item`, then add to collection via `CollectionItem` with `position = null`. (`POST /collections/{collectionId}/items`)
 
 3. **Ordered Collections (Sequences of exercises):**
-   - *Implementation A (Via Collections):* Same as unordered, but `Collection` has `order = true` and `CollectionItem`s are added with sequential `position`s (1, 2, 3...).
-   - *Implementation B (Via Root Items):* Create an `Item`, then subsequent `Item`s are created setting `rootItem` to the first item's ID.
+   - Via `Collection.order = true` and `CollectionItem.position` (1, 2, 3...).
+   - Via `rootItemId`: Items referencing the same root are grouped visually in the tree.
 
 4. **Extending and Modifying Collections:**
    - *Horizontal Vector:* An existing exercise can be extended by attaching a new collection to it. (`POST /items/{id}/collections` -> `POST /collections/{collectionId}/items`)
@@ -153,4 +153,4 @@ To translate the backend data models into a tree view:
 ## 5. Implementation Considerations
 - **Draggable vs. Droppable:** Differentiate between sortable contexts (within the same collection) and cross-container drops (moving to a new collection). Vue DnD Kit sensors should be configured to handle nested droppable zones (folders).
 - **Optimistic UI Updates:** Because backend operations (especially position recalculations) might take time, the Vue state (via Pinia or local component state) should optimisticly update the tree view structure immediately upon drop, reverting only if the API call fails.
-- **Root Items (Implementation B for Sequences):** If sequences are managed via `rootItem` instead of explicit Collections, dragging an item to link it to another should fire `PUT /items/{id}` setting the new `rootItemId`. Displaying these might involve grouping items that share a common `rootItem` under a virtual folder node in the UI.
+- **Root Items (rootItemId):** Items linked via `rootItemId` are grouped visually under their parent. Dragging an item to link it to another fires `PUT /items/{id}` setting the new `rootItemId`.

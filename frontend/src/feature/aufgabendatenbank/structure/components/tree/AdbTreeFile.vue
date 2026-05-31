@@ -22,6 +22,8 @@
           v-else
           class="expansion-spacer"
         />
+        <!-- folder/outline when expandable, file-document/outline when leaf;
+             -outline suffix indicates the item has its own parent (nested) -->
         <v-icon
           size="18"
           class="type-icon"
@@ -88,6 +90,7 @@ import { getInnerItem, type TreeItem } from '@/lib/types'
 
 const store = useExerciseStore()
 
+/** Whether a drag is currently hovering this item. */
 const isDragOver = ref(false)
 let expansionTimeout: ReturnType<typeof setTimeout> | null = null
 
@@ -102,6 +105,8 @@ const props = defineProps<{
 
 const emit = defineEmits(['toggle-expand'])
 
+/** Mark as hovered and auto-expand after 800ms if the item has children.
+ *  The delay prevents flickering when dragging quickly past a node. */
 const onDragOver = () => {
   isDragOver.value = true
   if (!props.isOpen && !expansionTimeout) {
@@ -112,6 +117,7 @@ const onDragOver = () => {
   }
 }
 
+/** Clear drag-over state and cancel pending expansion. */
 const onDragLeave = () => {
   isDragOver.value = false
   if (expansionTimeout) {
@@ -120,6 +126,7 @@ const onDragLeave = () => {
   }
 }
 
+/** Select the item in the store, and toggle expansion if it has children. */
 const onClick = () => {
   store.selectItem(props.element)
   if (props.hasChildren) {
@@ -127,11 +134,13 @@ const onClick = () => {
   }
 }
 
+/** Convert the underlying item into a Collection via the store. */
 const onMakeCollection = () => {
   const item = getInnerItem(props.element)
   store.makeItemACollection(item)
 }
 
+/** Delete the underlying item via the store. */
 const onDelete = () => {
   const item = getInnerItem(props.element)
   store.deleteItem(item)

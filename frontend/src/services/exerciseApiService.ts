@@ -16,7 +16,7 @@ import type { Item, Collection, CollectionItem, Content } from '@/lib/types'
  * | `item_contents`         | — (Join-Tabelle)  | purpose, verknüpft Item ↔ Content               |
  * | `item_collection`       | `Collection`      | `Item` mit item_type='collection'               |
  * | `item_collection_sub_item` | `CollectionItem` | position, verknüpft Collection ↔ Item          |
- * | `item` → root_item_id   | `Item.rootItemId` | Self-Referenz für Varianten (Implementation B)  |
+ * | `item` → root_item_id   | `Item.rootItemId` | Self-Referenz für Eltern-Kind-Beziehung        |
  *
  * ### ID-Konvention
  * Das Backend verwendet **Integer**-IDs (SERIAL). Das Frontend arbeitet derzeit mit
@@ -29,7 +29,7 @@ import type { Item, Collection, CollectionItem, Content } from '@/lib/types'
  * um die Anzahl der HTTP-Roundtrips zu minimieren.
  */
 export class ExerciseApiService {
-  private http: AxiosInstance
+  private readonly http: AxiosInstance
 
   constructor(baseURL = '/api') {
     this.http = axios.create({
@@ -74,9 +74,9 @@ export class ExerciseApiService {
     return data
   }
 
-  /**
-   * Gibt die Implementation-B-Kinder eines Items zurück
-   * (Items, deren rootItemId auf die übergebene ID zeigt).
+   /**
+    * Gibt die Kinder eines Items zurück
+    * (Items, deren rootItemId auf die übergebene ID zeigt).
    *
    * **GET** `/api/items?rootItemId={id}`
    *
@@ -131,9 +131,9 @@ export class ExerciseApiService {
     return data
   }
 
-  /**
-   * Ändert die rootItemId eines Items (Implementation B: Verschieben
-   * eines Items als Kind eines anderen).
+   /**
+    * Ändert die rootItemId eines Items (Verschieben eines Items
+    * als Kind eines anderen).
    *
    * **PATCH** `/api/items/{id}/root`
    *
@@ -358,15 +358,8 @@ export class ExerciseApiService {
    * @param position - Neue Position
    * @returns Das aktualisierte CollectionItem
    */
-  async updateCollectionItemPosition(
-    collectionId: string,
-    itemId: string,
-    position: number | null
-  ): Promise<CollectionItem> {
-    const { data } = await this.http.put<CollectionItem>(
-      `/collections/${collectionId}/items/${itemId}`,
-      { position }
-    )
+  async updateCollectionItemPosition(collectionId: string, itemId: string, position: number | null): Promise<CollectionItem> {
+    const { data } = await this.http.put<CollectionItem>(`/collections/${collectionId}/items/${itemId}`, { position })
     return data
   }
 
@@ -389,11 +382,7 @@ export class ExerciseApiService {
    * @param position - Optionale neue Position
    * @returns Das aktualisierte CollectionItem
    */
-  async moveCollectionItem(
-    itemId: string,
-    targetCollectionId: string,
-    position?: number | null
-  ): Promise<CollectionItem> {
+  async moveCollectionItem(itemId: string, targetCollectionId: string, position?: number | null): Promise<CollectionItem> {
     const { data } = await this.http.put<CollectionItem>(`/collections/items/${itemId}`, {
       collectionId: targetCollectionId,
       position
@@ -426,16 +415,13 @@ export class ExerciseApiService {
    *
    * Die Collections werden als `Collection`-Typ (Item mit items[])
    * ausgeliefert. Root-Items ohne item_type='collection' haben ggf.
-   * eigene Implementation-B-Kinder, die via `getItemChildren()` separat
+   * eigene Kinder (rootItemId-basiert), die via `getItemChildren()` separat
    * geladen werden müssen (oder das Backend liefert sie direkt im DTO mit).
    *
    * @returns Kombinierte Liste aus root-Items und Kollektionen
    */
   async loadFullTree(): Promise<{ rootItems: Item[]; collections: Collection[] }> {
-    const [rootItems, collections] = await Promise.all([
-      this.getRootItems(),
-      this.getCollections()
-    ])
+    const [rootItems, collections] = await Promise.all([this.getRootItems(), this.getCollections()])
     return { rootItems, collections }
   }
 }

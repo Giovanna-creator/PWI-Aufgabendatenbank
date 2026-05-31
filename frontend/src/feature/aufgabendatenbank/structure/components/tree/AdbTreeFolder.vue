@@ -24,6 +24,7 @@
               :icon="isOpen ? 'mdi-chevron-down' : 'mdi-chevron-right'"
               class="expansion-icon"
             />
+            <!-- numbered-list for ordered collections, folder/outline otherwise -->
             <v-icon
               size="18"
               class="type-icon"
@@ -103,7 +104,9 @@ import type { Collection } from '@/lib/types'
 
 const store = useExerciseStore()
 
+/** Tracks the Vuetify list-group open state (internal, for DnD auto-open). */
 const internalIsOpen = ref(false)
+/** Whether a drag is currently hovering this folder. */
 const isDragOver = ref(false)
 let expansionTimeout: ReturnType<typeof setTimeout> | null = null
 
@@ -116,6 +119,8 @@ const props = defineProps<{
 
 const emit = defineEmits(['toggle-expand'])
 
+/** Mark as hovered and auto-expand after 800ms.
+ *  The delay prevents flickering when dragging quickly past a node. */
 const onDragOver = () => {
   isDragOver.value = true
   if (!internalIsOpen.value && !expansionTimeout) {
@@ -127,6 +132,7 @@ const onDragOver = () => {
   }
 }
 
+/** Clear drag-over state and cancel pending expansion. */
 const onDragLeave = () => {
   isDragOver.value = false
   if (expansionTimeout) {
@@ -135,6 +141,7 @@ const onDragLeave = () => {
   }
 }
 
+/** Select the collection and toggle its expansion. */
 const onSelect = () => {
   store.selectItem(props.element)
   emit('toggle-expand')
