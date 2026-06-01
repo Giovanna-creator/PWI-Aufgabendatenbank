@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { validateTreeData } from '@/feature/aufgabendatenbank/validation'
+import {
+  validateTreeData,
+  checkOnlyCollectionsHaveChildren,
+  checkNoDuplicateItems,
+  checkNoDanglingRootItemId
+} from '@/feature/aufgabendatenbank/validation'
 import type { Item, Collection, CollectionItem } from '@/lib/types'
 
 function item(overrides: Partial<Item> & { id: string }): Item {
@@ -226,5 +231,54 @@ describe('validateTreeData', () => {
       })
     ]
     expect(validateTreeData(data)).toEqual([])
+  })
+})
+
+describe('checkOnlyCollectionsHaveChildren', () => {
+  it('returns no issues when all items follow the rule', () => {
+    const data = [item({ id: 'a' }), collection({ id: 'c', items: [] })]
+    expect(checkOnlyCollectionsHaveChildren(data)).toEqual([])
+  })
+
+  it('flags an exercise with children', () => {
+    const bad = item({ id: 'ex', items: [collItem({ id: 'ci', collectionId: 'ex', item: item({ id: 'child' }) })] }) as Item & { items: CollectionItem[] }
+    expect(checkOnlyCollectionsHaveChildren([bad])).toHaveLength(1)
+  })
+
+  it('does not flag an exercise with empty items', () => {
+    const ex = item({ id: 'ex', items: [] }) as Item & { items: CollectionItem[] }
+    expect(checkOnlyCollectionsHaveChildren([ex])).toEqual([])
+  })
+})
+
+describe('checkNoDuplicateItems', () => {
+  it('returns no issues when there are no duplicates', () => {
+    const data = [item({ id: 'a' })]
+    expect(checkNoDuplicateItems(data)).toEqual([])
+  })
+
+  it('flags an item appearing in rootItems and inside a collection', () => {
+    const dup = item({ id: 'dup' })
+    const data = [
+      dup,
+      collection({ id: 'c', items: [collItem({ id: 'ci', collectionId: 'c', item: dup })] })
+    ]
+    expect(checkNoDuplicateItems(data)).toHaveLength(1)
+  })
+})
+
+describe('checkNoDanglingRootItemId', () => {
+  it('returns no issues when all references are valid', () => {
+    const data = [item({ id: 'a', rootItemId: 'b' }), item({ id: 'b' })]
+    expect(checkNoDanglingRootItemId(data)).toEqual([])
+  })
+
+  it('flags a reference to a non-existent ID', () => {
+    const data = [item({ id: 'orphan', rootItemId: 'missing' })]
+    expect(checkNoDanglingRootItemId(data)).toHaveLength(1)
+  })
+
+  it('does not flag null rootItemId', () => {
+    expect(checkNoDanglingRootItemId([item({ id: 'a' })])).toEqual([])
   })
 })
