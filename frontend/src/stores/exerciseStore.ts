@@ -40,12 +40,6 @@ export const useExerciseStore = defineStore('exercise', {
       return inner && checkIsCollection(inner) ? (inner as Collection) : null
     },
 
-    /** The display title from the first Content block of the selected item. */
-    itemTitle(): string {
-      const inner = this.selectedInnerItem
-      return inner?.contents?.[0]?.jsonContent?.text ?? ''
-    },
-
     /** Whether the selected collection is ordered (children have sequential positions). */
     isOrdered(): boolean {
       const coll = this.selectedCollection
@@ -59,19 +53,52 @@ export const useExerciseStore = defineStore('exercise', {
       this.selectedItem = item
     },
 
-    /** Update the first content block's title text on the selected item. */
-    setItemTitle(title: string) {
-      const inner = this.selectedInnerItem
-      if (!inner || !inner.contents?.[0]) return
-      inner.contents[0].jsonContent.text = title
-    },
-
     /** Toggle a collection's `order` flag and reassign/clear positions on its children. */
     toggleCollectionOrder(collection: Collection) {
       collection.order = !collection.order
       collection.items.forEach((item, index) => {
         item.position = collection.order ? index + 1 : null
       })
+    },
+
+    // ── Content Actions ──
+
+    /** Add a new empty content block to the selected item. */
+    addContentToSelectedItem() {
+      const inner = this.selectedInnerItem
+      if (!inner) return
+      const now = Date.now().toString()
+      inner.contents.push({
+        id: 'content-' + now,
+        license: null,
+        contentType: 'text',
+        author: inner.author ?? 'author',
+        tags: [],
+        purpose: 'title',
+        jsonContent: { text: '' },
+        blobContent: ''
+      })
+    },
+
+    /** Remove a content block at the given index (keeps at least one). */
+    removeContentFromSelectedItem(index: number) {
+      const inner = this.selectedInnerItem
+      if (!inner || inner.contents.length <= 1) return
+      inner.contents.splice(index, 1)
+    },
+
+    /** Update the text of a content block at the given index. */
+    updateContentText(index: number, text: string) {
+      const inner = this.selectedInnerItem
+      if (!inner || !inner.contents[index]) return
+      inner.contents[index].jsonContent.text = text
+    },
+
+    /** Update the purpose of a content block at the given index. */
+    updateContentPurpose(index: number, purpose: string) {
+      const inner = this.selectedInnerItem
+      if (!inner || !inner.contents[index]) return
+      inner.contents[index].purpose = purpose
     },
 
     // ── helpers ──
