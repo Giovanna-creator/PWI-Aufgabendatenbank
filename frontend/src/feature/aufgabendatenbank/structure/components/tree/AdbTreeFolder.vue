@@ -151,7 +151,7 @@ const onSelect = () => {
 <style scoped lang="scss">
 .tree-folder-group {
   :deep(.v-list-group__items) {
-    --indent-padding: 12px !important;
+    padding-inline-start: 0 !important;
   }
 }
 
@@ -192,7 +192,8 @@ const onSelect = () => {
 .expansion-icon {
   width: 16px;
   height: 16px;
-  margin-right: 4px;
+  margin-left: -2px;
+  margin-right: 6px;
   color: #cccccc;
 }
 
@@ -222,7 +223,7 @@ const onSelect = () => {
   &::before {
     content: "";
     position: absolute;
-    left: 15px;
+    left: 14px;
     top: 0;
     bottom: 0;
     width: 1px;

@@ -117,7 +117,8 @@ const updateCollectionChildren = (element: Collection, newItems: TreeItem[]) => 
 }
 
 .tree-draggable {
-  padding-left: 12px;
+  padding-left: 24px;
+  min-height: 4px;
 }
 
 .nested-drop-zone {

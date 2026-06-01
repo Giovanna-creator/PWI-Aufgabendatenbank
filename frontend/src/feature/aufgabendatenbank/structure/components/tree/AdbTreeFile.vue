@@ -12,7 +12,12 @@
   >
     <template #prepend>
       <div class="tree-node-icons">
-        <div class="expansion-spacer" />
+        <v-icon
+          size="8"
+          class="bullet-icon"
+        >
+          mdi-circle
+        </v-icon>
         <v-icon
           size="18"
           class="type-icon"
@@ -156,8 +161,12 @@ const onDelete = () => {
   color: #cccccc;
 }
 
-.expansion-spacer {
-  width: 20px;
+.bullet-icon {
+  margin-left: 2px;
+  width: 8px;
+  min-width: 8px;
+  margin-right: 10px;
+  color: #888888;
 }
 
 .type-icon {

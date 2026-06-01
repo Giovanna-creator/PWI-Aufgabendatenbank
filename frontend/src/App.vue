@@ -36,7 +36,6 @@ watch(
     showBreadcrumb.value = true
 
     hideBreadcrumbIn.forEach((route) => {
-      //console.log(`if ${route} == ${newVal}`);
       if (route == newVal) {
         showBreadcrumb.value = false
       }
@@ -46,5 +45,3 @@ watch(
 
 onMounted(() => {})
 </script>
-
-<style scoped lang="scss"></style>
