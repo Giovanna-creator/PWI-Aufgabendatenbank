@@ -12,7 +12,12 @@
   >
     <template #prepend>
       <div class="tree-node-icons">
+        <span
+          v-if="position"
+          class="position-number"
+        >{{ position }}.</span>
         <v-icon
+          v-else
           size="8"
           class="bullet-icon"
         >
@@ -27,10 +32,6 @@
       </div>
     </template>
     <v-list-item-title class="tree-node-title">
-      <span
-        v-if="position"
-        class="position-label"
-      >{{ position }}.</span>
       {{ title }}
     </v-list-item-title>
     <template #append>
@@ -75,10 +76,16 @@
       </v-menu>
     </template>
   </v-list-item>
+
+  <AdbDeleteDialog
+    v-model:visible="showDeleteDialog"
+    @confirm="onDeleteConfirmed"
+  />
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import AdbDeleteDialog from '@/feature/aufgabendatenbank/editor/components/AdbDeleteDialog.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
 import { getInnerItem, type TreeItem } from '@/lib/types'
 
@@ -86,6 +93,7 @@ const store = useExerciseStore()
 
 /** Whether a drag is currently hovering this item. */
 const isDragOver = ref(false)
+const showDeleteDialog = ref(false)
 
 const props = defineProps<{
   element: TreeItem
@@ -113,8 +121,12 @@ const onMakeCollection = () => {
   store.makeItemACollection(item)
 }
 
-/** Delete the underlying item via the store. */
+/** Show confirmation dialog before deleting. */
 const onDelete = () => {
+  showDeleteDialog.value = true
+}
+
+const onDeleteConfirmed = () => {
   const item = getInnerItem(props.element)
   store.deleteItem(item)
 }
@@ -167,6 +179,20 @@ const onDelete = () => {
   min-width: 8px;
   margin-right: 10px;
   color: #888888;
+}
+
+.position-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 16px;
+  margin-left: -4px;
+  margin-right: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #007fd4;
+  line-height: 1;
 }
 
 .type-icon {
