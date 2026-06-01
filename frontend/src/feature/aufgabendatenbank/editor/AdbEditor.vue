@@ -5,18 +5,33 @@
     </v-card-title>
     <v-card-text class="adb-editor-text">
       <div v-if="store.selectedItem">
-        <h3 class="text-h6 mb-2">
-          {{ itemTypeLabel }}
-        </h3>
+        <div class="editor-header-row">
+          <h3 class="text-h6 mb-2">
+            {{ itemTypeLabel }}
+          </h3>
+          <div
+            v-if="store.isCollectionSelected"
+            class="order-toggle-area"
+          >
+            <span class="order-hint">Geordnete Liste</span>
+            <div
+              class="order-card"
+              :class="{ visible: store.isOrdered }"
+            >
+              <v-btn
+                icon="mdi-format-list-numbered"
+                variant="text"
+                size="small"
+                :ripple="false"
+                class="order-btn"
+                :class="{ active: store.isOrdered }"
+                @click="toggleOrder"
+              />
+            </div>
+          </div>
+        </div>
 
         <AdbContentList />
-
-        <v-switch
-          v-if="isCollection"
-          v-model="isOrdered"
-          label="Kollektion sequenziell (geordnet) machen"
-          color="primary"
-        />
 
         <p class="text-caption text-grey">
           ID: {{ store.selectedItem.id }}
@@ -36,8 +51,6 @@ import { useExerciseStore } from '@/stores/exerciseStore'
 
 const store = useExerciseStore()
 
-const isCollection = computed(() => store.isCollectionSelected)
-
 const itemTypeLabel = computed(() => {
   if (!store.selectedInnerItem) return ''
   const type = store.selectedInnerItem.item_type
@@ -46,15 +59,12 @@ const itemTypeLabel = computed(() => {
   return firstText ? `${label}: ${firstText}` : label
 })
 
-const isOrdered = computed({
-  get: () => store.isOrdered,
-  set: (val: boolean) => {
-    const coll = store.selectedCollection
-    if (coll && coll.order !== val) {
-      store.toggleCollectionOrder(coll)
-    }
+function toggleOrder() {
+  const coll = store.selectedCollection
+  if (coll) {
+    store.toggleCollectionOrder(coll)
   }
-})
+}
 </script>
 
 <style lang="scss" scoped>
@@ -80,9 +90,76 @@ const isOrdered = computed({
 }
 
 .adb-editor-text {
-  padding: 20px;
+  padding: 28px 36px;
   font-size: 13px;
   color: #cccccc;
+}
+
+.editor-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.order-toggle-area {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.order-hint {
+  font-size: 11px;
+  color: #777;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.order-card {
+  transition: all 0.15s;
+  border-radius: 4px;
+  padding: 0;
+  line-height: 0;
+
+  &.visible {
+    background-color: #0d2b45;
+    box-shadow: 0 0 0 1px #007fd4;
+  }
+}
+
+.order-btn {
+  color: #666 !important;
+  transition: color 0.15s;
+  margin: 0 !important;
+  padding: 1rem !important;
+  min-width: 0 !important;
+  width: 22px;
+  height: 22px;
+  background: transparent !important;
+
+  :deep(.v-btn__overlay) {
+    display: none;
+  }
+
+  :deep(.v-btn__content) {
+    padding: 0;
+  }
+
+  :deep(.v-icon) {
+    font-size: 22px;
+  }
+
+  &:hover {
+    color: #999 !important;
+  }
+
+  &.active {
+    color: #007fd4 !important;
+
+    &:hover {
+      color: #1a9aff !important;
+    }
+  }
 }
 
 :deep(.v-text-field) {

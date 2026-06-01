@@ -1,56 +1,30 @@
 <template>
-  <div
-    class="content-card"
-    @mouseenter="hovered = true"
-    @mouseleave="hovered = false"
-  >
+  <div class="content-card">
     <div class="card-header">
-      <span
-        v-if="!editingPurpose"
-        class="purpose-badge"
-        @click.stop="startEditPurpose"
-      >
-        {{ content.purpose }}
-      </span>
-      <input
-        v-else
-        ref="purposeInput"
-        :value="content.purpose"
-        class="purpose-input"
-        @input="onPurposeInput"
-        @blur="editingPurpose = false"
-        @keydown.enter="editingPurpose = false"
-        @keydown.escape="editingPurpose = false"
-      />
-      <v-btn
-        v-if="hovered && !hideDelete"
-        icon="mdi-close"
-        variant="text"
-        size="x-small"
-        class="delete-btn"
-        @click.stop="emit('delete')"
-      />
+      <div v-if="!editingPurpose" class="purpose-group" @click.stop="startEditPurpose">
+        <span class="purpose-badge">{{ content.purpose }}</span>
+        <v-icon icon="mdi-pencil-outline" size="14" class="edit-hint" />
+      </div>
+      <div v-else class="field-wrapper">
+        <span class="field-label">Zweck</span>
+        <input ref="purposeInput" :value="content.purpose" class="purpose-input" @input="onPurposeInput" @blur="editingPurpose = false" @keydown.enter="editingPurpose = false" @keydown.escape="editingPurpose = false" />
+      </div>
+      <div class="header-actions">
+        <v-btn icon="mdi-close" variant="text" size="x-small" class="delete-btn" @click.stop="emit('delete')" />
+      </div>
     </div>
 
     <div class="card-divider" />
 
     <div class="card-body">
-      <p
-        v-if="!editingText"
-        class="content-text"
-        @click="startEditText"
-      >
-        {{ displayText || 'Klicken zum Bearbeiten...' }}
-      </p>
-      <textarea
-        v-else
-        ref="textInput"
-        :value="displayText"
-        class="content-textarea"
-        @input="onTextInput"
-        @blur="editingText = false"
-        @keydown.escape="editingText = false"
-      />
+      <div v-if="!editingText" class="content-text" @click="startEditText">
+        <span class="content-label">{{ displayText || 'Klicken zum Bearbeiten...' }}</span>
+        <v-icon icon="mdi-pencil-outline" size="14" class="edit-hint" />
+      </div>
+      <div v-else class="field-wrapper">
+        <span class="field-label field-label--content">Inhalt</span>
+        <textarea ref="textInput" :value="displayText" class="content-textarea" placeholder="Klicken zum Bearbeiten..." @input="onTextInput" @blur="editingText = false" @keydown.escape="editingText = false" />
+      </div>
     </div>
   </div>
 </template>
@@ -61,7 +35,6 @@ import type { Content } from '@/lib/types'
 
 const props = defineProps<{
   content: Content
-  hideDelete?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -70,7 +43,6 @@ const emit = defineEmits<{
   delete: []
 }>()
 
-const hovered = ref(false)
 const editingText = ref(false)
 const editingPurpose = ref(false)
 const purposeInput = ref<HTMLInputElement | null>(null)
@@ -107,14 +79,9 @@ function startEditText() {
 .content-card {
   background: #2d2d2d;
   border: 1px solid #3c3c3c;
-  border-radius: 12px;
+  border-radius: 24px;
   padding: 12px 16px;
   margin-bottom: 10px;
-  transition: border-color 0.15s;
-
-  &:hover {
-    border-color: #505050;
-  }
 }
 
 .card-header {
@@ -123,33 +90,86 @@ function startEditText() {
   justify-content: space-between;
 }
 
-.purpose-badge {
-  display: inline-block;
-  padding: 4px 0;
-  color: #969696;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+.purpose-group {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   cursor: pointer;
-  transition: color 0.15s;
-  user-select: none;
+  padding: 4px 8px;
+  margin: 0 -8px;
+  border-radius: 8px;
+  transition: background 0.15s;
 
   &:hover {
-    color: #cccccc;
+    background: rgba(255, 255, 255, 0.04);
+    outline: 1px dashed rgba(255, 255, 255, 0.12);
+    outline-offset: -1px;
   }
+}
+
+.purpose-badge {
+  display: inline-block;
+  color: #cccccc;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  user-select: none;
+}
+
+.field-wrapper {
+  flex: 1;
+  position: relative;
+}
+
+.field-label {
+  position: absolute;
+  top: 3px;
+  left: 12px;
+  font-size: 8px;
+  line-height: 1;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+
+.field-label--content {
+  top: 5px;
 }
 
 .purpose-input {
   all: unset;
-  display: inline-block;
-  padding: 4px 0;
+  display: block;
+  width: 100%;
+  padding: 11px 8px 2px 12px;
   color: #cccccc;
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   border-bottom: 1px solid #007fd4;
   outline: none;
-  min-width: 60px;
+  box-sizing: border-box;
+}
+
+.edit-hint {
+  color: #555;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.purpose-group:hover .edit-hint,
+.content-text:hover .edit-hint {
+  opacity: 1;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-left: 24px;
 }
 
 .card-divider {
@@ -160,16 +180,16 @@ function startEditText() {
 }
 
 .delete-btn {
-  flex-shrink: 0;
-  color: #555 !important;
-  transition: color 0.15s;
+  color: #666 !important;
+  opacity: 0.7;
+  transition:
+    opacity 0.15s,
+    color 0.15s,
+    background 0.15s;
 
   &:hover {
-    color: #e06c75 !important;
-  }
-
-  :deep(.v-icon) {
-    font-size: 14px !important;
+    opacity: 1;
+    color: #ff7a84 !important;
   }
 }
 
@@ -178,19 +198,28 @@ function startEditText() {
 }
 
 .content-text {
-  margin: 0;
-  font-size: 13px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 15px;
   line-height: 1.6;
   color: #cccccc;
   cursor: pointer;
-  padding: 4px 0;
-  border-radius: 6px;
-  transition: color 0.15s;
+  padding: 8px 10px;
+  margin: 0 -10px;
+  border-radius: 8px;
   word-wrap: break-word;
+  transition: background 0.15s;
 
   &:hover {
-    color: #ffffff;
+    background: rgba(255, 255, 255, 0.04);
+    outline: 1px dashed rgba(255, 255, 255, 0.12);
+    outline-offset: -1px;
   }
+}
+
+.content-label {
+  flex: none;
 }
 
 .content-textarea {
@@ -198,15 +227,15 @@ function startEditText() {
   display: block;
   width: 100%;
   box-sizing: border-box;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.6;
   color: #cccccc;
   background: #1e1e1e;
   border: 1px solid #007fd4;
   border-radius: 8px;
-  padding: 8px 10px;
+  padding: 14px 12px 6px 12px;
   resize: vertical;
-  min-height: 40px;
+  min-height: 48px;
   font-family: inherit;
 
   &::placeholder {

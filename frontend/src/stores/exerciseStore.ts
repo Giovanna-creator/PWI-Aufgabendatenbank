@@ -74,16 +74,16 @@ export const useExerciseStore = defineStore('exercise', {
         contentType: 'text',
         author: inner.author ?? 'author',
         tags: [],
-        purpose: 'title',
+        purpose: 'Neuer Inhalt',
         jsonContent: { text: '' },
         blobContent: ''
       })
     },
 
-    /** Remove a content block at the given index (keeps at least one). */
+    /** Remove a content block at the given index. */
     removeContentFromSelectedItem(index: number) {
       const inner = this.selectedInnerItem
-      if (!inner || inner.contents.length <= 1) return
+      if (!inner || !inner.contents[index]) return
       inner.contents.splice(index, 1)
     },
 
@@ -140,8 +140,8 @@ export const useExerciseStore = defineStore('exercise', {
             contentType: 'text',
             author: 'author',
             tags: [],
-            purpose: 'title',
-            jsonContent: { text: 'New Task' },
+            purpose: 'Neuer Inhalt',
+            jsonContent: { text: '' },
             blobContent: ''
           }
         ]
@@ -176,8 +176,8 @@ export const useExerciseStore = defineStore('exercise', {
             contentType: 'text',
             author: 'author',
             tags: [],
-            purpose: 'title',
-            jsonContent: { text: 'New Collection' },
+            purpose: 'Neuer Inhalt',
+            jsonContent: { text: '' },
             blobContent: ''
           }
         ],
