@@ -9,9 +9,5 @@ import java.util.List;
 public interface ItemCollectionRepository
         extends JpaRepository<ItemCollection, Integer> {
 
-    // Alle Root-Kollektionen (ohne Parent)
-    List<ItemCollection> findByParentCollectionIsNull();
-
-    // Alle Kinder einer Kollektion
-    List<ItemCollection> findByParentCollection_ItemCollectionId(Integer parentId);
+    List<ItemCollection> findByParentItemIsNull();
 }
