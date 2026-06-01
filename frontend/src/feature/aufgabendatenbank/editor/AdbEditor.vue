@@ -33,12 +33,17 @@
                 variant="text"
                 :ripple="false"
                 class="delete-btn"
-                @click="deleteSelectedItem"
+                @click="showDeleteDialog = true"
               >
                 Löschen
               </v-btn>
             </div>
           </div>
+
+          <AdbDeleteDialog
+            v-model:visible="showDeleteDialog"
+            @confirm="deleteSelectedItem"
+          />
         </div>
 
         <AdbContentList />
@@ -55,11 +60,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import AdbContentList from './components/AdbContentList.vue'
+import AdbDeleteDialog from './components/AdbDeleteDialog.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
 
 const store = useExerciseStore()
+const showDeleteDialog = ref(false)
 
 const itemTypeLabel = computed(() => {
   if (!store.selectedInnerItem) return ''
@@ -152,6 +159,7 @@ function deleteSelectedItem() {
   display: flex;
   align-items: center;
   height: 32px;
+  margin-left: 12px;
 }
 
 .delete-btn {
