@@ -32,7 +32,11 @@ public class ItemContentResponseDto {
     // Content
     private String jsonSerializedContent;
 
-    private byte[] blobSerializedContent;
+    /**
+     * Gibt an ob Binärdaten vorhanden sind.
+     * Der eigentliche Blob wird über separaten Endpoint geholt.
+     */
+    private boolean hasBlobContent;
 
     // Tags
     private Set<Integer> tagIds = new HashSet<>();
@@ -108,13 +112,9 @@ public class ItemContentResponseDto {
         this.jsonSerializedContent = jsonSerializedContent;
     }
 
-    public byte[] getBlobSerializedContent() {
-        return blobSerializedContent;
-    }
+    public boolean isHasBlobContent() { return hasBlobContent; }
 
-    public void setBlobSerializedContent(byte[] blobSerializedContent) {
-        this.blobSerializedContent = blobSerializedContent;
-    }
+    public void setHasBlobContent(boolean b) { this.hasBlobContent = b; }
 
     public Set<Integer> getTagIds() {
         return tagIds;

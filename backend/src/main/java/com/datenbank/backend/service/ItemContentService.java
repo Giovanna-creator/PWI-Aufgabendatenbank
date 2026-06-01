@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -52,6 +53,20 @@ public class ItemContentService {
         ItemContent content = findContentOrThrow(id);
         return convertToResponseDto(content);
     }
+    /**
+     * Liefert die Blob-Daten eines Contents direkt als byte[].
+     * Wirft 404 falls Content nicht gefunden.
+     * Wirft 404 falls keine Blob-Daten vorhanden.
+     */
+    @Transactional(readOnly = true)
+    public byte[] getBlobById(Integer id) {
+        ItemContent content = findContentOrThrow(id);
+        if (content.getBlobSerializedContent() == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "Keine Blob-Daten vorhanden");
+        }
+        return content.getBlobSerializedContent();
+    }
 
     @Transactional
     public ItemContentResponseDto create(ItemContentCreateDto dto) {
@@ -77,6 +92,18 @@ public class ItemContentService {
         return convertToResponseDto(saved);
     }
 
+    /**
+     * Speichert Blob-Daten für einen existierenden Content.
+     * Wirft 404, falls Content nicht gefunden.
+     */
+    @Transactional
+    public ItemContentResponseDto uploadBlob(Integer id, byte[] blob) {
+        ItemContent content = findContentOrThrow(id);
+        content.setBlobSerializedContent(blob);
+        ItemContent saved = contentRepository.save(content);
+        return convertToResponseDto(saved);
+    }
+
     @Transactional
     public void delete(Integer id) {
 
@@ -90,7 +117,7 @@ public class ItemContentService {
     }
 
 
-    // Hilfmethoden
+    // Hilfsmethoden
 
 
     private ItemContent findContentOrThrow(Integer id) {
@@ -100,94 +127,82 @@ public class ItemContentService {
                         "Content nicht gefunden"));
     }
 
-    private void applyDtoToEntity(
-            ItemContentCreateDto dto,
-            ItemContent content) {
+    private void applyDtoToEntity(ItemContentCreateDto dto, ItemContent content) {
 
-        Author author = authorRepository
-                .findById(dto.getAuthorId())
+        // Pflicht-Beziehungen (NOT NULL in Entity)
+        content.setAuthor(authorRepository.findById(dto.getAuthorId())
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Author nicht gefunden"));
+                        HttpStatus.NOT_FOUND, "Author nicht gefunden")));
 
-        License license = licenseRepository
-                .findById(dto.getLicenseId())
+        content.setLicense(licenseRepository.findById(dto.getLicenseId())
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "License nicht gefunden"));
+                        HttpStatus.NOT_FOUND, "License nicht gefunden")));
 
-        ItemContentType contentType = contentTypeRepository
-                .findById(dto.getItemContentTypeId())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "ItemContentType nicht gefunden"));
+        content.setItemContentType(
+                contentTypeRepository.findById(dto.getItemContentTypeId())
+                        .orElseThrow(() -> new ResponseStatusException(
+                                HttpStatus.NOT_FOUND, "ContentType nicht gefunden")));
 
-        content.setAuthor(author);
-        content.setLicense(license);
-        content.setItemContentType(contentType);
+        // Optionaler JSON-Inhalt
+        content.setJsonSerializedContent(dto.getJsonSerializedContent());
 
-        content.setJsonSerializedContent(
-                dto.getJsonSerializedContent());
+        // Optionaler Blob-Inhalt (Bild, PDF)
+        content.setBlobSerializedContent(dto.getBlobSerializedContent());
 
-        content.setBlobSerializedContent(
-                dto.getBlobSerializedContent());
-
-        // Tags
+        // Many-to-Many: Tags
         if (dto.getTagIds() != null && !dto.getTagIds().isEmpty()) {
-
-            Set<Tag> tags = dto.getTagIds().stream()
-                    .map(tagId -> tagRepository.findById(tagId)
-                            .orElseThrow(() ->
-                                    new ResponseStatusException(
-                                            HttpStatus.NOT_FOUND,
-                                            "Tag nicht gefunden: " + tagId)))
-                    .collect(Collectors.toSet());
-
+            Set<Tag> tags = new HashSet<>(
+                    tagRepository.findAllById(dto.getTagIds()));
+            if (tags.size() != dto.getTagIds().size()) {
+                throw new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Mindestens ein Tag wurde nicht gefunden");
+            }
             content.setTags(tags);
-
         } else {
-            content.setTags(Set.of());
+            content.setTags(new HashSet<>());
         }
     }
 
-    private ItemContentResponseDto convertToResponseDto(
-            ItemContent content) {
-
-        ItemContentResponseDto dto =
-                new ItemContentResponseDto();
+    /**
+     * Wandelt eine ItemContent-Entity in ein ResponseDTO um.
+     * Blob-Daten werden NICHT eingebettet — nur ein Flag ob vorhanden.
+     */
+    private ItemContentResponseDto convertToResponseDto(ItemContent content) {
+        ItemContentResponseDto dto = new ItemContentResponseDto();
 
         dto.setItemContentId(content.getItemContentId());
 
         // Author
-        dto.setAuthorId(content.getAuthor().getAuthorId());
-        dto.setAuthorDescriptor(
-                content.getAuthor().getAuthorDescriptor());
+        if (content.getAuthor() != null) {
+            dto.setAuthorId(content.getAuthor().getAuthorId());
+            dto.setAuthorDescriptor(content.getAuthor().getDescriptor());
+        }
 
         // License
-        dto.setLicenseId(content.getLicense().getLicenseId());
-        dto.setLicenseName(
-                content.getLicense().getLicenseName());
+        if (content.getLicense() != null) {
+            dto.setLicenseId(content.getLicense().getLicenseId());
+            dto.setLicenseName(content.getLicense().getLicense());
+        }
 
         // ContentType
-        dto.setItemContentTypeId(
-                content.getItemContentType().getItemContentTypeId());
+        if (content.getItemContentType() != null) {
+            dto.setItemContentTypeId(
+                    content.getItemContentType().getItemContentTypeId());
+            dto.setItemContentTypeName(
+                    content.getItemContentType().getItemContentTypeName());
+        }
 
-        dto.setItemContentTypeName(
-                content.getItemContentType().getContentTypeName());
+        // JSON-Inhalt direkt zurückgeben
+        dto.setJsonSerializedContent(content.getJsonSerializedContent());
 
-        // Content
-        dto.setJsonSerializedContent(
-                content.getJsonSerializedContent());
+        // Blob: nur Flag setzen, nicht den Inhalt
+        dto.setHasBlobContent(content.getBlobSerializedContent() != null);
 
-        dto.setBlobSerializedContent(
-                content.getBlobSerializedContent());
-
-        // Tags
-        dto.setTagIds(
-                content.getTags().stream()
-                        .map(Tag::getTagId)
-                        .collect(Collectors.toSet())
-        );
+        // Tags als IDs
+        dto.setTagIds(content.getTags().stream()
+                .map(Tag::getTagId)
+                .collect(Collectors.toSet()));
 
         // Timestamps
         dto.setCreatedAt(content.getCreatedAt());
