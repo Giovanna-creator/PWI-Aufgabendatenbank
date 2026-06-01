@@ -28,6 +28,16 @@
                 @click="toggleOrder"
               />
             </div>
+            <div class="delete-card">
+              <v-btn
+                variant="text"
+                :ripple="false"
+                class="delete-btn"
+                @click="deleteSelectedItem"
+              >
+                Löschen
+              </v-btn>
+            </div>
           </div>
         </div>
 
@@ -63,6 +73,12 @@ function toggleOrder() {
   const coll = store.selectedCollection
   if (coll) {
     store.toggleCollectionOrder(coll)
+  }
+}
+
+function deleteSelectedItem() {
+  if (store.selectedInnerItem) {
+    store.deleteItem(store.selectedInnerItem)
   }
 }
 </script>
@@ -124,6 +140,44 @@ function toggleOrder() {
   &.visible {
     background-color: #0d2b45;
     box-shadow: 0 0 0 1px #007fd4;
+  }
+}
+
+.delete-card {
+  border-radius: 4px;
+  padding: 0 14px;
+  line-height: 0;
+  background-color: #4a1a1a;
+  box-shadow: 0 0 0 1px #c04040;
+  display: flex;
+  align-items: center;
+  height: 32px;
+}
+
+.delete-btn {
+  color: #c04040 !important;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  transition: color 0.15s;
+  margin: 0 !important;
+  padding: 0 !important;
+  min-width: 0 !important;
+  height: 32px !important;
+  --v-btn-height: 32px;
+  background: transparent !important;
+
+  :deep(.v-btn__overlay) {
+    display: none;
+  }
+
+  :deep(.v-btn__content) {
+    padding: 0;
+  }
+
+  &:hover {
+    color: #e06060 !important;
   }
 }
 
