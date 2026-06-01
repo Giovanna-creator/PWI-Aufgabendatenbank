@@ -25,10 +25,8 @@ import { useExerciseStore } from '@/stores/exerciseStore'
 
 const store = useExerciseStore()
 
-/** Top-level items visible in the tree (excludes items with a rootItemId). */
-const items = computed(() =>
-  store.rootItems.filter((item) => !item.rootItemId)
-)
+/** All root-level items visible in the tree. */
+const items = computed(() => store.rootItems)
 
 /** Forward a DnD reorder of root items to the store. */
 const updateRootItems = (newItems: typeof store.rootItems) => {

@@ -14,7 +14,6 @@
           :title="getTitle(element)"
           :position="getPosition(element)"
           :is-sub-item="isSubItem(element)"
-          @toggle-expand="toggleExpand(getId(element))"
         >
           <!-- Items inside the collection -->
           <AdbTreeItem
@@ -23,36 +22,14 @@
             class="nested-drop-zone"
             @update-items="(newItems) => updateCollectionChildren(getCollection(element), newItems)"
           />
-
-          <!-- Items linked via rootItemId, shown beneath the same collection node -->
-          <AdbTreeItem
-            v-if="isExpanded(getId(element))"
-            :items="getChildren(element)"
-            :is-draggable="true"
-            class="nested-drop-zone"
-            @update-items="(newItems) => updateItemChildren(element, newItems)"
-          />
         </AdbTreeFolder>
 
-        <!-- Non-collection items: either a plain exercise or one with rootItemId children -->
         <div v-else>
           <AdbTreeFile
             :element="getInnerItem(element)"
             :title="getTitle(element)"
             :position="getPosition(element)"
             :is-sub-item="isSubItem(element)"
-            :has-children="hasChildren(element)"
-            :is-open="isExpanded(getId(element))"
-            @toggle-expand="toggleExpand(getId(element))"
-          />
-
-          <!-- Items linked via rootItemId -->
-          <AdbTreeItem
-            v-if="isExpanded(getId(element))"
-            :items="getChildren(element)"
-            :is-draggable="true"
-            class="nested-drop-zone"
-            @update-items="(newItems) => updateItemChildren(element, newItems)"
           />
         </div>
       </div>
@@ -61,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import draggable from 'vuedraggable'
 import AdbTreeFile from './tree/AdbTreeFile.vue'
 import AdbTreeFolder from './tree/AdbTreeFolder.vue'
@@ -93,17 +70,6 @@ const dragOptions = computed(() => ({
   ghostClass: 'ghost',
   itemKey: 'id'
 }))
-
-/** Tracks which tree node IDs are expanded. */
-const expandedItems = ref<Record<string, boolean>>({})
-
-/** Toggle the expanded state of a node by its ID. */
-const toggleExpand = (id: string) => {
-  expandedItems.value[id] = !expandedItems.value[id]
-}
-
-/** Whether a given node ID is currently expanded. */
-const isExpanded = (id: string) => !!expandedItems.value[id]
 
 /** Cast an unknown element to TreeItem. */
 const toItem = (element: unknown): TreeItem => element as TreeItem
@@ -137,35 +103,15 @@ const getPosition = (element: unknown): number | null | undefined => {
   return isCollectionItem(e) ? e.position : null
 }
 
-/** True when the element lives inside a collection or has a rootItemId (i.e. is nested). */
+/** True when the element lives inside a collection (i.e. is nested). */
 const isSubItem = (element: unknown): boolean => {
   const e = toItem(element)
-  const inner = getInnerItem(e)
-  if (inner.rootItemId) return true
-  if (isCollectionItem(e)) return !!e.collectionId
-  return false
-}
-
-/** True when the element has children linked via rootItemId. */
-const hasChildren = (element: unknown) => {
-  const inner = getInnerItem(toItem(element))
-  return inner?.id ? store.rootItems.some((ri) => ri.rootItemId === inner.id) : false
-}
-
-/** Get children whose rootItemId matches the element's ID. */
-const getChildren = (element: unknown) => {
-  const inner = getInnerItem(toItem(element))
-  return inner?.id ? store.rootItems.filter((ri) => ri.rootItemId === inner.id) : []
+  return isCollectionItem(e) && !!e.collectionId
 }
 
 /** Forward DnD-updated children to the store for a Collection. */
 const updateCollectionChildren = (element: Collection, newItems: TreeItem[]) => {
   store.updateCollectionItems(element, newItems)
-}
-
-/** Forward DnD-updated children to the store for a rootItemId-based parent. */
-const updateItemChildren = (element: unknown, newItems: TreeItem[]) => {
-  store.updateItemChildren(getInnerItem(toItem(element)), newItems)
 }
 </script>
 

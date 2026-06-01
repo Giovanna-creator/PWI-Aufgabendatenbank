@@ -190,7 +190,8 @@ export const useExerciseStore = defineStore('exercise', {
 
     /** Create a new exercise item and add it to a collection, assigning position if ordered. */
     addItemToCollection(collection: Collection): CollectionItem {
-      const item = this.createItem(null, false)
+      const rootId = collection.rootItemId ?? collection.id
+      const item = this.createItem(rootId, false)
       const collectionItem: CollectionItem = {
         id: 'coll-item-' + Date.now().toString(),
         collectionId: collection.id,
@@ -211,22 +212,17 @@ export const useExerciseStore = defineStore('exercise', {
     },
 
     /**
-     * Delete an item and all its children (linked via rootItemId).
-     * Also removes it from any collection it belongs to.
+     * Delete an item and remove it from any collection it belongs to.
      */
     deleteItem(itemToDelete: Item) {
       const itemId = itemToDelete.id
       this._detachItem(itemId)
-      // Snapshot before deleting, since deleteItem mutates rootItems
-      const subTasks = [...this.rootItems.filter((ri) => ri.rootItemId === itemId)]
-      subTasks.forEach((st) => this.deleteItem(st))
       if (this.selectedItem && getInnerItem(this.selectedItem).id === itemId) {
         this.selectedItem = null
       }
     },
 
     deleteCollection(collectionToDelete: Collection) {
-      // Snapshot because deleteItem will mutate collectionToDelete.items
       const itemsToDelete = [...collectionToDelete.items]
       this.deleteItem(collectionToDelete)
       itemsToDelete.forEach((ci) => this.deleteItem(ci.item))
@@ -245,8 +241,8 @@ export const useExerciseStore = defineStore('exercise', {
         if (inner.id !== collection.id) {
           this._detachItem(inner.id, collection.id)
         }
-        // Once inside a collection, rootItemId referencing is no longer needed
-        inner.rootItemId = null
+        // Set rootItemId to the root owner of this tree
+        inner.rootItemId = collection.rootItemId ?? collection.id
         if (isCollectionItem(item)) {
           return { ...item, collectionId: collection.id, position: collection.order ? index + 1 : null }
         }
@@ -260,44 +256,15 @@ export const useExerciseStore = defineStore('exercise', {
     },
 
     /**
-     * Replace the children (rootItemId-based) of a parent item.
-     * Detaches moved items and preserves unrelated rootItems.
-     */
-    updateItemChildren(parent: Item, children: TreeItem[]) {
-      const parentId = parent.id
-      const normalized = children.map((child) => {
-        const item = getInnerItem(child)
-        // If item was inside a collection, detach it before linking as rootItemId child
-        if (item.id !== parent.id) {
-          this._detachItem(item.id, parent.id)
-        }
-        item.rootItemId = parentId
-        return item as Item
-      })
-      // Replace only the children of this parent, keep everything else untouched
-      const otherItems = this.rootItems.filter(
-        (item) => item.rootItemId !== parentId || item.id === parent.id
-      )
-      this.rootItems = [...otherItems, ...normalized]
-    },
-
-    /**
      * Replace rootItems after a top-level DnD reorder.
-     * Preserves child items (rootItemId-based) whose parent is still in the new list.
      */
     updateRootItems(newItems: TreeItem[]) {
       const mapped = newItems.map((item) => {
         const inner = getInnerItem(item)
         this._detachItem(inner.id)
-        if (!checkIsCollection(inner)) inner.rootItemId = null
         return inner as Item
       })
-      const mappedIds = new Set(mapped.map((i) => i.id))
-      // Children whose parent is still in the new list stay attached
-      const preserved = this.rootItems.filter((i) => i.rootItemId && mappedIds.has(i.rootItemId))
-      // Orphans (parent removed from tree) are kept at the end so they don't disappear
-      const orphaned = this.rootItems.filter((i) => i.rootItemId && !mappedIds.has(i.rootItemId))
-      this.rootItems = [...mapped, ...preserved, ...orphaned]
+      this.rootItems = mapped
     }
   }
 })
