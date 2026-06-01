@@ -1,7 +1,14 @@
 <template>
   <div class="container">
     <CoursesList ref="coursesList" />
-    <v-btn v-if="isAdmin" id="createCourseBtn" color="primary-dark" @click="createCourse"> Kurs erstellen </v-btn>
+    <v-btn
+      v-if="isAdmin"
+      id="createCourseBtn"
+      color="primary-dark"
+      @click="createCourse"
+    >
+      Kurs erstellen
+    </v-btn>
   </div>
   <DialogCreateCourse ref="dialogCreateCourse" />
 </template>

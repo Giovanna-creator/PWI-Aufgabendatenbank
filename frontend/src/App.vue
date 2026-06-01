@@ -3,7 +3,10 @@
     <HeaderMain />
 
     <v-main>
-      <BreadCrumb v-if="showBreadcrumb" :link="router.currentRoute.value.fullPath" />
+      <BreadCrumb
+        v-if="showBreadcrumb"
+        :link="router.currentRoute.value.fullPath"
+      />
       <RouterView />
     </v-main>
 

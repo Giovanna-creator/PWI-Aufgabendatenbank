@@ -8,35 +8,87 @@
 
         <v-spacer />
 
-        <v-btn v-if="courseRole == 'OWNER'" variant="text" color="dark-gray" @click="openMembersView">
-          <v-icon size="x-large"> mdi-account-group </v-icon>
-          <v-tooltip activator="parent" location="bottom"> Teilnehmer </v-tooltip>
+        <v-btn
+          v-if="courseRole == 'OWNER'"
+          variant="text"
+          color="dark-gray"
+          @click="openMembersView"
+        >
+          <v-icon size="x-large">
+            mdi-account-group
+          </v-icon>
+          <v-tooltip
+            activator="parent"
+            location="bottom"
+          >
+            Teilnehmer
+          </v-tooltip>
         </v-btn>
 
-        <v-btn variant="text" color="dark-gray" @click="leaveCourse">
-          <v-icon size="x-large"> mdi-logout-variant </v-icon>
-          <v-tooltip activator="parent" location="bottom"> Kurs Verlassen </v-tooltip>
+        <v-btn
+          variant="text"
+          color="dark-gray"
+          @click="leaveCourse"
+        >
+          <v-icon size="x-large">
+            mdi-logout-variant
+          </v-icon>
+          <v-tooltip
+            activator="parent"
+            location="bottom"
+          >
+            Kurs Verlassen
+          </v-tooltip>
         </v-btn>
 
-        <v-btn v-if="courseRole == 'OWNER'" variant="text" color="dark-gray" @click="editCourse">
-          <v-icon size="x-large"> mdi-cog </v-icon>
-          <v-tooltip activator="parent" location="bottom"> Kurs bearbeiten </v-tooltip>
+        <v-btn
+          v-if="courseRole == 'OWNER'"
+          variant="text"
+          color="dark-gray"
+          @click="editCourse"
+        >
+          <v-icon size="x-large">
+            mdi-cog
+          </v-icon>
+          <v-tooltip
+            activator="parent"
+            location="bottom"
+          >
+            Kurs bearbeiten
+          </v-tooltip>
         </v-btn>
       </v-card-title>
       <v-card-text>
         <p>{{ course?.description }}</p>
-        <br />
+        <br>
         <div class="align-items-center">
-          <v-chip prepend-icon="mdi-account-circle" color="secondary" text-color="white" label>
+          <v-chip
+            prepend-icon="mdi-account-circle"
+            color="secondary"
+            text-color="white"
+            label
+          >
             {{ courseRole }}
           </v-chip>
           <v-spacer />
-          <v-btn v-if="courseRole == 'OWNER' || courseRole == 'TUTOR'" variant="text" @click="openMembersView"> Mitglieder verwalten </v-btn>
+          <v-btn
+            v-if="courseRole == 'OWNER' || courseRole == 'TUTOR'"
+            variant="text"
+            @click="openMembersView"
+          >
+            Mitglieder verwalten
+          </v-btn>
         </div>
       </v-card-text>
     </v-card>
     <div class="course-note">
-      <v-alert type="info" variant="tonal" density="comfortable"> In der Originalanwendung befanden sich hier Aufgaben, Abgaben und eine Modellierungsplattform. Dieses Template reduziert die Ansicht bewusst auf die Kursverwaltung. </v-alert>
+      <v-alert
+        type="info"
+        variant="tonal"
+        density="comfortable"
+      >
+        In der Originalanwendung befanden sich hier Aufgaben, Abgaben und eine Modellierungsplattform. Dieses Template reduziert die Ansicht bewusst auf die Kursverwaltung.
+      </v-alert>
     </div>
   </div>
   <DialogConfirmVue ref="dialogConfirm" />

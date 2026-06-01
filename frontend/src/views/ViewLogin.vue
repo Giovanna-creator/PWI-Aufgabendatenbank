@@ -7,7 +7,12 @@
         <p>Persönliche THM-Kennung bestehend aus 4 Buchstaben und 2 Zahlen,</p>
         <p>sowie Ihr persönliches Passwort</p>
         <template #activator="{ props }">
-          <v-icon v-bind="props" class="helpIcon"> mdi-help-circle </v-icon>
+          <v-icon
+            v-bind="props"
+            class="helpIcon"
+          >
+            mdi-help-circle
+          </v-icon>
         </template>
       </v-tooltip>
       <v-card-title class="login-title">
@@ -16,15 +21,52 @@
         <!-- <span> <IconEWiLL /> </span> -->
       </v-card-title>
       <v-card-subtitle>Lokaler Demo-Login ohne Backend. Voreingestellt sind admin / admin, damit du direkt ins Template kommst.</v-card-subtitle>
-      <v-alert class="demo-hint" type="info" variant="tonal" density="comfortable"> Dieses Template ist absichtlich mit dem Demo-Login admin / admin vorbelegt. Ersetze die Werte später durch deine eigene Authentifizierung. </v-alert>
+      <v-alert
+        class="demo-hint"
+        type="info"
+        variant="tonal"
+        density="comfortable"
+      >
+        Dieses Template ist absichtlich mit dem Demo-Login admin / admin vorbelegt. Ersetze die Werte später durch deine eigene Authentifizierung.
+      </v-alert>
       <v-card-text class="form-container">
-        <v-form ref="form" v-model="valid" lazy-validation>
-          <v-text-field v-model="userInput" :rules="userRules" label="THM-Kennung" required />
-          <v-text-field v-model="passwordInput" :rules="passwordRules" label="THM-Passwort" type="password" required />
-          <v-btn v-if="!loading" :disabled="!valid" @click="localLogin"> Login </v-btn>
-          <v-progress-circular v-if="loading" indeterminate />
+        <v-form
+          ref="form"
+          v-model="valid"
+          lazy-validation
+        >
+          <v-text-field
+            v-model="userInput"
+            :rules="userRules"
+            label="THM-Kennung"
+            required
+          />
+          <v-text-field
+            v-model="passwordInput"
+            :rules="passwordRules"
+            label="THM-Passwort"
+            type="password"
+            required
+          />
+          <v-btn
+            v-if="!loading"
+            :disabled="!valid"
+            @click="localLogin"
+          >
+            Login
+          </v-btn>
+          <v-progress-circular
+            v-if="loading"
+            indeterminate
+          />
         </v-form>
-        <v-alert v-if="errorMessage.length != 0" icon="mdi-alert" :text="errorMessage" type="error" variant="outlined" />
+        <v-alert
+          v-if="errorMessage.length != 0"
+          icon="mdi-alert"
+          :text="errorMessage"
+          type="error"
+          variant="outlined"
+        />
       </v-card-text>
     </v-card>
   </BasicBackground>

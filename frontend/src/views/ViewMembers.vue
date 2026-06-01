@@ -3,39 +3,100 @@
   <div class="course-members">
     <v-card>
       <v-card-title class="task-header-title">
-        <h3 class="headline mb-0">Teilnehmer</h3>
+        <h3 class="headline mb-0">
+          Teilnehmer
+        </h3>
         <v-spacer />
-        <v-btn variant="text" icon="mdi-keyboard-return" color="dark-gray" @click="returnToCourse" />
+        <v-btn
+          variant="text"
+          icon="mdi-keyboard-return"
+          color="dark-gray"
+          @click="returnToCourse"
+        />
       </v-card-title>
       <v-card-text>
         <p>{{ courseName }}</p>
-        <v-alert class="mt-4" type="info" variant="tonal" density="comfortable"> Auch diese Ansicht nutzt lokale Beispieldaten. Damit bleibt die Ordnerstruktur sichtbar, ohne dass ein Backend nötig ist. </v-alert>
-        <br />
+        <v-alert
+          class="mt-4"
+          type="info"
+          variant="tonal"
+          density="comfortable"
+        >
+          Auch diese Ansicht nutzt lokale Beispieldaten. Damit bleibt die Ordnerstruktur sichtbar, ohne dass ein Backend nötig ist.
+        </v-alert>
+        <br>
         <div class="align-items-center">
-          <v-chip prepend-icon="mdi-account-circle" color="secondary" text-color="white" label>
+          <v-chip
+            prepend-icon="mdi-account-circle"
+            color="secondary"
+            text-color="white"
+            label
+          >
             {{ courseRole }}
           </v-chip>
           <v-spacer />
-          <v-btn v-if="courseRole == 'OWNER' || courseRole == 'TUTOR'" variant="text" color="red" @click="kickAllStudents"> Alle Studenten entfernen </v-btn>
+          <v-btn
+            v-if="courseRole == 'OWNER' || courseRole == 'TUTOR'"
+            variant="text"
+            color="red"
+            @click="kickAllStudents"
+          >
+            Alle Studenten entfernen
+          </v-btn>
         </div>
       </v-card-text>
     </v-card>
 
     <div class="container">
-      <v-text-field v-model="search" label="Search" density="compact" prepend-icon="mdi-magnify" variant="underlined" hide-details class="search-field" />
-      <v-data-table :headers="headers" :items="members" item-value="name" class="elevation-1" :search="search" density="default" height="480px">
+      <v-text-field
+        v-model="search"
+        label="Search"
+        density="compact"
+        prepend-icon="mdi-magnify"
+        variant="underlined"
+        hide-details
+        class="search-field"
+      />
+      <v-data-table
+        :headers="headers"
+        :items="members"
+        item-value="name"
+        class="elevation-1"
+        :search="search"
+        density="default"
+        height="480px"
+      >
         <template #[`item.role`]="{ item }">
-          <v-select v-model="item.role" item variant="plain" :items="['STUDENT', 'TUTOR', 'OWNER']" class="select" :disabled="courseRole == 'STUDENT'" @update:model-value="changeRole(item)" />
+          <v-select
+            v-model="item.role"
+            item
+            variant="plain"
+            :items="['STUDENT', 'TUTOR', 'OWNER']"
+            class="select"
+            :disabled="courseRole == 'STUDENT'"
+            @update:model-value="changeRole(item)"
+          />
         </template>
         <template #[`item.actions`]="{ item }">
-          <v-btn icon="mdi-delete" color="red" variant="text" :disabled="courseRole == 'STUDENT'" @click="kickUser(item.user)" />
+          <v-btn
+            icon="mdi-delete"
+            color="red"
+            variant="text"
+            :disabled="courseRole == 'STUDENT'"
+            @click="kickUser(item.user)"
+          />
         </template>
       </v-data-table>
     </div>
 
     <div class="course-members-main" />
   </div>
-  <v-snackbar v-model="snackbarSuccess" :timeout="2500"> Rolle erfolgreich geändert </v-snackbar>
+  <v-snackbar
+    v-model="snackbarSuccess"
+    :timeout="2500"
+  >
+    Rolle erfolgreich geändert
+  </v-snackbar>
 </template>
 
 <script setup lang="ts">

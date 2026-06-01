@@ -1,10 +1,24 @@
 <template>
-  <v-dialog v-model="deleteDialog" width="500px">
-    <v-card :title="deleteTitle" :text="deleteMessage">
+  <v-dialog
+    v-model="deleteDialog"
+    width="500px"
+  >
+    <v-card
+      :title="deleteTitle"
+      :text="deleteMessage"
+    >
       <v-card-actions>
         <v-spacer />
-        <v-btn variant="text" @click="_cancel"> Schließen </v-btn>
-        <v-btn variant="text" @click="_confirm">
+        <v-btn
+          variant="text"
+          @click="_cancel"
+        >
+          Schließen
+        </v-btn>
+        <v-btn
+          variant="text"
+          @click="_confirm"
+        >
           {{ deleteConfirmBtnText }}
         </v-btn>
       </v-card-actions>

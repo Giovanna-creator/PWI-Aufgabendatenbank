@@ -1,9 +1,20 @@
 <template>
-  <v-dialog v-model="alertDialog" width="500px">
-    <v-card :title="alertTitle" :text="alertMessage">
+  <v-dialog
+    v-model="alertDialog"
+    width="500px"
+  >
+    <v-card
+      :title="alertTitle"
+      :text="alertMessage"
+    >
       <v-card-actions>
         <v-spacer />
-        <v-btn variant="text" @click="_cancel"> OK </v-btn>
+        <v-btn
+          variant="text"
+          @click="_cancel"
+        >
+          OK
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
