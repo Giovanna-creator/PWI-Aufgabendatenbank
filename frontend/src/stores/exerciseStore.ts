@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
 import { dummyData } from '@/feature/aufgabendatenbank/dummy-data'
+import { validateTreeData } from '@/feature/aufgabendatenbank/validation'
+import { useNotificationStore } from '@/stores/useNotificationStore'
 import {
   type Item,
   type Collection,
@@ -154,6 +156,7 @@ export const useExerciseStore = defineStore('exercise', {
     createItem(rootItemId: string | null = null, addToRoot = true): Item {
       const item = this._createItemData(rootItemId)
       if (addToRoot) this.rootItems.push(item)
+      this.validate()
       return item
     },
 
@@ -185,6 +188,7 @@ export const useExerciseStore = defineStore('exercise', {
         order: false
       }
       this.rootItems.push(collection)
+      this.validate()
       return collection
     },
 
@@ -199,6 +203,7 @@ export const useExerciseStore = defineStore('exercise', {
         position: collection.order ? collection.items.length + 1 : null
       }
       collection.items.push(collectionItem)
+      this.validate()
       return collectionItem
     },
 
@@ -208,6 +213,7 @@ export const useExerciseStore = defineStore('exercise', {
       item.item_type = 'collection'
       item.items = []
       item.order = false
+      this.validate()
       return item as Collection
     },
 
@@ -220,6 +226,7 @@ export const useExerciseStore = defineStore('exercise', {
       if (this.selectedItem && getInnerItem(this.selectedItem).id === itemId) {
         this.selectedItem = null
       }
+      this.validate()
     },
 
     deleteCollection(collectionToDelete: Collection) {
@@ -253,6 +260,7 @@ export const useExerciseStore = defineStore('exercise', {
           position: collection.order ? index + 1 : null
         }
       })
+      this.validate()
     },
 
     /**
@@ -265,6 +273,21 @@ export const useExerciseStore = defineStore('exercise', {
         return inner as Item
       })
       this.rootItems = mapped
+      this.validate()
+    },
+
+    // ── Validation ──
+
+    /**
+     * Run tree validation and push any issues to the global notification store.
+     */
+    validate() {
+      const issues = validateTreeData(this.rootItems)
+      if (issues.length === 0) return
+      const notifStore = useNotificationStore()
+      for (const issue of issues) {
+        notifStore.push(issue.message, 'error', 8000)
+      }
     }
   }
 })

@@ -1,10 +1,24 @@
 <template>
   <div class="content-list">
-    <AdbContentEditor v-for="(content, index) in contents" :key="content.id ?? index" :content="content" @update:text="(val) => store.updateContentText(index, val)" @update:purpose="(val) => store.updateContentPurpose(index, val)" @delete="store.removeContentFromSelectedItem(index)" />
+    <AdbContentEditor
+      v-for="(content, index) in contents"
+      :key="content.id ?? index"
+      :content="content"
+      @update:text="(val) => store.updateContentText(index, val)"
+      @update:purpose="(val) => store.updateContentPurpose(index, val)"
+      @delete="store.removeContentFromSelectedItem(index)"
+    />
 
-    <button type="button" class="add-content-btn" @click="store.addContentToSelectedItem()">
+    <button
+      type="button"
+      class="add-content-btn"
+      @click="store.addContentToSelectedItem()"
+    >
       <span class="btn-inner">
-        <v-icon icon="mdi-plus" size="18" />
+        <v-icon
+          icon="mdi-plus"
+          size="18"
+        />
         <span>Inhalt hinzufügen</span>
       </span>
     </button>

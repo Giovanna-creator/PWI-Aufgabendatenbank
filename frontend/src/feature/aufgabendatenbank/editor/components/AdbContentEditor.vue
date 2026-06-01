@@ -1,29 +1,73 @@
 <template>
   <div class="content-card">
     <div class="card-header">
-      <div v-if="!editingPurpose" class="purpose-group" @click.stop="startEditPurpose">
+      <div
+        v-if="!editingPurpose"
+        class="purpose-group"
+        @click.stop="startEditPurpose"
+      >
         <span class="purpose-badge">{{ content.purpose }}</span>
-        <v-icon icon="mdi-pencil-outline" size="14" class="edit-hint" />
+        <v-icon
+          icon="mdi-pencil-outline"
+          size="14"
+          class="edit-hint"
+        />
       </div>
-      <div v-else class="field-wrapper">
+      <div
+        v-else
+        class="field-wrapper"
+      >
         <span class="field-label">Zweck</span>
-        <input ref="purposeInput" :value="content.purpose" class="purpose-input" @input="onPurposeInput" @blur="editingPurpose = false" @keydown.enter="editingPurpose = false" @keydown.escape="editingPurpose = false" />
+        <input
+          ref="purposeInput"
+          :value="content.purpose"
+          class="purpose-input"
+          @input="onPurposeInput"
+          @blur="editingPurpose = false"
+          @keydown.enter="editingPurpose = false"
+          @keydown.escape="editingPurpose = false"
+        >
       </div>
       <div class="header-actions">
-        <v-btn icon="mdi-close" variant="text" size="x-small" class="delete-btn" @click.stop="emit('delete')" />
+        <v-btn
+          icon="mdi-close"
+          variant="text"
+          size="x-small"
+          class="delete-btn"
+          @click.stop="emit('delete')"
+        />
       </div>
     </div>
 
     <div class="card-divider" />
 
     <div class="card-body">
-      <div v-if="!editingText" class="content-text" @click="startEditText">
+      <div
+        v-if="!editingText"
+        class="content-text"
+        @click="startEditText"
+      >
         <span class="content-label">{{ displayText || 'Klicken zum Bearbeiten...' }}</span>
-        <v-icon icon="mdi-pencil-outline" size="14" class="edit-hint" />
+        <v-icon
+          icon="mdi-pencil-outline"
+          size="14"
+          class="edit-hint"
+        />
       </div>
-      <div v-else class="field-wrapper">
+      <div
+        v-else
+        class="field-wrapper"
+      >
         <span class="field-label field-label--content">Inhalt</span>
-        <textarea ref="textInput" :value="displayText" class="content-textarea" placeholder="Klicken zum Bearbeiten..." @input="onTextInput" @blur="editingText = false" @keydown.escape="editingText = false" />
+        <textarea
+          ref="textInput"
+          :value="displayText"
+          class="content-textarea"
+          placeholder="Klicken zum Bearbeiten..."
+          @input="onTextInput"
+          @blur="editingText = false"
+          @keydown.escape="editingText = false"
+        />
       </div>
     </div>
   </div>

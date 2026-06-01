@@ -84,11 +84,6 @@ const getCollection = (element: unknown): Collection => {
   return getInnerItem(toItem(element)) as Collection
 }
 
-/** Extract the ID from a tree element. */
-const getId = (element: unknown): string => {
-  return toItem(element).id
-}
-
 /** Derive the display title from the element's first Content block. */
 const getTitle = (element: unknown) => {
   const inner = getInnerItem(toItem(element))
