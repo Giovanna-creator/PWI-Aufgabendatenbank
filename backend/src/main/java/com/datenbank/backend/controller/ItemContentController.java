@@ -30,7 +30,10 @@ public class ItemContentController {
 
 
     // GET ALL
-
+    /**
+     * Liefert alle Contents.
+     * GET /api/contents → 200 OK
+     */
 
     @GetMapping
     public ResponseEntity<List<ItemContentResponseDto>> getAll() {
@@ -51,9 +54,25 @@ public class ItemContentController {
                 contentService.getById(id));
     }
 
+    /**
+     * Liefert die Blob-Daten eines Contents (Bild, PDF).
+     * GET /api/contents/{id}/blob → 200 OK oder 404
+     *
+     * Gibt die rohen Binärdaten zurück mit korrektem Content-Type.
+     */
+    @GetMapping("/{id}/blob")
+    public ResponseEntity<byte[]> getBlob(@PathVariable Integer id) {
+        byte[] blob = contentService.getBlobById(id);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(blob);
+    }
 
     // POST
-
+    /**
+     * Erstellt einen neuen Content.
+     * POST /api/contents → 201 Created
+     */
 
     @PostMapping
     public ResponseEntity<ItemContentResponseDto> create(
@@ -62,6 +81,21 @@ public class ItemContentController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(contentService.create(dto));
+    }
+
+    /**
+     * Lädt eine Datei (Bild, PDF) als Blob hoch.
+     * POST /api/contents/{id}/blob → 200 OK
+     *
+     * Beispiel mit curl:
+     * curl -X POST /api/contents/1/blob -F "file=@bild.png"
+     */
+    @PostMapping("/{id}/blob")
+    public ResponseEntity<ItemContentResponseDto> uploadBlob(
+            @PathVariable Integer id,
+            @RequestParam("file") MultipartFile file) throws IOException {
+        return ResponseEntity.ok(
+                contentService.uploadBlob(id, file.getBytes()));
     }
 
 
