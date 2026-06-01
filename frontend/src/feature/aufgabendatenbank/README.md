@@ -126,7 +126,7 @@ Contains SQL-themed seed data that demonstrates four structuring use cases:
 
 ## Tree rendering
 
-The tree is a custom recursive implementation built with `vuedraggable`
+The tree is a custom recursive implementation built with **vuedraggable**
 (SortableJS).
 
 | Component | Role |
@@ -141,7 +141,7 @@ checks `isCollection()` on each element to decide folder or file rendering.
 
 ## Drag & drop
 
-Uses [vuedraggable](https://github.com/SortableJS/vue.draggable.next).
+Uses **vuedraggable** (SortableJS wrapper).
 - Reordering within the same list triggers `updateCollectionItems` or
   `updateRootItems` in the store.
 - Dropping into a collection moves the item — `_detachItem` removes it from

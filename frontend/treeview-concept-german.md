@@ -8,7 +8,7 @@ Die UI verhält sich ähnlich wie ein Datei-Explorer.
 ## 2. Komponenten-Stack
 
 - **Vuetify Treeview (`v-treeview` oder ähnliche Vuetify-Komponenten):** Wird verwendet, um strukturierte hierarchische Daten, verschachtelte Sammlungen und Elemente darzustellen.
-- **Vue DnD Kit:** Wird für Drag-and-Drop-Operationen genutzt, damit Benutzer Übungen intuitiv neu anordnen, zwischen Sammlungen verschieben und verschachtelte Strukturen erstellen können.
+- **vuedraggable:** Wird für Drag-and-Drop-Operationen genutzt, damit Benutzer Übungen intuitiv neu anordnen, zwischen Sammlungen verschieben und verschachtelte Strukturen erstellen können.
 
 ## 3. Visuelle Abbildung
 
@@ -38,13 +38,13 @@ Um die Backend-Datenmodelle in einer Treeview darzustellen:
 ### A. Drag-and-Drop-Neuanordnung (innerhalb einer geordneten Sammlung)
 
 - **Aktion:** Der Benutzer zieht eine Übung innerhalb derselben geordneten Sammlung nach oben oder unten.
-- **Vue DnD Kit:** Erkennt die Sortierinteraktion und berechnet den neuen Index.
+- **vuedraggable:** Erkennt die Sortierinteraktion und berechnet den neuen Index.
 - **Backend-Flow:** Löst `PUT /collections/{collectionId}/items/{itemId}` mit der neu berechneten `position` aus. Das Backend berechnet die Positionen der Geschwisterelemente automatisch neu.
 
 ### B. Verschieben von Items zwischen Sammlungen
 
 - **Aktion:** Der Benutzer zieht ein Item aus Sammlung A und legt es in Sammlung B ab.
-- **Vue DnD Kit:** Erkennt das Drop-Event über einem anderen Droppable-Container (Ordner).
+- **vuedraggable:** Erkennt das Drop-Event über einem anderen Droppable-Container (Ordner).
 - **Backend-Flow:** Löst `PUT /collections/items/{itemId}` mit der Ziel-`collectionId` aus. Falls Sammlung B geordnet ist, weist das Backend automatisch eine Position zu oder verwendet den Drop-Index.
 
 ### C. Übungen erweitern (horizontaler Vektor per Drag & Drop)
@@ -68,7 +68,7 @@ Um die Backend-Datenmodelle in einer Treeview darzustellen:
 
 ## 5. Implementierungsaspekte
 
-- **Draggable vs. Droppable:** Es muss zwischen Sortier-Kontexten (innerhalb derselben Sammlung) und Cross-Container-Drops (Verschieben in eine andere Sammlung) unterschieden werden. Die Sensoren von Vue DnD Kit sollten so konfiguriert werden, dass verschachtelte Droppable-Zonen (Ordner) unterstützt werden.
+- **Draggable vs. Droppable:** Es muss zwischen Sortier-Kontexten (innerhalb derselben Sammlung) und Cross-Container-Drops (Verschieben in eine andere Sammlung) unterschieden werden. vuedraggable handhabt verschachtelte Droppable-Zonen über seine Gruppenkonfiguration.
 
 - **Optimistische UI-Updates:** Da Backend-Operationen – insbesondere Positions-Neuberechnungen – Zeit benötigen können, sollte der Vue-State (über Pinia oder lokalen Komponenten-State) die Struktur der Treeview unmittelbar nach einem Drop-Ereignis optimistisch aktualisieren. Nur bei einem API-Fehler sollte ein Rollback erfolgen.
 
