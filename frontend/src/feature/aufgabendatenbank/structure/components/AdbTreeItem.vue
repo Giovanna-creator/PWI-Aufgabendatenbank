@@ -126,7 +126,9 @@ const getId = (element: unknown): string => {
 /** Derive the display title from the element's first Content block. */
 const getTitle = (element: unknown) => {
   const inner = getInnerItem(toItem(element))
-  return inner?.contents?.[0]?.jsonContent?.text || (inner?.item_type === 'collection' ? 'New Collection' : 'New Task')
+  const first = inner?.contents?.[0]?.jsonContent?.text
+  if (first != null && first !== '') return first
+  return inner?.item_type === 'collection' ? 'New Collection' : 'New Task'
 }
 
 /** Get the position of a CollectionItem, or null for root-level items. */

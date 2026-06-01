@@ -6,15 +6,10 @@
     <v-card-text class="adb-editor-text">
       <div v-if="store.selectedItem">
         <h3 class="text-h6 mb-2">
-          Edit: {{ itemTitle }}
+          {{ itemTypeLabel }}
         </h3>
 
-        <v-text-field
-          v-model="itemTitle"
-          label="Titel / Aufgabe"
-          variant="outlined"
-          class="mb-4"
-        />
+        <AdbContentList />
 
         <v-switch
           v-if="isCollection"
@@ -36,21 +31,21 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import AdbContentList from './components/AdbContentList.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
 
 const store = useExerciseStore()
 
-/** True when the selected item is a Collection. */
 const isCollection = computed(() => store.isCollectionSelected)
 
-/** Two-way binding for the item title, read/written via the store. */
-const itemTitle = computed({
-  get: () => store.itemTitle,
-  set: (val) => store.setItemTitle(val)
+const itemTypeLabel = computed(() => {
+  if (!store.selectedInnerItem) return ''
+  const type = store.selectedInnerItem.item_type
+  const label = type === 'collection' ? 'Kollektion' : 'Aufgabe'
+  const firstText = store.selectedInnerItem?.contents?.[0]?.jsonContent?.text
+  return firstText ? `${label}: ${firstText}` : label
 })
 
-/** Two-way binding for the ordered toggle.
- *  Guards against redundant toggleCollectionOrder calls (which would reverse the setting). */
 const isOrdered = computed({
   get: () => store.isOrdered,
   set: (val: boolean) => {
