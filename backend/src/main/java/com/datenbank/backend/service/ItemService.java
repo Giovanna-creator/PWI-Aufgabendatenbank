@@ -33,6 +33,8 @@ public class ItemService {
     private final TagRepository tagRepository;
     private final ValidatorRepository validatorRepository;
     private final ModifierRepository modifierRepository;
+    private final ItemCollectionRepository collectionRepository;
+private final ItemContentRepository itemContentsRepository;
 
     /**
      * Constructor-Injection: Spring übergibt automatisch die Repositories.
@@ -45,7 +47,9 @@ public class ItemService {
                        ItemRepresentationTemplateRepository templateRepository,
                        TagRepository tagRepository,
                        ValidatorRepository validatorRepository,
-                       ModifierRepository modifierRepository) {
+                       ModifierRepository modifierRepository,
+                       ItemCollectionRepository collectionRepository,
+                       ItemContentsRepository itemContentsRepository) {
         this.itemRepository = itemRepository;
         this.authorRepository = authorRepository;
         this.licenseRepository = licenseRepository;
@@ -54,6 +58,8 @@ public class ItemService {
         this.tagRepository = tagRepository;
         this.validatorRepository = validatorRepository;
         this.modifierRepository = modifierRepository;
+        this.collectionRepository = collectionRepository;
+        this.itemContentsRepository = itemContentsRepository;
     }
 
     // =========================================================================
