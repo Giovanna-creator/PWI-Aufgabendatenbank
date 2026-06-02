@@ -2,6 +2,8 @@ package com.datenbank.backend.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
+
 
 /**
  * Entspricht der Tabelle "item_collection".
@@ -33,6 +35,18 @@ public class ItemCollection {
      */
     @Column(name = "\"order\"")
     private Integer collectionOrder;
+
+    /**
+     * Liste aller Aufgaben (Items) die zu dieser Kollektion gehören.
+     * Geordnet nach Position (aufsteigend).
+     * Wird automatisch mitgelöscht wenn die Kollektion gelöscht wird (CASCADE).
+     */
+    @OneToMany(mappedBy = "itemCollection",
+            fetch = FetchType.LAZY,
+            cascade = CascadeType.ALL)
+    @OrderBy("position ASC")
+    private List<ItemCollectionSubItem> subItems;
+
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -76,4 +90,8 @@ public class ItemCollection {
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
+
+    public List<ItemCollectionSubItem> getSubItems() { return subItems; }
+
+    public void setSubItems(List<ItemCollectionSubItem> s) { this.subItems = s; }
 }
