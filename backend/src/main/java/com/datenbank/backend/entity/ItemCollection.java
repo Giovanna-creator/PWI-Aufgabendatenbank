@@ -41,7 +41,7 @@ public class ItemCollection {
      * Geordnet nach Position (aufsteigend).
      * Wird automatisch mitgelöscht wenn die Kollektion gelöscht wird (CASCADE).
      */
-    @OneToMany(mappedBy = "collection",
+    @OneToMany(mappedBy = "itemCollection",
             fetch = FetchType.LAZY,
             cascade = CascadeType.ALL)
     @OrderBy("position ASC")
