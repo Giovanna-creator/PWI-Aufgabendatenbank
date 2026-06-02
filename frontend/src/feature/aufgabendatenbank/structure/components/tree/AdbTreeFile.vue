@@ -12,31 +12,26 @@
   >
     <template #prepend>
       <div class="tree-node-icons">
+        <span
+          v-if="position"
+          class="position-number"
+        >{{ position }}.</span>
         <v-icon
-          v-if="hasChildren"
-          size="16"
-          :icon="isOpen ? 'mdi-chevron-down' : 'mdi-chevron-right'"
-          class="expansion-icon"
-        />
-        <div
           v-else
-          class="expansion-spacer"
-        />
-        <!-- folder/outline when expandable, file-document/outline when leaf;
-             -outline suffix indicates the item has its own parent (nested) -->
+          size="8"
+          class="bullet-icon"
+        >
+          mdi-circle
+        </v-icon>
         <v-icon
           size="18"
           class="type-icon"
         >
-          {{ hasChildren ? (isSubItem ? 'mdi-folder-outline' : 'mdi-folder') : (isSubItem ? 'mdi-file-document-outline' : 'mdi-file-document') }}
+          {{ isSubItem ? 'mdi-file-document-outline' : 'mdi-file-document' }}
         </v-icon>
       </div>
     </template>
     <v-list-item-title class="tree-node-title">
-      <span
-        v-if="position"
-        class="position-label"
-      >{{ position }}.</span>
       {{ title }}
     </v-list-item-title>
     <template #append>
@@ -81,10 +76,16 @@
       </v-menu>
     </template>
   </v-list-item>
+
+  <AdbDeleteDialog
+    v-model:visible="showDeleteDialog"
+    @confirm="onDeleteConfirmed"
+  />
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import AdbDeleteDialog from '@/feature/aufgabendatenbank/editor/components/AdbDeleteDialog.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
 import { getInnerItem, type TreeItem } from '@/lib/types'
 
@@ -92,46 +93,26 @@ const store = useExerciseStore()
 
 /** Whether a drag is currently hovering this item. */
 const isDragOver = ref(false)
-let expansionTimeout: ReturnType<typeof setTimeout> | null = null
+const showDeleteDialog = ref(false)
 
 const props = defineProps<{
   element: TreeItem
   title: string
   position?: number | null
   isSubItem?: boolean
-  hasChildren?: boolean
-  isOpen?: boolean
 }>()
 
-const emit = defineEmits(['toggle-expand'])
-
-/** Mark as hovered and auto-expand after 800ms if the item has children.
- *  The delay prevents flickering when dragging quickly past a node. */
 const onDragOver = () => {
   isDragOver.value = true
-  if (!props.isOpen && !expansionTimeout) {
-    expansionTimeout = setTimeout(() => {
-      emit('toggle-expand')
-      expansionTimeout = null
-    }, 800)
-  }
 }
 
-/** Clear drag-over state and cancel pending expansion. */
 const onDragLeave = () => {
   isDragOver.value = false
-  if (expansionTimeout) {
-    clearTimeout(expansionTimeout)
-    expansionTimeout = null
-  }
 }
 
-/** Select the item in the store, and toggle expansion if it has children. */
+/** Select the item in the store. */
 const onClick = () => {
   store.selectItem(props.element)
-  if (props.hasChildren) {
-    emit('toggle-expand')
-  }
 }
 
 /** Convert the underlying item into a Collection via the store. */
@@ -140,8 +121,12 @@ const onMakeCollection = () => {
   store.makeItemACollection(item)
 }
 
-/** Delete the underlying item via the store. */
+/** Show confirmation dialog before deleting. */
 const onDelete = () => {
+  showDeleteDialog.value = true
+}
+
+const onDeleteConfirmed = () => {
   const item = getInnerItem(props.element)
   store.deleteItem(item)
 }
@@ -188,8 +173,26 @@ const onDelete = () => {
   color: #cccccc;
 }
 
-.expansion-spacer {
-  width: 20px;
+.bullet-icon {
+  margin-left: 2px;
+  width: 8px;
+  min-width: 8px;
+  margin-right: 10px;
+  color: #888888;
+}
+
+.position-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 16px;
+  margin-left: -4px;
+  margin-right: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #007fd4;
+  line-height: 1;
 }
 
 .type-icon {

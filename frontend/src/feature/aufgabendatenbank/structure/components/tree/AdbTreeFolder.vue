@@ -24,7 +24,10 @@
               :icon="isOpen ? 'mdi-chevron-down' : 'mdi-chevron-right'"
               class="expansion-icon"
             />
-            <!-- numbered-list for ordered collections, folder/outline otherwise -->
+            <span
+              v-if="position"
+              class="position-number"
+            >{{ position }}.</span>
             <v-icon
               size="18"
               class="type-icon"
@@ -34,10 +37,6 @@
           </div>
         </template>
         <v-list-item-title class="tree-node-title">
-          <span
-            v-if="position"
-            class="position-label"
-          >{{ position }}.</span>
           {{ title }}
         </v-list-item-title>
         <template #append>
@@ -72,7 +71,7 @@
               <v-divider />
               <v-list-item
                 color="error"
-                @click="store.deleteCollection(element)"
+                @click="showDeleteDialog = true"
               >
                 <template #prepend>
                   <v-icon
@@ -95,10 +94,16 @@
       <slot />
     </div>
   </v-list-group>
+
+  <AdbDeleteDialog
+    v-model:visible="showDeleteDialog"
+    @confirm="onDeleteConfirmed"
+  />
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import AdbDeleteDialog from '@/feature/aufgabendatenbank/editor/components/AdbDeleteDialog.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
 import type { Collection } from '@/lib/types'
 
@@ -108,6 +113,7 @@ const store = useExerciseStore()
 const internalIsOpen = ref(false)
 /** Whether a drag is currently hovering this folder. */
 const isDragOver = ref(false)
+const showDeleteDialog = ref(false)
 let expansionTimeout: ReturnType<typeof setTimeout> | null = null
 
 const props = defineProps<{
@@ -141,6 +147,11 @@ const onDragLeave = () => {
   }
 }
 
+/** Handle confirmed deletion of the collection. */
+const onDeleteConfirmed = () => {
+  store.deleteCollection(props.element)
+}
+
 /** Select the collection and toggle its expansion. */
 const onSelect = () => {
   store.selectItem(props.element)
@@ -151,7 +162,7 @@ const onSelect = () => {
 <style scoped lang="scss">
 .tree-folder-group {
   :deep(.v-list-group__items) {
-    --indent-padding: 12px !important;
+    padding-inline-start: 0 !important;
   }
 }
 
@@ -192,8 +203,23 @@ const onSelect = () => {
 .expansion-icon {
   width: 16px;
   height: 16px;
-  margin-right: 4px;
+  margin-left: -2px;
+  margin-right: 6px;
   color: #cccccc;
+}
+
+.position-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 16px;
+  margin-left: -4px;
+  margin-right: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #007fd4;
+  line-height: 1;
 }
 
 .type-icon {
@@ -222,7 +248,7 @@ const onSelect = () => {
   &::before {
     content: "";
     position: absolute;
-    left: 15px;
+    left: 14px;
     top: 0;
     bottom: 0;
     width: 1px;

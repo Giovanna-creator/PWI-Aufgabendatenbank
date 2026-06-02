@@ -5,7 +5,7 @@ This document outlines how the creation, management, and structuring of exercise
 
 ## 2. Component Stack
 - **Vuetify Treeview (`v-treeview` or similar Vuetify components):** Used for rendering structured hierachical data, nested collections, and items.
-- **Vue DnD Kit:** Used for drag-and-drop operations, allowing users to intuitively reorder exercises, move them across collections, and build nested structures.
+- **vuedraggable:** Used for drag-and-drop operations, allowing users to intuitively reorder exercises, move them across collections, and build nested structures.
 
 ## 3. Visual Mapping
 To translate the backend data models into a tree view:
@@ -28,12 +28,12 @@ To translate the backend data models into a tree view:
 
 ### A. Drag-and-Drop Reordering (Inside an Ordered Collection)
 - **Action:** User drags an exercise up or down within the same ordered collection.
-- **Vue DnD Kit:** Detects the sortable interaction and calculates the new index.
+- **vuedraggable:** Detects the sortable interaction and calculates the new index.
 - **Backend Flow:** Triggers `PUT /collections/{collectionId}/items/{itemId}` with the newly calculated `position`. The backend recalculates the positions of sibling items automatically.
 
 ### B. Moving Items Between Collections
 - **Action:** User drags an item from Collection A and drops it into Collection B.
-- **Vue DnD Kit:** Detects the drop event over a different droppable container (folder).
+- **vuedraggable:** Detects the drop event over a different droppable container (folder).
 - **Backend Flow:** Triggers `PUT /collections/items/{itemId}` with the target `collectionId`. If Collection B is ordered, the backend assigns a position automatically or based on the drop index.
 
 ### C. Extending Exercises (Horizontal Vector via Drag & Drop)
@@ -53,6 +53,6 @@ To translate the backend data models into a tree view:
 - **New Collection:** Action fires `POST /collections`, creating a new folder node in the tree.
 
 ## 5. Implementation Considerations
-- **Draggable vs. Droppable:** Differentiate between sortable contexts (within the same collection) and cross-container drops (moving to a new collection). Vue DnD Kit sensors should be configured to handle nested droppable zones (folders).
+- **Draggable vs. Droppable:** Differentiate between sortable contexts (within the same collection) and cross-container drops (moving to a new collection). vuedraggable handles nested droppable zones via its group configuration.
 - **Optimistic UI Updates:** Because backend operations (especially position recalculations) might take time, the Vue state (via Pinia or local component state) should optimisticly update the tree view structure immediately upon drop, reverting only if the API call fails.
 - **Root Items (rootItemId):** Items linked via `rootItemId` are grouped visually under their parent. Dragging an item to link it to another fires `PUT /items/{id}` setting the new `rootItemId`.

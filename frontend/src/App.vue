@@ -11,6 +11,8 @@
     </v-main>
 
     <FooterMain />
+
+    <NotificationToast />
   </v-app>
 </template>
 
@@ -21,6 +23,7 @@ import { onMounted, ref, watch } from 'vue'
 import BreadCrumb from '@/components/BreadCrumb.vue'
 import FooterMain from '@/components/layout/FooterMain.vue'
 import HeaderMain from '@/components/layout/HeaderMain.vue'
+import NotificationToast from '@/components/NotificationToast.vue'
 
 const router = useRouter()
 
@@ -33,7 +36,6 @@ watch(
     showBreadcrumb.value = true
 
     hideBreadcrumbIn.forEach((route) => {
-      //console.log(`if ${route} == ${newVal}`);
       if (route == newVal) {
         showBreadcrumb.value = false
       }
@@ -43,5 +45,3 @@ watch(
 
 onMounted(() => {})
 </script>
-
-<style scoped lang="scss"></style>

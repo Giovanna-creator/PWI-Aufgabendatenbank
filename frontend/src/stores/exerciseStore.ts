@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
 import { dummyData } from '@/feature/aufgabendatenbank/dummy-data'
+import { validateTreeData } from '@/feature/aufgabendatenbank/validation'
+import { useNotificationStore } from '@/stores/useNotificationStore'
 import {
   type Item,
   type Collection,
@@ -40,12 +42,6 @@ export const useExerciseStore = defineStore('exercise', {
       return inner && checkIsCollection(inner) ? (inner as Collection) : null
     },
 
-    /** The display title from the first Content block of the selected item. */
-    itemTitle(): string {
-      const inner = this.selectedInnerItem
-      return inner?.contents?.[0]?.jsonContent?.text ?? ''
-    },
-
     /** Whether the selected collection is ordered (children have sequential positions). */
     isOrdered(): boolean {
       const coll = this.selectedCollection
@@ -59,19 +55,52 @@ export const useExerciseStore = defineStore('exercise', {
       this.selectedItem = item
     },
 
-    /** Update the first content block's title text on the selected item. */
-    setItemTitle(title: string) {
-      const inner = this.selectedInnerItem
-      if (!inner || !inner.contents?.[0]) return
-      inner.contents[0].jsonContent.text = title
-    },
-
     /** Toggle a collection's `order` flag and reassign/clear positions on its children. */
     toggleCollectionOrder(collection: Collection) {
       collection.order = !collection.order
       collection.items.forEach((item, index) => {
         item.position = collection.order ? index + 1 : null
       })
+    },
+
+    // ── Content Actions ──
+
+    /** Add a new empty content block to the selected item. */
+    addContentToSelectedItem() {
+      const inner = this.selectedInnerItem
+      if (!inner) return
+      const now = Date.now().toString()
+      inner.contents.push({
+        id: 'content-' + now,
+        license: null,
+        contentType: 'text',
+        author: inner.author ?? 'author',
+        tags: [],
+        purpose: 'Neuer Inhalt',
+        jsonContent: { text: '' },
+        blobContent: ''
+      })
+    },
+
+    /** Remove a content block at the given index. */
+    removeContentFromSelectedItem(index: number) {
+      const inner = this.selectedInnerItem
+      if (!inner || !inner.contents[index]) return
+      inner.contents.splice(index, 1)
+    },
+
+    /** Update the text of a content block at the given index. */
+    updateContentText(index: number, text: string) {
+      const inner = this.selectedInnerItem
+      if (!inner || !inner.contents[index]) return
+      inner.contents[index].jsonContent.text = text
+    },
+
+    /** Update the purpose of a content block at the given index. */
+    updateContentPurpose(index: number, purpose: string) {
+      const inner = this.selectedInnerItem
+      if (!inner || !inner.contents[index]) return
+      inner.contents[index].purpose = purpose
     },
 
     // ── helpers ──
@@ -113,8 +142,8 @@ export const useExerciseStore = defineStore('exercise', {
             contentType: 'text',
             author: 'author',
             tags: [],
-            purpose: 'title',
-            jsonContent: { text: 'New Task' },
+            purpose: 'Neuer Inhalt',
+            jsonContent: { text: '' },
             blobContent: ''
           }
         ]
@@ -127,6 +156,7 @@ export const useExerciseStore = defineStore('exercise', {
     createItem(rootItemId: string | null = null, addToRoot = true): Item {
       const item = this._createItemData(rootItemId)
       if (addToRoot) this.rootItems.push(item)
+      this.validate()
       return item
     },
 
@@ -149,8 +179,8 @@ export const useExerciseStore = defineStore('exercise', {
             contentType: 'text',
             author: 'author',
             tags: [],
-            purpose: 'title',
-            jsonContent: { text: 'New Collection' },
+            purpose: 'Neuer Inhalt',
+            jsonContent: { text: '' },
             blobContent: ''
           }
         ],
@@ -158,12 +188,14 @@ export const useExerciseStore = defineStore('exercise', {
         order: false
       }
       this.rootItems.push(collection)
+      this.validate()
       return collection
     },
 
     /** Create a new exercise item and add it to a collection, assigning position if ordered. */
     addItemToCollection(collection: Collection): CollectionItem {
-      const item = this.createItem(null, false)
+      const rootId = collection.rootItemId ?? collection.id
+      const item = this.createItem(rootId, false)
       const collectionItem: CollectionItem = {
         id: 'coll-item-' + Date.now().toString(),
         collectionId: collection.id,
@@ -171,6 +203,7 @@ export const useExerciseStore = defineStore('exercise', {
         position: collection.order ? collection.items.length + 1 : null
       }
       collection.items.push(collectionItem)
+      this.validate()
       return collectionItem
     },
 
@@ -180,26 +213,23 @@ export const useExerciseStore = defineStore('exercise', {
       item.item_type = 'collection'
       item.items = []
       item.order = false
+      this.validate()
       return item as Collection
     },
 
     /**
-     * Delete an item and all its children (linked via rootItemId).
-     * Also removes it from any collection it belongs to.
+     * Delete an item and remove it from any collection it belongs to.
      */
     deleteItem(itemToDelete: Item) {
       const itemId = itemToDelete.id
       this._detachItem(itemId)
-      // Snapshot before deleting, since deleteItem mutates rootItems
-      const subTasks = [...this.rootItems.filter((ri) => ri.rootItemId === itemId)]
-      subTasks.forEach((st) => this.deleteItem(st))
       if (this.selectedItem && getInnerItem(this.selectedItem).id === itemId) {
         this.selectedItem = null
       }
+      this.validate()
     },
 
     deleteCollection(collectionToDelete: Collection) {
-      // Snapshot because deleteItem will mutate collectionToDelete.items
       const itemsToDelete = [...collectionToDelete.items]
       this.deleteItem(collectionToDelete)
       itemsToDelete.forEach((ci) => this.deleteItem(ci.item))
@@ -218,8 +248,8 @@ export const useExerciseStore = defineStore('exercise', {
         if (inner.id !== collection.id) {
           this._detachItem(inner.id, collection.id)
         }
-        // Once inside a collection, rootItemId referencing is no longer needed
-        inner.rootItemId = null
+        // Set rootItemId to the root owner of this tree
+        inner.rootItemId = collection.rootItemId ?? collection.id
         if (isCollectionItem(item)) {
           return { ...item, collectionId: collection.id, position: collection.order ? index + 1 : null }
         }
@@ -230,47 +260,34 @@ export const useExerciseStore = defineStore('exercise', {
           position: collection.order ? index + 1 : null
         }
       })
-    },
-
-    /**
-     * Replace the children (rootItemId-based) of a parent item.
-     * Detaches moved items and preserves unrelated rootItems.
-     */
-    updateItemChildren(parent: Item, children: TreeItem[]) {
-      const parentId = parent.id
-      const normalized = children.map((child) => {
-        const item = getInnerItem(child)
-        // If item was inside a collection, detach it before linking as rootItemId child
-        if (item.id !== parent.id) {
-          this._detachItem(item.id, parent.id)
-        }
-        item.rootItemId = parentId
-        return item as Item
-      })
-      // Replace only the children of this parent, keep everything else untouched
-      const otherItems = this.rootItems.filter(
-        (item) => item.rootItemId !== parentId || item.id === parent.id
-      )
-      this.rootItems = [...otherItems, ...normalized]
+      this.validate()
     },
 
     /**
      * Replace rootItems after a top-level DnD reorder.
-     * Preserves child items (rootItemId-based) whose parent is still in the new list.
      */
     updateRootItems(newItems: TreeItem[]) {
       const mapped = newItems.map((item) => {
         const inner = getInnerItem(item)
         this._detachItem(inner.id)
-        if (!checkIsCollection(inner)) inner.rootItemId = null
         return inner as Item
       })
-      const mappedIds = new Set(mapped.map((i) => i.id))
-      // Children whose parent is still in the new list stay attached
-      const preserved = this.rootItems.filter((i) => i.rootItemId && mappedIds.has(i.rootItemId))
-      // Orphans (parent removed from tree) are kept at the end so they don't disappear
-      const orphaned = this.rootItems.filter((i) => i.rootItemId && !mappedIds.has(i.rootItemId))
-      this.rootItems = [...mapped, ...preserved, ...orphaned]
+      this.rootItems = mapped
+      this.validate()
+    },
+
+    // ── Validation ──
+
+    /**
+     * Run tree validation and push any issues to the global notification store.
+     */
+    validate() {
+      const issues = validateTreeData(this.rootItems)
+      if (issues.length === 0) return
+      const notifStore = useNotificationStore()
+      for (const issue of issues) {
+        notifStore.push(issue.message, 'error', 8000)
+      }
     }
   }
 })

@@ -5,23 +5,48 @@
     </v-card-title>
     <v-card-text class="adb-editor-text">
       <div v-if="store.selectedItem">
-        <h3 class="text-h6 mb-2">
-          Edit: {{ itemTitle }}
-        </h3>
+        <div class="editor-header-row">
+          <h3 class="text-h6 mb-2">
+            {{ itemTypeLabel }}
+          </h3>
+          <div
+            v-if="store.isCollectionSelected"
+            class="order-toggle-area"
+          >
+            <span class="order-hint">Geordnete Liste</span>
+            <div
+              class="order-card"
+              :class="{ visible: store.isOrdered }"
+            >
+              <v-btn
+                icon="mdi-format-list-numbered"
+                variant="text"
+                size="small"
+                :ripple="false"
+                class="order-btn"
+                :class="{ active: store.isOrdered }"
+                @click="toggleOrder"
+              />
+            </div>
+            <div class="delete-card">
+              <v-btn
+                variant="text"
+                :ripple="false"
+                class="delete-btn"
+                @click="showDeleteDialog = true"
+              >
+                Löschen
+              </v-btn>
+            </div>
+          </div>
 
-        <v-text-field
-          v-model="itemTitle"
-          label="Titel / Aufgabe"
-          variant="outlined"
-          class="mb-4"
-        />
+          <AdbDeleteDialog
+            v-model:visible="showDeleteDialog"
+            @confirm="deleteSelectedItem"
+          />
+        </div>
 
-        <v-switch
-          v-if="isCollection"
-          v-model="isOrdered"
-          label="Kollektion sequenziell (geordnet) machen"
-          color="primary"
-        />
+        <AdbContentList />
 
         <p class="text-caption text-grey">
           ID: {{ store.selectedItem.id }}
@@ -35,31 +60,34 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import AdbContentList from './components/AdbContentList.vue'
+import AdbDeleteDialog from './components/AdbDeleteDialog.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
 
 const store = useExerciseStore()
+const showDeleteDialog = ref(false)
 
-/** True when the selected item is a Collection. */
-const isCollection = computed(() => store.isCollectionSelected)
-
-/** Two-way binding for the item title, read/written via the store. */
-const itemTitle = computed({
-  get: () => store.itemTitle,
-  set: (val) => store.setItemTitle(val)
+const itemTypeLabel = computed(() => {
+  if (!store.selectedInnerItem) return ''
+  const type = store.selectedInnerItem.item_type
+  const label = type === 'collection' ? 'Kollektion' : 'Aufgabe'
+  const firstText = store.selectedInnerItem?.contents?.[0]?.jsonContent?.text
+  return firstText ? `${label}: ${firstText}` : label
 })
 
-/** Two-way binding for the ordered toggle.
- *  Guards against redundant toggleCollectionOrder calls (which would reverse the setting). */
-const isOrdered = computed({
-  get: () => store.isOrdered,
-  set: (val: boolean) => {
-    const coll = store.selectedCollection
-    if (coll && coll.order !== val) {
-      store.toggleCollectionOrder(coll)
-    }
+function toggleOrder() {
+  const coll = store.selectedCollection
+  if (coll) {
+    store.toggleCollectionOrder(coll)
   }
-})
+}
+
+function deleteSelectedItem() {
+  if (store.selectedInnerItem) {
+    store.deleteItem(store.selectedInnerItem)
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -85,9 +113,115 @@ const isOrdered = computed({
 }
 
 .adb-editor-text {
-  padding: 20px;
+  padding: 28px 36px;
   font-size: 13px;
   color: #cccccc;
+}
+
+.editor-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.order-toggle-area {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.order-hint {
+  font-size: 11px;
+  color: #777;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.order-card {
+  transition: all 0.15s;
+  border-radius: 4px;
+  padding: 0;
+  line-height: 0;
+
+  &.visible {
+    background-color: #0d2b45;
+    box-shadow: 0 0 0 1px #007fd4;
+  }
+}
+
+.delete-card {
+  border-radius: 4px;
+  padding: 0 14px;
+  line-height: 0;
+  background-color: #4a1a1a;
+  box-shadow: 0 0 0 1px #c04040;
+  display: flex;
+  align-items: center;
+  height: 32px;
+  margin-left: 12px;
+}
+
+.delete-btn {
+  color: #c04040 !important;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  transition: color 0.15s;
+  margin: 0 !important;
+  padding: 0 !important;
+  min-width: 0 !important;
+  height: 32px !important;
+  --v-btn-height: 32px;
+  background: transparent !important;
+
+  :deep(.v-btn__overlay) {
+    display: none;
+  }
+
+  :deep(.v-btn__content) {
+    padding: 0;
+  }
+
+  &:hover {
+    color: #e06060 !important;
+  }
+}
+
+.order-btn {
+  color: #666 !important;
+  transition: color 0.15s;
+  margin: 0 !important;
+  padding: 1rem !important;
+  min-width: 0 !important;
+  width: 22px;
+  height: 22px;
+  background: transparent !important;
+
+  :deep(.v-btn__overlay) {
+    display: none;
+  }
+
+  :deep(.v-btn__content) {
+    padding: 0;
+  }
+
+  :deep(.v-icon) {
+    font-size: 22px;
+  }
+
+  &:hover {
+    color: #999 !important;
+  }
+
+  &.active {
+    color: #007fd4 !important;
+
+    &:hover {
+      color: #1a9aff !important;
+    }
+  }
 }
 
 :deep(.v-text-field) {

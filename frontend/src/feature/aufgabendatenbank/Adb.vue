@@ -23,12 +23,19 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { useSidebarResizer } from './composables/useSidebarResizer'
+import { useExerciseStore } from '@/stores/exerciseStore'
 import AdbStructure from './structure/AdbStructure.vue'
 import AdbEditor from './editor/AdbEditor.vue'
 import AdbToolbar from './toolbar/AdbToolbar.vue'
 
+const store = useExerciseStore()
 const { sidebarWidth, containerRef, startResizing } = useSidebarResizer()
+
+onMounted(() => {
+  store.validate()
+})
 </script>
 
 <style lang="scss" scoped>
