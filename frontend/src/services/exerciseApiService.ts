@@ -2,7 +2,23 @@ import axios, { type AxiosInstance } from 'axios'
 import type { Item, Collection, CollectionItem, Content } from '@/lib/types'
 
 /**
- * ## Adb API Service
+ * @deprecated
+ *
+ * This service is superseded by the new {@link AdbApiService}
+ * (`src/feature/aufgabendatenbank/adbApi.service.ts`) which follows the
+ * updated API contract defined in `frontend/frontend-backend-communication.md`.
+ *
+ * Key differences:
+ * - Paths changed for several endpoints (e.g. `/api/items/root?=true` instead of `/api/items?root=true`)
+ * - New endpoints added (`PUT /collections/{id}/order`, `POST /items/{id}/collection`, etc.)
+ * - The new service is part of the feature module (`src/feature/aufgabendatenbank/`)
+ *   and implements the {@link ApiAdapter} interface for clean dependency inversion.
+ *
+ * This file is kept for reference only and will be removed once migration is complete.
+ */
+
+/**
+ * ## ExerciseApiService (deprecated)
  *
  * Geplante REST-Kommunikation zwischen Frontend und Spring-Boot-Backend.
  * Der Service bildet alle aktuellen Operationen aus `useAdbActions` auf API-Aufrufe ab.
