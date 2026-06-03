@@ -24,12 +24,6 @@ public class ItemController {
         this.itemService = itemService;
     }
 
-    // GET /api/items
-    @GetMapping
-    public ResponseEntity<List<ItemResponseDto>> getAll() {
-        return ResponseEntity.ok(itemService.getAllItems());
-    }
-
     // GET /api/items/{id}
     @GetMapping("/{id}")
     public ResponseEntity<ItemResponseDto> getById(@PathVariable Integer id) {
