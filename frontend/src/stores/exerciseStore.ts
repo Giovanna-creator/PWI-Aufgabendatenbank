@@ -312,11 +312,19 @@ export const useExerciseStore = defineStore('exercise', {
      *
      * Only fires when `collection.order === true`.
      */
-    _syncOrderedCollectionItems(collection: Collection) {
+    /**
+     * Persist positions for an ordered collection.
+     *
+     * @param collection - The collection to sync.
+     * @param force - When `true`, call the API for every item regardless
+     * of whether its local position already matches. Used after DnD reorder
+     * where positions are pre-set in `.map()` but still need to be persisted.
+     */
+    _syncOrderedCollectionItems(collection: Collection, force = false) {
       if (!collection.order || !_adapter) return
       collection.items.forEach((item, index) => {
         const expected = index + 1
-        if (item.position !== expected) {
+        if (force || item.position !== expected) {
           _adapter!.updateCollectionItemPosition(collection.id, item.id, expected)
             .catch((e) => this._notifyError(e))
           item.position = expected
@@ -445,16 +453,22 @@ export const useExerciseStore = defineStore('exercise', {
         const inner = getInnerItem(item)
         if (inner.id !== collection.id) {
           const oldParentId = this._detachItem(inner.id, collection.id)
-          // Cross-collection move: notify backend
-          if (oldParentId && oldParentId !== collection.id) {
-            _adapter?.removeItemFromCollection(oldParentId, inner.id)
+          if (oldParentId) {
+            if (oldParentId !== collection.id) {
+              // Cross-collection move: remove from source, add to target
+              _adapter?.removeItemFromCollection(oldParentId, inner.id)
+                .catch((e) => this._notifyError(e))
+              _adapter?.addItemToCollection(collection.id, inner.id)
+                .catch((e) => this._notifyError(e))
+              const oldParent = this._findCollectionById(oldParentId)
+              if (oldParent) this._syncOrderedCollectionItems(oldParent)
+            }
+            // oldParentId === collection.id → item stayed, skip API (reorder only)
+          } else {
+            // Root-to-collection move: add to target
+            _adapter?.addItemToCollection(collection.id, inner.id)
               .catch((e) => this._notifyError(e))
-            // Reorder the source collection if it was ordered
-            const oldParent = this._findCollectionById(oldParentId)
-            if (oldParent) this._syncOrderedCollectionItems(oldParent)
           }
-          _adapter?.addItemToCollection(collection.id, inner.id)
-            .catch((e) => this._notifyError(e))
         }
         inner.rootItemId = collection.rootItemId ?? collection.id
         if (isCollectionItem(item)) {
@@ -467,7 +481,7 @@ export const useExerciseStore = defineStore('exercise', {
           position: collection.order ? index + 1 : null
         } as CollectionItem
       })
-      this._syncOrderedCollectionItems(collection)
+      this._syncOrderedCollectionItems(collection, true)
       this.validate()
     },
 
