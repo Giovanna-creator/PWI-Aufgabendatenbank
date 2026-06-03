@@ -10,4 +10,7 @@ public interface ItemCollectionRepository
         extends JpaRepository<ItemCollection, Integer> {
 
     List<ItemCollection> findByParentItemIsNull();
+
+    // 1.3 prüfen ob ein Item eine Kollektion ist
+    boolean existsByParentItem_ItemId(Integer itemId);
 }

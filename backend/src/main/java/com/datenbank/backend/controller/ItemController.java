@@ -24,12 +24,6 @@ public class ItemController {
         this.itemService = itemService;
     }
 
-    // GET /api/items
-    @GetMapping
-    public ResponseEntity<List<ItemResponseDto>> getAll() {
-        return ResponseEntity.ok(itemService.getAllItems());
-    }
-
     // GET /api/items/{id}
     @GetMapping("/{id}")
     public ResponseEntity<ItemResponseDto> getById(@PathVariable Integer id) {
@@ -55,5 +49,29 @@ public class ItemController {
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
         itemService.deleteItem(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * GET /api/items              → alle Items
+     * GET /api/items?root=true    → nur Root-Items
+     * GET /api/items?rootItemId=5 → Kinder von Item 5
+     */
+    @GetMapping
+    public ResponseEntity<List<ItemResponseDto>> getAll(
+            @RequestParam(required = false) Boolean root,
+            @RequestParam(required = false) Integer rootItemId) {
+
+        // root=true hat Vorrang
+        if (Boolean.TRUE.equals(root)) {
+            return ResponseEntity.ok(itemService.getRootItems());
+        }
+
+        // rootItemId Filter
+        if (rootItemId != null) {
+            return ResponseEntity.ok(itemService.getItemsByRootId(rootItemId));
+        }
+
+        // Alle Items
+        return ResponseEntity.ok(itemService.getAllItems());
     }
 }
