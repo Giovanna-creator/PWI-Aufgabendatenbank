@@ -209,7 +209,7 @@ export const useExerciseStore = defineStore('exercise', {
       const inner = this.selectedInnerItem
       if (!inner) return
       const now = Date.now().toString()
-      inner.contents.push({
+      const content: Content = {
         id: 'content-' + now,
         license: null,
         contentType: 'text',
@@ -218,25 +218,56 @@ export const useExerciseStore = defineStore('exercise', {
         purpose: 'Neuer Inhalt',
         jsonContent: { text: '' },
         blobContent: ''
-      })
+      }
+      inner.contents.push(content)
+      _adapter?.createContent(inner.id, {
+        license: content.license,
+        contentType: content.contentType,
+        author: content.author,
+        purpose: content.purpose,
+        jsonContent: content.jsonContent as Record<string, unknown>,
+        blobContent: content.blobContent
+      }).catch((e) => this._notifyError(e))
     },
 
     removeContentFromSelectedItem(index: number) {
       const inner = this.selectedInnerItem
       if (!inner || !inner.contents[index]) return
+      const removedId = inner.contents[index].id
       inner.contents.splice(index, 1)
+      if (removedId) {
+        _adapter?.deleteContent(removedId).catch((e) => this._notifyError(e))
+      }
     },
 
     updateContentText(index: number, text: string) {
       const inner = this.selectedInnerItem
       if (!inner || !inner.contents[index]) return
-      inner.contents[index].jsonContent.text = text
+      const content = inner.contents[index]
+      content.jsonContent.text = text
+      _adapter?.updateContent(content.id ?? '', {
+        license: content.license,
+        contentType: content.contentType,
+        author: content.author,
+        purpose: content.purpose,
+        jsonContent: content.jsonContent as Record<string, unknown>,
+        blobContent: content.blobContent
+      }).catch((e) => this._notifyError(e))
     },
 
     updateContentPurpose(index: number, purpose: string) {
       const inner = this.selectedInnerItem
       if (!inner || !inner.contents[index]) return
-      inner.contents[index].purpose = purpose
+      const content = inner.contents[index]
+      content.purpose = purpose
+      _adapter?.updateContent(content.id ?? '', {
+        license: content.license,
+        contentType: content.contentType,
+        author: content.author,
+        purpose: content.purpose,
+        jsonContent: content.jsonContent as Record<string, unknown>,
+        blobContent: content.blobContent
+      }).catch((e) => this._notifyError(e))
     },
 
     // ── Tree helpers ──

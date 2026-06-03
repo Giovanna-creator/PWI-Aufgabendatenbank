@@ -21,8 +21,10 @@ import { dummyData } from './dummy-data'
 import type {
   ApiAdapter,
   ItemDTO,
+  ContentDTO,
   CollectionItemDTO,
   CreateItemPayload,
+  CreateContentPayload,
   CreateCollectionPayload,
   UpdateCollectionPayload
 } from './api-adapter.types'
@@ -249,6 +251,50 @@ export class DevAdbApiService implements ApiAdapter {
    */
   async updateCollectionItemPosition(collectionId: string, itemId: string, position: number): Promise<void> {
     log('PUT', `/api/collection/${collectionId}/items/${itemId}`, { position })
+  }
+
+  /**
+   * **GET /api/items/{itemId}/contents**
+   *
+   * Finds the item in seed data and returns its contents.
+   */
+  async getContents(itemId: string): Promise<ContentDTO[]> {
+    log('GET', `/api/items/${itemId}/contents`)
+    const roots = dummyData.rootItems as unknown as ItemDTO[]
+    const item = findItemInTree(itemId, roots)
+    if (item && item.contents) return JSON.parse(JSON.stringify(item.contents))
+    return []
+  }
+
+  /**
+   * **POST /api/items/{itemId}/contents**
+   *
+   * Logs the payload and returns a mock ContentDTO.
+   */
+  async createContent(itemId: string, payload: CreateContentPayload): Promise<ContentDTO> {
+    log('POST', `/api/items/${itemId}/contents`, payload)
+    const content: ContentDTO = { id: uid('content'), ...payload }
+    console.log(`  ← ${content.id}`)
+    return content
+  }
+
+  /**
+   * **PUT /api/contents/{id}**
+   *
+   * Logs the payload and returns the updated content.
+   */
+  async updateContent(contentId: string, payload: CreateContentPayload): Promise<ContentDTO> {
+    log('PUT', `/api/contents/${contentId}`, payload)
+    return { id: contentId, ...payload }
+  }
+
+  /**
+   * **DELETE /api/contents/{id}**
+   *
+   * Logs the request only.
+   */
+  async deleteContent(contentId: string): Promise<void> {
+    log('DELETE', `/api/contents/${contentId}`)
   }
 
   /**

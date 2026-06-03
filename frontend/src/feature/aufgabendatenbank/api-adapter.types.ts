@@ -222,6 +222,38 @@ export interface ApiAdapter {
   updateCollectionItemPosition(collectionId: string, itemId: string, position: number): Promise<void>
 
   /**
+   * **GET /api/items/{itemId}/contents**
+   *
+   * Returns all content blocks attached to an item.
+   * Each content block includes its `id`, `purpose`, `contentType`, etc.
+   */
+  getContents(itemId: string): Promise<ContentDTO[]>
+
+  /**
+   * **POST /api/items/{itemId}/contents**
+   *
+   * Creates a new content block for the given item.
+   * The backend assigns the `id` and links it to the item via `purpose`.
+   * Returns the persisted ContentDTO.
+   */
+  createContent(itemId: string, payload: CreateContentPayload): Promise<ContentDTO>
+
+  /**
+   * **PUT /api/contents/{id}**
+   *
+   * Updates an existing content block's fields.
+   * Accepts the same payload shape as createContent.
+   */
+  updateContent(contentId: string, payload: CreateContentPayload): Promise<ContentDTO>
+
+  /**
+   * **DELETE /api/contents/{id}**
+   *
+   * Deletes a content block and its join-table entries.
+   */
+  deleteContent(contentId: string): Promise<void>
+
+  /**
    * Load all root items. Children are NOT included — the store loads
    * them progressively via {@link getCollectionItems} with per-node
    * loading state, so the UI can show spinners.

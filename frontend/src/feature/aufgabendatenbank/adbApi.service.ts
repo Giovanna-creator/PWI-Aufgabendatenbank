@@ -2,8 +2,10 @@ import axios, { type AxiosInstance } from 'axios'
 import type {
   ApiAdapter,
   ItemDTO,
+  ContentDTO,
   CollectionItemDTO,
   CreateItemPayload,
+  CreateContentPayload,
   CreateCollectionPayload,
   UpdateCollectionPayload
 } from './api-adapter.types'
@@ -152,6 +154,45 @@ export class AdbApiService implements ApiAdapter {
    */
   async updateCollectionItemPosition(collectionId: string, itemId: string, position: number): Promise<void> {
     await this.http.put(`/collection/${collectionId}/items/${itemId}`, { position })
+  }
+
+  /**
+   * **GET /api/items/{itemId}/contents**
+   *
+   * Returns all content blocks for an item.
+   */
+  async getContents(itemId: string): Promise<ContentDTO[]> {
+    const { data } = await this.http.get<ContentDTO[]>(`/items/${itemId}/contents`)
+    return data
+  }
+
+  /**
+   * **POST /api/items/{itemId}/contents**
+   *
+   * Creates a new content block for an item.
+   */
+  async createContent(itemId: string, payload: CreateContentPayload): Promise<ContentDTO> {
+    const { data } = await this.http.post<ContentDTO>(`/items/${itemId}/contents`, payload)
+    return data
+  }
+
+  /**
+   * **PUT /api/contents/{id}**
+   *
+   * Updates an existing content block.
+   */
+  async updateContent(contentId: string, payload: CreateContentPayload): Promise<ContentDTO> {
+    const { data } = await this.http.put<ContentDTO>(`/contents/${contentId}`, payload)
+    return data
+  }
+
+  /**
+   * **DELETE /api/contents/{id}**
+   *
+   * Deletes a content block.
+   */
+  async deleteContent(contentId: string): Promise<void> {
+    await this.http.delete(`/contents/${contentId}`)
   }
 
   /**

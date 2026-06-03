@@ -68,6 +68,10 @@ exerciseStore.ts  (depends on ApiAdapter interface)
 | `DELETE /api/items/{id}` | `deleteItem(id)` | Cascade delete |
 | `PUT /api/collections/{id}` | `updateCollection(id, { order })` | Single endpoint for both on/off |
 | `PUT /api/collection/{id}/items/{itemId}` | `updateCollectionItemPosition(id, itemId, pos)` | Note singular "collection" |
+| `GET /api/items/{itemId}/contents` | `getContents(itemId)` | Returns all content blocks for an item |
+| `POST /api/items/{itemId}/contents` | `createContent(itemId, payload)` | Creates a new content block |
+| `PUT /api/contents/{id}` | `updateContent(contentId, payload)` | Updates a content block's fields |
+| `DELETE /api/contents/{id}` | `deleteContent(contentId)` | Deletes a content block |
 
 ## Progressive Loading Strategy
 
@@ -99,9 +103,19 @@ exerciseStore.ts  (depends on ApiAdapter interface)
 - `oldParentId` is different ID → cross-collection move → `removeItemFromCollection(old)` + `addItemToCollection(new)` + reorder old parent
 - `oldParentId === null` → root-to-collection move → `addItemToCollection(new)`
 
-## Running
+## Item Content Sync
 
-| Command | Adapter | Backend needed? |
+Content CRUD follows the same fire-and-forget pattern as item/collection mutations:
+
+| Store Action | API Call | Frequency |
 |---|---|---|
-| `npm run dev` | `AdbApiService` (real HTTP) | Yes |
-| `npm run dev:dummy` | `DevAdbApiService` (logs + seed data) | No |
+| `addContentToSelectedItem()` | `adapter.createContent(itemId, payload)` | On user click (add button) |
+| `removeContentFromSelectedItem(index)` | `adapter.deleteContent(contentId)` | On user click (delete X button) |
+| `updateContentText(index, text)` | `adapter.updateContent(contentId, payload)` | On every keystroke (`@input`) |
+| `updateContentPurpose(index, purpose)` | `adapter.updateContent(contentId, payload)` | On every keystroke (`@input`) |
+
+All four fire the API call after applying the local state change, using `.catch(this._notifyError)` per the standard pattern. Text and purpose updates sync on every keystroke (no debounce) to match the direct fire-and-forget convention used elsewhere — the backend is expected to handle frequent PATCH-like updates gracefully.
+
+Content IDs are generated locally (`'content-' + timestamp`) for create, identical to the `createItem` / `createCollection` pattern. The backend-assigned ID from the response is ignored (fire-and-forget).
+
+## Running
