@@ -1,5 +1,6 @@
 package com.datenbank.backend.controller;
 
+import com.datenbank.backend.dto.CollectionSubItemDto;
 import com.datenbank.backend.dto.ItemCollectionCreateDto;
 import com.datenbank.backend.dto.ItemCollectionResponseDto;
 import com.datenbank.backend.service.ItemCollectionService;
@@ -54,4 +55,16 @@ public class ItemCollectionController {
         collectionService.delete(id);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * Gibt alle SubItems einer Kollektion zurück, sortiert nach Position.
+     * GET /api/collections/{id}/items → 200 OK oder 404
+     */
+    @GetMapping("/{id}/items")
+    public ResponseEntity<List<CollectionSubItemDto>> getSubItems(
+            @PathVariable Integer id) {
+        return ResponseEntity.ok(
+            collectionService.getSubItemsForCollection(id));
+    }
+
 }

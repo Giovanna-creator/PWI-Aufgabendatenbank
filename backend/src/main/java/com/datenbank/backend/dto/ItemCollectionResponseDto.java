@@ -34,6 +34,14 @@ public class ItemCollectionResponseDto {
     // Timestamp
     private LocalDateTime createdAt;
 
+    
+
+    
+    //Anzahl der SubItems in dieser Kollektion.
+    private Integer subItemCount;
+
+    
+
     /**
      * Inneres DTO für jede Aufgabe in der Antwort.
      * Gibt ID und Position zurück.
@@ -65,4 +73,8 @@ public class ItemCollectionResponseDto {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime t) { this.createdAt = t; }
+
+    // Getter & Setter
+    public Integer getSubItemCount() { return subItemCount; }
+    public void setSubItemCount(Integer c) { this.subItemCount = c; }
 }
