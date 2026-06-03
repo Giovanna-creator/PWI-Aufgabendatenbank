@@ -3,6 +3,8 @@ package com.datenbank.backend.controller;
 import com.datenbank.backend.dto.CollectionSubItemDto;
 import com.datenbank.backend.dto.ItemCollectionCreateDto;
 import com.datenbank.backend.dto.ItemCollectionResponseDto;
+import com.datenbank.backend.dto.OrderToggleDto;
+import com.datenbank.backend.dto.PositionUpdateDto;
 import com.datenbank.backend.service.ItemCollectionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -10,6 +12,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
+/**
+ * REST-Controller für die ItemCollection-Entität.
+ *
+ * Endpoints:
+ *  - CRUD-Operationen (GET, POST, PUT, DELETE)
+ *  - SubItems-Verwaltung
+ *  - Order-Management (Toggle und Reordering)
+ */
 @RestController
 @RequestMapping("/api/collections")
 @CrossOrigin(origins = "*")
@@ -67,4 +77,52 @@ public class ItemCollectionController {
             collectionService.getSubItemsForCollection(id));
     }
 
+    // ===========================================================
+    // Order-Management (TICKET A)
+    // ===========================================================
+
+    /**
+     * Schaltet eine Kollektion zwischen geordnet und ungeordnet um.
+     *
+     * PUT /api/collections/{id}/order
+     * Body: { "order": true }  oder  { "order": false }
+     *
+     * Bei true: Backend vergibt automatisch Positionen 1, 2, 3...
+     * Bei false: Positionen bleiben in der DB erhalten
+     *
+     * @param id ID der Kollektion
+     * @param dto Body mit dem neuen order-Wert
+     * @return aktualisierte Kollektion
+     */
+    @PutMapping("/{id}/order")
+    public ResponseEntity<ItemCollectionResponseDto> toggleOrder(
+            @PathVariable Integer id,
+            @Valid @RequestBody OrderToggleDto dto) {
+        return ResponseEntity.ok(
+            collectionService.toggleOrder(id, dto.getOrder()));
+    }
+
+    /**
+     * Ändert die Position eines SubItems in einer geordneten Kollektion.
+     *
+     * PUT /api/collections/{id}/items/{itemId}/position
+     * Body: { "position": 3 }
+     *
+     * Funktioniert nur, wenn die Kollektion geordnet ist (order = true).
+     * Sonst: 400 Bad Request.
+     *
+     * Backend berechnet automatisch die Positionen aller anderen SubItems neu.
+     *
+     * @param id ID der Kollektion
+     * @param itemId ID des Items
+     * @param dto Body mit der neuen Position
+     */
+    @PutMapping("/{id}/items/{itemId}/position")
+    public ResponseEntity<Void> updateSubItemPosition(
+            @PathVariable Integer id,
+            @PathVariable Integer itemId,
+            @Valid @RequestBody PositionUpdateDto dto) {
+        collectionService.updateSubItemPosition(id, itemId, dto.getPosition());
+        return ResponseEntity.noContent().build();
+    }
 }

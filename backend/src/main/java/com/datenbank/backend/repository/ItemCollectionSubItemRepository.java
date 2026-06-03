@@ -12,6 +12,6 @@ public interface ItemCollectionSubItemRepository extends JpaRepository<ItemColle
      * Alle SubItems einer Kollektion sortiert nach Position.
      */
     List<ItemCollectionSubItem> 
-        findByCollection_ItemCollectionIdOrderByPositionAsc(
+        findByItemCollection_ItemCollectionIdOrderByPositionAsc(
             Integer collectionId);
 }

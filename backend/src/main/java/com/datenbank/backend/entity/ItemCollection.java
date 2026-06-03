@@ -12,6 +12,10 @@ import java.util.List;
  * Hinweis: Die Spalte "order" ist ein reserviertes SQL-Wort,
  * daher in der SQL-Definition in Anführungszeichen. In JPA mappen
  * wir das Feld als "collectionOrder" auf die Spalte "order".
+ *
+ * collectionOrder ist ein Boolean:
+ *  - true: Kollektion ist geordnet (SubItems haben Positionen 1, 2, 3...)
+ *  - false: Kollektion ist ungeordnet (Positionen werden nicht angezeigt)
  */
 @Entity
 @Table(name = "item_collection")
@@ -32,9 +36,10 @@ public class ItemCollection {
 
     /**
      * "order" ist reserviert -> wir nutzen Anführungszeichen im Spaltennamen.
+     * true = geordnet, false = ungeordnet.
      */
-    @Column(name = "\"order\"")
-    private Integer collectionOrder;
+    @Column(name = "\"order\"", nullable = false)
+    private Boolean collectionOrder = false;
 
     /**
      * Liste aller Aufgaben (Items) die zu dieser Kollektion gehören.
@@ -75,11 +80,11 @@ public class ItemCollection {
         this.parentItem = parentItem;
     }
 
-    public Integer getCollectionOrder() {
+    public Boolean getCollectionOrder() {
         return collectionOrder;
     }
 
-    public void setCollectionOrder(Integer collectionOrder) {
+    public void setCollectionOrder(Boolean collectionOrder) {
         this.collectionOrder = collectionOrder;
     }
 

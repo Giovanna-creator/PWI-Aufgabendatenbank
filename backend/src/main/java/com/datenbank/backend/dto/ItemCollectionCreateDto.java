@@ -21,10 +21,9 @@ public class ItemCollectionCreateDto {
     private Integer parentItemId;
 
     /**
-     * Optional: Reihenfolge der Kollektion.
-     * Hinweis: "order" ist reserviert in SQL → collectionOrder.
+     * Reihenfolge-Flag: true = geordnet, false = ungeordnet.
      */
-    private Integer collectionOrder;
+    private Boolean order = false;
 
     /**
      * Liste der Aufgaben mit ihrer Position in der Kollektion.
@@ -56,8 +55,8 @@ public class ItemCollectionCreateDto {
     public Integer getParentItemId() { return parentItemId; }
     public void setParentItemId(Integer id) { this.parentItemId = id; }
 
-    public Integer getCollectionOrder() { return collectionOrder; }
-    public void setCollectionOrder(Integer o) { this.collectionOrder = o; }
+    public Boolean getOrder() { return order; }
+    public void setOrder(Boolean o) { this.order = o; }
 
     public List<SubItemDto> getSubItems() { return subItems; }
     public void setSubItems(List<SubItemDto> s) { this.subItems = s; }

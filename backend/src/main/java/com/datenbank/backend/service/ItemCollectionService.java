@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
  *  - Umwandlung zwischen DTOs (Frontend) und Entities (Datenbank)
  *  - Verwaltung von Sub-Items mit Position
  *  - CRUD-Operationen mit korrekter Fehlerbehandlung
+ *  - Order-Management (geordnet / ungeordnet) und Reordering
  */
 @Service
 public class ItemCollectionService {
@@ -42,8 +43,9 @@ public class ItemCollectionService {
     }
 
 
+    // ===========================================================
     // CRUD-Operationen
-
+    // ===========================================================
 
     /**
      * Liefert alle Kollektionen als Liste von ResponseDTOs.
@@ -113,8 +115,9 @@ public class ItemCollectionService {
     }
 
 
-    // Hilfsmethoden
-
+    // ===========================================================
+    // SubItems
+    // ===========================================================
 
     /**
      * Gibt alle SubItems einer Kollektion zurück, sortiert nach Position.
@@ -124,21 +127,19 @@ public class ItemCollectionService {
     public List<CollectionSubItemDto> getSubItemsForCollection(
             Integer collectionId) {
 
-        // Prüfen ob Collection existiert
         if (!collectionRepository.existsById(collectionId)) {
             throw new ResponseStatusException(
                 HttpStatus.NOT_FOUND, "Collection nicht gefunden");
         }
 
         return subItemRepository
-            .findByCollection_ItemCollectionIdOrderByPositionAsc(collectionId)
+            .findByItemCollection_ItemCollectionIdOrderByPositionAsc(collectionId)
             .stream()
             .map(sub -> {
                 CollectionSubItemDto dto = new CollectionSubItemDto();
                 dto.setSubItemId(sub.getSubItem().getItemId());
                 dto.setPosition(sub.getPosition());
 
-                // Optionale vollständige Item-Daten
                 ItemResponseDto itemDto = new ItemResponseDto();
                 itemDto.setItemId(sub.getSubItem().getItemId());
                 itemDto.setAuthorId(
@@ -152,6 +153,154 @@ public class ItemCollectionService {
             .collect(Collectors.toList());
     }
 
+
+    // ===========================================================
+    // Order-Management (TICKET A)
+    // ===========================================================
+
+    /**
+     * Schaltet eine Kollektion zwischen geordnet und ungeordnet um.
+     *
+     * Bei newOrder = true (geordnet):
+     *  - Falls Kollektion bisher ungeordnet war: Backend vergibt
+     *    automatisch Positionen 1, 2, 3... nach Erstellungszeit der SubItems
+     *  - Falls Kollektion bereits geordnet war: Positionen bleiben unverändert
+     *
+     * Bei newOrder = false (ungeordnet):
+     *  - Positionen bleiben in der DB erhalten
+     *  - Frontend blendet Positionen nur aus
+     *
+     * @param collectionId ID der Kollektion
+     * @param newOrder neuer Order-Zustand
+     * @return aktualisierte Kollektion als ResponseDTO
+     */
+    @Transactional
+    public ItemCollectionResponseDto toggleOrder(
+            Integer collectionId, Boolean newOrder) {
+
+        if (newOrder == null) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST, "order darf nicht null sein");
+        }
+
+        ItemCollection collection = findCollectionOrThrow(collectionId);
+
+        Boolean oldOrder = collection.getCollectionOrder();
+
+        // Order-Flag setzen
+        collection.setCollectionOrder(newOrder);
+
+        // Falls Wechsel von ungeordnet auf geordnet:
+        // automatisch Positionen 1, 2, 3... vergeben
+        if (Boolean.TRUE.equals(newOrder) && !Boolean.TRUE.equals(oldOrder)) {
+            List<ItemCollectionSubItem> subItems = collection.getSubItems();
+            if (subItems != null) {
+                int position = 1;
+                for (ItemCollectionSubItem sub : subItems) {
+                    sub.setPosition(position);
+                    position++;
+                }
+            }
+        }
+
+        ItemCollection saved = collectionRepository.save(collection);
+        return convertToResponseDto(saved);
+    }
+
+    /**
+     * Aktualisiert die Position eines SubItems in einer geordneten Kollektion.
+     *
+     * Reordering-Logik:
+     *  - SubItem auf die Zielposition setzen
+     *  - Andere SubItems entsprechend nach oben oder unten verschieben
+     *
+     * Beispiel: Item auf Position 5 wird auf Position 2 verschoben.
+     *   Vorher:  [1, 2, 3, 4, 5, 6, 7]
+     *   Nachher: [1, 5, 2, 3, 4, 6, 7]  (alle anderen werden +1 verschoben)
+     *
+     * @param collectionId ID der Kollektion
+     * @param itemId ID des Items
+     * @param newPosition neue Zielposition (1-basiert)
+     */
+    @Transactional
+    public void updateSubItemPosition(
+            Integer collectionId, Integer itemId, Integer newPosition) {
+
+        if (newPosition == null || newPosition < 1) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST, "Position muss >= 1 sein");
+        }
+
+        ItemCollection collection = findCollectionOrThrow(collectionId);
+
+        // Prüfen: Kollektion muss geordnet sein
+        if (!Boolean.TRUE.equals(collection.getCollectionOrder())) {
+            throw new ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "Position kann nur in geordneten Kollektionen geändert werden");
+        }
+
+        List<ItemCollectionSubItem> subItems = collection.getSubItems();
+        if (subItems == null || subItems.isEmpty()) {
+            throw new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Kollektion hat keine SubItems");
+        }
+
+        // Das zu verschiebende SubItem finden
+        ItemCollectionSubItem target = subItems.stream()
+            .filter(sub -> sub.getSubItem().getItemId().equals(itemId))
+            .findFirst()
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "SubItem nicht in Kollektion gefunden: " + itemId));
+
+        Integer oldPosition = target.getPosition();
+
+        // Falls Position unverändert: nichts zu tun
+        if (oldPosition.equals(newPosition)) {
+            return;
+        }
+
+        // Sicherstellen, dass newPosition nicht größer als die Anzahl SubItems
+        int maxPosition = subItems.size();
+        if (newPosition > maxPosition) {
+            newPosition = maxPosition;
+        }
+
+        // Reordering-Logik:
+        // - Item nach OBEN verschieben (oldPosition > newPosition):
+        //   alle Items zwischen newPosition und oldPosition-1 nach UNTEN (+1)
+        // - Item nach UNTEN verschieben (oldPosition < newPosition):
+        //   alle Items zwischen oldPosition+1 und newPosition nach OBEN (-1)
+        for (ItemCollectionSubItem sub : subItems) {
+            if (sub == target) continue;
+
+            int pos = sub.getPosition();
+
+            if (oldPosition > newPosition) {
+                // Item geht nach oben
+                if (pos >= newPosition && pos < oldPosition) {
+                    sub.setPosition(pos + 1);
+                }
+            } else {
+                // Item geht nach unten
+                if (pos > oldPosition && pos <= newPosition) {
+                    sub.setPosition(pos - 1);
+                }
+            }
+        }
+
+        // Zielposition für das verschobene Item setzen
+        target.setPosition(newPosition);
+
+        // Da @Transactional aktiv ist, werden Änderungen automatisch
+        // beim Methodenende persistiert
+    }
+
+
+    // ===========================================================
+    // Hilfsmethoden
+    // ===========================================================
 
     /**
      * Holt eine Kollektion aus der DB oder wirft 404.
@@ -181,8 +330,9 @@ public class ItemCollectionService {
             collection.setParentItem(null);
         }
 
-        // Reihenfolge setzen
-        collection.setCollectionOrder(dto.getCollectionOrder());
+        // Order-Flag setzen (jetzt Boolean!)
+        collection.setCollectionOrder(
+            dto.getOrder() != null ? dto.getOrder() : false);
 
         // Sub-Items setzen mit Position
         if (dto.getSubItems() != null && !dto.getSubItems().isEmpty()) {
@@ -218,7 +368,7 @@ public class ItemCollectionService {
         ItemCollectionResponseDto dto = new ItemCollectionResponseDto();
 
         dto.setItemCollectionId(collection.getItemCollectionId());
-        dto.setCollectionOrder(collection.getCollectionOrder());
+        dto.setOrder(collection.getCollectionOrder());
         dto.setCreatedAt(collection.getCreatedAt());
 
         // Eltern-Item ID
@@ -244,10 +394,10 @@ public class ItemCollectionService {
             dto.setSubItems(subDtos);
         }
 
-            // Anzahl SubItems hinzufügen
+        // Anzahl SubItems
         dto.setSubItemCount(
-            collection.getSubItems() != null 
-                ? collection.getSubItems().size() 
+            collection.getSubItems() != null
+                ? collection.getSubItems().size()
                 : 0
         );
 
