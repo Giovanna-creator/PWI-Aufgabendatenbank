@@ -1,8 +1,10 @@
 package com.datenbank.backend.dto;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.List;
 
 /**
  * DTO für die Rückgabe einer Aufgabe (Item) an das Frontend.
@@ -47,6 +49,26 @@ public class ItemResponseDto {
     // Timestamps (vom System gesetzt)
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    
+
+    /**
+     * true wenn dieses Item eine Kollektion ist
+     * (d.h. eine ItemCollection mit parent_item_id = item_id existiert)
+     */
+    private boolean isCollection;
+
+    /**
+     * Inhalte dieses Items. Niemals null — leere Liste wenn keine vorhanden.
+     */
+    private List<ContentSummaryDto> contents = new ArrayList<>();
+
+    // Getter & Setter
+    public boolean isCollection() { return isCollection; }
+    public void setCollection(boolean c) { this.isCollection = c; }
+
+    public List<ContentSummaryDto> getContents() { return contents; }
+    public void setContents(List<ContentSummaryDto> c) { this.contents = c; }
 
     public ItemResponseDto() {
     }

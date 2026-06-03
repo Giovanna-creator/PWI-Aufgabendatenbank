@@ -1,5 +1,6 @@
 package com.datenbank.backend.service;
 
+import com.datenbank.backend.dto.ContentSummaryDto;
 import com.datenbank.backend.dto.ItemCreateDto;
 import com.datenbank.backend.dto.ItemResponseDto;
 import com.datenbank.backend.entity.*;
@@ -34,7 +35,7 @@ public class ItemService {
     private final ValidatorRepository validatorRepository;
     private final ModifierRepository modifierRepository;
     private final ItemCollectionRepository collectionRepository;
-private final ItemContentRepository itemContentsRepository;
+    private final ItemContentsRepository itemContentsRepository;
 
     /**
      * Constructor-Injection: Spring übergibt automatisch die Repositories.
@@ -121,8 +122,28 @@ private final ItemContentRepository itemContentsRepository;
         itemRepository.deleteById(id);
     }
 
+    /**
+    * Liefert nur Root-Items (root_item_id IS NULL)
+    */
+    @Transactional(readOnly = true)
+    public List<ItemResponseDto> getRootItems() {
+        return itemRepository.findByRootItemIsNull().stream()
+                .map(this::convertToResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Liefert alle Kinder eines Items
+     */
+    @Transactional(readOnly = true)
+    public List<ItemResponseDto> getItemsByRootId(Integer rootItemId) {
+        return itemRepository.findByRootItem_ItemId(rootItemId).stream()
+                .map(this::convertToResponseDto)
+                .collect(Collectors.toList());
+    }
+
     // =========================================================================
-    // Hilfsmethoden (private)
+    // Hilfsmethoden
     // =========================================================================
 
     /**
@@ -260,6 +281,32 @@ private final ItemContentRepository itemContentsRepository;
         dto.setCreatedAt(item.getCreatedAt());
         dto.setUpdatedAt(item.getUpdatedAt());
 
-        return dto;
+        // 1.3 isCollection setzen
+    dto.setCollection(
+        collectionRepository.existsByParentItem_ItemId(item.getItemId())
+    );
+
+    // 1.4 contents setzen
+    List<ContentSummaryDto> contentSummaries = itemContentsRepository
+        .findByItem_ItemId(item.getItemId())
+        .stream()
+        .map(ic -> {
+            ContentSummaryDto summary = new ContentSummaryDto();
+            summary.setItemContentId(
+                ic.getItemContent().getItemContentId());
+            summary.setItemContentTypeName(
+                ic.getItemContent().getItemContentType()
+                    .getItemContentTypeName());
+            summary.setHasJsonContent(
+                ic.getItemContent().getJsonSerializedContent() != null);
+            summary.setHasBlobContent(
+                ic.getItemContent().getBlobSerializedContent() != null);
+            return summary;
+        })
+        .collect(Collectors.toList());
+
+    dto.setContents(contentSummaries);
+
+    return dto;
     }
 }
