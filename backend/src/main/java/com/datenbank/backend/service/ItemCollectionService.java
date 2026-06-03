@@ -1,7 +1,9 @@
 package com.datenbank.backend.service;
 
+import com.datenbank.backend.dto.CollectionSubItemDto;
 import com.datenbank.backend.dto.ItemCollectionCreateDto;
 import com.datenbank.backend.dto.ItemCollectionResponseDto;
+import com.datenbank.backend.dto.ItemResponseDto;
 import com.datenbank.backend.entity.*;
 import com.datenbank.backend.repository.*;
 import org.springframework.http.HttpStatus;
@@ -25,15 +27,18 @@ public class ItemCollectionService {
 
     private final ItemCollectionRepository collectionRepository;
     private final ItemRepository itemRepository;
+    private final ItemCollectionSubItemRepository subItemRepository;
 
     /**
      * Constructor-Injection: Spring übergibt automatisch die Repositories.
      */
     public ItemCollectionService(
             ItemCollectionRepository collectionRepository,
-            ItemRepository itemRepository) {
+            ItemRepository itemRepository,
+            ItemCollectionSubItemRepository subItemRepository) {
         this.collectionRepository = collectionRepository;
         this.itemRepository = itemRepository;
+        this.subItemRepository = subItemRepository;
     }
 
 
@@ -112,6 +117,43 @@ public class ItemCollectionService {
 
 
     /**
+     * Gibt alle SubItems einer Kollektion zurück, sortiert nach Position.
+     * Wirft 404 wenn Kollektion nicht existiert.
+     */
+    @Transactional(readOnly = true)
+    public List<CollectionSubItemDto> getSubItemsForCollection(
+            Integer collectionId) {
+
+        // Prüfen ob Collection existiert
+        if (!collectionRepository.existsById(collectionId)) {
+            throw new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Collection nicht gefunden");
+        }
+
+        return subItemRepository
+            .findByCollection_ItemCollectionIdOrderByPositionAsc(collectionId)
+            .stream()
+            .map(sub -> {
+                CollectionSubItemDto dto = new CollectionSubItemDto();
+                dto.setSubItemId(sub.getSubItem().getItemId());
+                dto.setPosition(sub.getPosition());
+
+                // Optionale vollständige Item-Daten
+                ItemResponseDto itemDto = new ItemResponseDto();
+                itemDto.setItemId(sub.getSubItem().getItemId());
+                itemDto.setAuthorId(
+                    sub.getSubItem().getAuthor().getAuthorId());
+                itemDto.setAuthorDescriptor(
+                    sub.getSubItem().getAuthor().getDescriptor());
+                dto.setItem(itemDto);
+
+                return dto;
+            })
+            .collect(Collectors.toList());
+    }
+
+
+    /**
      * Holt eine Kollektion aus der DB oder wirft 404.
      */
     private ItemCollection findCollectionOrThrow(Integer id) {
@@ -119,6 +161,7 @@ public class ItemCollectionService {
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Collection nicht gefunden"));
     }
+
 
     /**
      * Wendet die Daten eines CreateDTO auf eine ItemCollection-Entity an.
@@ -200,6 +243,13 @@ public class ItemCollectionService {
 
             dto.setSubItems(subDtos);
         }
+
+            // Anzahl SubItems hinzufügen
+        dto.setSubItemCount(
+            collection.getSubItems() != null 
+                ? collection.getSubItems().size() 
+                : 0
+        );
 
         return dto;
     }
