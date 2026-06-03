@@ -91,7 +91,19 @@
       </v-list-item>
     </template>
     <div class="folder-children">
-      <slot />
+      <div
+        v-if="isLoading"
+        class="loading-spinner"
+      >
+        <v-progress-circular
+          indeterminate
+          size="16"
+          width="2"
+          color="#007fd4"
+        />
+        <span class="loading-text">Laden...</span>
+      </div>
+      <slot v-else />
     </div>
   </v-list-group>
 
@@ -102,7 +114,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import AdbDeleteDialog from '@/feature/aufgabendatenbank/editor/components/AdbDeleteDialog.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
 import type { Collection } from '@/lib/types'
@@ -124,6 +136,9 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits(['toggle-expand'])
+
+/** True while this collection's children are being fetched in the background. */
+const isLoading = computed(() => store.loadingChildrenIds.includes(props.element.id))
 
 /** Mark as hovered and auto-expand after 800ms.
  *  The delay prevents flickering when dragging quickly past a node. */
@@ -266,5 +281,18 @@ const onSelect = () => {
 .drop-target {
   background-color: rgba(0, 127, 212, 0.1);
   box-shadow: inset 0 0 0 1px #007fd4;
+}
+
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px 8px 48px;
+  color: #888;
+  font-size: 12px;
+}
+
+.loading-text {
+  user-select: none;
 }
 </style>
