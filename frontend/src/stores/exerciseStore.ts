@@ -15,6 +15,7 @@ import type {
   ApiAdapter,
   ItemDTO,
   ContentDTO,
+  ContentSummaryDTO,
   CollectionItemDTO
 } from '@/feature/aufgabendatenbank/api-adapter.types'
 
@@ -32,26 +33,26 @@ export function setApiAdapter(adapter: ApiAdapter): void {
 
 // ── DTO → Store type mappers ──────────────────────────────────────────────────
 
-function toContent(dto: ContentDTO): Content {
+function toContent(dto: ContentSummaryDTO): Content {
   return {
-    id: dto.id,
-    license: dto.license,
-    contentType: dto.contentType,
-    author: dto.author,
+    id: dto.itemContentId,
+    license: null,
+    contentType: dto.itemContentTypeName,
+    author: '',
     tags: [],
-    purpose: dto.purpose,
-    jsonContent: dto.jsonContent as Record<string, any>,
-    blobContent: dto.blobContent
+    purpose: '',
+    jsonContent: {} as Record<string, any>,
+    blobContent: dto.hasBlobContent ? '(binary)' : ''
   }
 }
 
 function toItem(dto: ItemDTO): Item {
   return {
-    id: dto.id,
-    item_type: dto.item_type,
-    author: dto.author,
-    representationTemplate: dto.representationTemplate ?? null,
-    license: dto.license ?? null,
+    id: dto.itemId,
+    item_type: dto.isCollection ? 'collection' : 'exercise',
+    author: dto.authorDescriptor,
+    representationTemplate: dto.itemTemplateId ?? null,
+    license: dto.licenseName ?? null,
     tags: [],
     validators: [],
     modifiers: [],
@@ -64,9 +65,9 @@ function toItem(dto: ItemDTO): Item {
 
 function toCollectionItem(dto: CollectionItemDTO): CollectionItem {
   return {
-    id: dto.id,
-    collectionId: dto.collectionId,
-    item: toItem(dto.item),
+    id: dto.subItemId,
+    collectionId: '',
+    item: toItem(dto.item!),
     position: dto.position
   }
 }
@@ -221,12 +222,11 @@ export const useExerciseStore = defineStore('exercise', {
       }
       inner.contents.push(content)
       _adapter?.createContent(inner.id, {
-        license: content.license,
-        contentType: content.contentType,
-        author: content.author,
+        licenseId: '00000000-0000-0000-0000-000000000000',
+        itemContentTypeId: '00000000-0000-0000-0000-000000000000',
+        authorId: '00000000-0000-0000-0000-000000000000',
         purpose: content.purpose,
-        jsonContent: content.jsonContent as Record<string, unknown>,
-        blobContent: content.blobContent
+        jsonSerializedContent: JSON.stringify(content.jsonContent)
       }).catch((e) => this._notifyError(e))
     },
 
@@ -246,12 +246,11 @@ export const useExerciseStore = defineStore('exercise', {
       const content = inner.contents[index]
       content.jsonContent.text = text
       _adapter?.updateContent(content.id ?? '', {
-        license: content.license,
-        contentType: content.contentType,
-        author: content.author,
+        licenseId: '00000000-0000-0000-0000-000000000000',
+        itemContentTypeId: '00000000-0000-0000-0000-000000000000',
+        authorId: '00000000-0000-0000-0000-000000000000',
         purpose: content.purpose,
-        jsonContent: content.jsonContent as Record<string, unknown>,
-        blobContent: content.blobContent
+        jsonSerializedContent: JSON.stringify(content.jsonContent)
       }).catch((e) => this._notifyError(e))
     },
 
@@ -261,12 +260,11 @@ export const useExerciseStore = defineStore('exercise', {
       const content = inner.contents[index]
       content.purpose = purpose
       _adapter?.updateContent(content.id ?? '', {
-        license: content.license,
-        contentType: content.contentType,
-        author: content.author,
+        licenseId: '00000000-0000-0000-0000-000000000000',
+        itemContentTypeId: '00000000-0000-0000-0000-000000000000',
+        authorId: '00000000-0000-0000-0000-000000000000',
         purpose: content.purpose,
-        jsonContent: content.jsonContent as Record<string, unknown>,
-        blobContent: content.blobContent
+        jsonSerializedContent: JSON.stringify(content.jsonContent)
       }).catch((e) => this._notifyError(e))
     },
 
@@ -369,17 +367,20 @@ export const useExerciseStore = defineStore('exercise', {
       const item = this._createItemData(rootItemId)
       if (addToRoot) this.rootItems.push(item)
       _adapter?.createItem({
-        item_type: item.item_type,
-        author: item.author,
-        rootItemId: item.rootItemId ?? null,
-        contents: item.contents.map((c) => ({
-          license: c.license,
-          contentType: c.contentType,
-          author: c.author,
-          purpose: c.purpose,
-          jsonContent: c.jsonContent as Record<string, unknown>,
-          blobContent: c.blobContent
-        }))
+        authorId: '00000000-0000-0000-0000-000000000000',
+        licenseId: '00000000-0000-0000-0000-000000000000',
+        itemTypeId: '00000000-0000-0000-0000-000000000000',
+        rootItemId: item.rootItemId ?? null
+      }).then((dto) => {
+        if (dto && item.contents.length > 0) {
+          _adapter?.createContent(dto.itemId, {
+            licenseId: '00000000-0000-0000-0000-000000000000',
+            itemContentTypeId: '00000000-0000-0000-0000-000000000000',
+            authorId: '00000000-0000-0000-0000-000000000000',
+            purpose: item.contents[0].purpose,
+            jsonSerializedContent: JSON.stringify(item.contents[0].jsonContent)
+          }).catch((e) => this._notifyError(e))
+        }
       }).catch((e) => this._notifyError(e))
       this.validate()
       return item
@@ -412,19 +413,8 @@ export const useExerciseStore = defineStore('exercise', {
         order: false
       }
       this.rootItems.push(collection)
-      _adapter?.createCollection({
-        item_type: 'collection',
-        author: collection.author,
-        contents: collection.contents.map((c) => ({
-          license: c.license,
-          contentType: c.contentType,
-          author: c.author,
-          purpose: c.purpose,
-          jsonContent: c.jsonContent as Record<string, unknown>,
-          blobContent: c.blobContent
-        })),
-        order: false
-      }).catch((e) => this._notifyError(e))
+      _adapter?.createCollection({ order: false })
+        .catch((e) => this._notifyError(e))
       this.validate()
       return collection
     },

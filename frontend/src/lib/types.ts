@@ -1,3 +1,7 @@
+/**
+ * @deprecated Use types from `@/feature/aufgabendatenbank/api-adapter.types` instead.
+ * These old types will be removed in a future cleanup.
+ */
 export interface Content {
   id?: string
   license: string | null
