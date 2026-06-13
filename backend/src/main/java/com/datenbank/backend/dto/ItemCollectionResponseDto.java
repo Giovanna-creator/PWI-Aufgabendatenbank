@@ -23,8 +23,8 @@ public class ItemCollectionResponseDto {
     // Optionales Eltern-Item
     private Integer parentItemId;
 
-    // Reihenfolge der Kollektion
-    private Integer collectionOrder;
+    // Reihenfolge der Kollektion: true = geordnet, false = ungeordnet
+    private Boolean order;
 
     /**
      * Aufgaben in dieser Kollektion, sortiert nach Position.
@@ -65,8 +65,8 @@ public class ItemCollectionResponseDto {
     public Integer getParentItemId() { return parentItemId; }
     public void setParentItemId(Integer id) { this.parentItemId = id; }
 
-    public Integer getCollectionOrder() { return collectionOrder; }
-    public void setCollectionOrder(Integer o) { this.collectionOrder = o; }
+    public Boolean getOrder() { return order; }
+    public void setOrder(Boolean o) { this.order = o; }
 
     public List<SubItemResponseDto> getSubItems() { return subItems; }
     public void setSubItems(List<SubItemResponseDto> s) { this.subItems = s; }

@@ -32,9 +32,11 @@ public class ItemCollection {
 
     /**
      * "order" ist reserviert -> wir nutzen Anführungszeichen im Spaltennamen.
+     * true = geordnet (SubItems haben Positionen 1, 2, 3...)
+     * false = ungeordnet (Positionen null)
      */
     @Column(name = "\"order\"")
-    private Integer collectionOrder;
+    private Boolean collectionOrder = false;
 
     /**
      * Liste aller Aufgaben (Items) die zu dieser Kollektion gehören.
@@ -75,11 +77,11 @@ public class ItemCollection {
         this.parentItem = parentItem;
     }
 
-    public Integer getCollectionOrder() {
+    public Boolean getCollectionOrder() {
         return collectionOrder;
     }
 
-    public void setCollectionOrder(Integer collectionOrder) {
+    public void setCollectionOrder(Boolean collectionOrder) {
         this.collectionOrder = collectionOrder;
     }
 

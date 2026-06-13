@@ -22,9 +22,10 @@ public class ItemCollectionCreateDto {
 
     /**
      * Optional: Reihenfolge der Kollektion.
-     * Hinweis: "order" ist reserviert in SQL → collectionOrder.
+     * true = geordnet (SubItems haben Positionen 1, 2, 3...)
+     * false = ungeordnet (Positionen null)
      */
-    private Integer collectionOrder;
+    private Boolean order = false;
 
     /**
      * Liste der Aufgaben mit ihrer Position in der Kollektion.
@@ -41,8 +42,7 @@ public class ItemCollectionCreateDto {
         @NotNull(message = "SubItem ID ist Pflicht")
         private Integer subitemId;
 
-        @NotNull(message = "Position ist Pflicht")
-        private Integer position;
+        private Integer position;  // null erlaubt für ungeordnete Collections
 
         public Integer getSubitemId() { return subitemId; }
         public void setSubitemId(Integer id) { this.subitemId = id; }
@@ -56,8 +56,8 @@ public class ItemCollectionCreateDto {
     public Integer getParentItemId() { return parentItemId; }
     public void setParentItemId(Integer id) { this.parentItemId = id; }
 
-    public Integer getCollectionOrder() { return collectionOrder; }
-    public void setCollectionOrder(Integer o) { this.collectionOrder = o; }
+    public Boolean getOrder() { return order; }
+    public void setOrder(Boolean o) { this.order = o; }
 
     public List<SubItemDto> getSubItems() { return subItems; }
     public void setSubItems(List<SubItemDto> s) { this.subItems = s; }

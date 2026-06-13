@@ -59,6 +59,17 @@ public class ItemContentController {
     }
 
     /**
+     * Liefert alle Contents eines Items (über item_contents Join-Tabelle).
+     * GET /api/contents/by-item/{itemId} → 200 OK
+     */
+    @GetMapping("/by-item/{itemId}")
+    public ResponseEntity<List<ItemContentResponseDto>> getContentsByItemId(
+            @PathVariable Integer itemId) {
+        return ResponseEntity.ok(
+                contentService.getContentsByItemId(itemId));
+    }
+
+    /**
      * Liefert die Blob-Daten eines Contents (Bild, PDF).
      * GET /api/contents/{id}/blob → 200 OK oder 404
      *

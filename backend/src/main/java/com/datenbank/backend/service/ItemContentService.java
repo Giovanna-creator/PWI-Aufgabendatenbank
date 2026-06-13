@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 public class ItemContentService {
 
     private final ItemContentRepository contentRepository;
+    private final ItemContentsRepository itemContentsRepository;
     private final AuthorRepository authorRepository;
     private final LicenseRepository licenseRepository;
     private final ItemContentTypeRepository contentTypeRepository;
@@ -26,12 +27,14 @@ public class ItemContentService {
 
     public ItemContentService(
             ItemContentRepository contentRepository,
+            ItemContentsRepository itemContentsRepository,
             AuthorRepository authorRepository,
             LicenseRepository licenseRepository,
             ItemContentTypeRepository contentTypeRepository,
             TagRepository tagRepository) {
 
         this.contentRepository = contentRepository;
+        this.itemContentsRepository = itemContentsRepository;
         this.authorRepository = authorRepository;
         this.licenseRepository = licenseRepository;
         this.contentTypeRepository = contentTypeRepository;
@@ -52,6 +55,17 @@ public class ItemContentService {
     public ItemContentResponseDto getById(Integer id) {
         ItemContent content = findContentOrThrow(id);
         return convertToResponseDto(content);
+    }
+
+    /**
+     * Liefert alle Contents eines Items (über item_contents Join-Tabelle).
+     */
+    @Transactional(readOnly = true)
+    public List<ItemContentResponseDto> getContentsByItemId(Integer itemId) {
+        return itemContentsRepository.findByItem_ItemId(itemId)
+                .stream()
+                .map(ic -> convertToResponseDto(ic.getItemContent()))
+                .collect(Collectors.toList());
     }
     /**
      * Liefert die Blob-Daten eines Contents direkt als byte[].

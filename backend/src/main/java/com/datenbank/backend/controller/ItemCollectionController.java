@@ -3,6 +3,8 @@ package com.datenbank.backend.controller;
 import com.datenbank.backend.dto.CollectionSubItemDto;
 import com.datenbank.backend.dto.ItemCollectionCreateDto;
 import com.datenbank.backend.dto.ItemCollectionResponseDto;
+import com.datenbank.backend.dto.OrderToggleDto;
+import com.datenbank.backend.dto.PositionUpdateDto;
 import com.datenbank.backend.service.ItemCollectionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -65,6 +67,46 @@ public class ItemCollectionController {
             @PathVariable Integer id) {
         return ResponseEntity.ok(
             collectionService.getSubItemsForCollection(id));
+    }
+
+    /**
+     * Schaltet die Reihenfolge einer Kollektion um.
+     * PUT /api/collections/{id}/order
+     * { "order": true }  → geordnet (Positionen 1, 2, 3...)
+     * { "order": false } → ungeordnet (Positionen null)
+     */
+    @PutMapping("/{id}/order")
+    public ResponseEntity<ItemCollectionResponseDto> toggleOrder(
+            @PathVariable Integer id,
+            @Valid @RequestBody OrderToggleDto dto) {
+        return ResponseEntity.ok(
+            collectionService.toggleOrder(id, dto.getOrder()));
+    }
+
+    /**
+     * Aktualisiert die Position eines SubItems in einer Kollektion.
+     * PUT /api/collections/{id}/items/{itemId}/position
+     * { "position": 2 } → Setzt Position auf 2, Geschwister werden neu berechnet
+     */
+    @PutMapping("/{id}/items/{itemId}/position")
+    public ResponseEntity<Void> updateSubItemPosition(
+            @PathVariable Integer id,
+            @PathVariable Integer itemId,
+            @Valid @RequestBody PositionUpdateDto dto) {
+        collectionService.updateSubItemPosition(id, itemId, dto.getPosition());
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Entfernt ein Item aus einer Kollektion.
+     * DELETE /api/collections/{id}/items/{itemId}
+     */
+    @DeleteMapping("/{id}/items/{itemId}")
+    public ResponseEntity<Void> removeItemFromCollection(
+            @PathVariable Integer id,
+            @PathVariable Integer itemId) {
+        collectionService.removeItemFromCollection(id, itemId);
+        return ResponseEntity.noContent().build();
     }
 
 }
