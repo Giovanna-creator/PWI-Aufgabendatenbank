@@ -59,7 +59,9 @@ INSERT INTO item_type (item_type_name, description) VALUES
     ('SQL-Abfrage',         'Aufgaben, die das Schreiben einer SQL-Abfrage erfordern'),
     ('Modellierung',        'Erstellung eines Datenmodells'),
     ('Multiple-Choice',     'Auswahl der richtigen Antwort(en) aus mehreren Optionen'),
-    ('Freitext',            'Offene Textantwort');
+    ('Freitext',            'Offene Textantwort'),
+    ('exercise',            'Einzelne Aufgabe'),
+    ('collection',          'Sammlung von Aufgaben');
 
 -- -----------------------------------------------------------------------------
 -- 6. Item_Representation_Template — Darstellungs-Templates
@@ -110,23 +112,23 @@ INSERT INTO item_content (license_id, item_content_type_id, author_id, json_seri
 -- -----------------------------------------------------------------------------
 -- Item 1: Konzept entwerfen
 INSERT INTO item (author_id, license_id, item_type_id, item_template_id, root_item_id) VALUES
-    (1, 4, 2, 1, NULL);
+    (1, 4, 5, 1, NULL);
 
 -- Item 2: SERM-Diagramm
 INSERT INTO item (author_id, license_id, item_type_id, item_template_id, root_item_id) VALUES
-    (1, 4, 2, 1, NULL);
+    (1, 4, 5, 1, NULL);
 
 -- Item 3: SQL-DDL
 INSERT INTO item (author_id, license_id, item_type_id, item_template_id, root_item_id) VALUES
-    (1, 4, 1, 2, NULL);
+    (1, 4, 5, 2, NULL);
 
 -- Item 4: SQL-Abfrage (Basisversion)
 INSERT INTO item (author_id, license_id, item_type_id, item_template_id, root_item_id) VALUES
-    (1, 4, 1, 2, NULL);
+    (1, 4, 5, 2, NULL);
 
 -- Item 5: SQL-Abfrage VARIANTE — muss INNER JOIN verwenden (root_item_id = 4)
 INSERT INTO item (author_id, license_id, item_type_id, item_template_id, root_item_id) VALUES
-    (1, 4, 1, 2, 4);
+    (1, 4, 5, 2, 4);
 
 -- -----------------------------------------------------------------------------
 -- 11. Item_Contents — Verknüpfung Item ↔ Item_Content
@@ -166,9 +168,15 @@ INSERT INTO item_validator (item_id, validator_id) VALUES (5, 1);
 INSERT INTO item_modifier  (item_id, modifier_id)  VALUES (5, 1);
 
 -- -----------------------------------------------------------------------------
--- 14. Item_Collection — Lernpfad
+-- 14. Item_Collection Item — Eintrag für die Sammlung
 -- -----------------------------------------------------------------------------
-INSERT INTO item_collection (parent_item_id, "order") VALUES (NULL, 1);
+INSERT INTO item (author_id, license_id, item_type_id, item_template_id, root_item_id) VALUES
+    (1, 4, 6, NULL, NULL);
+
+-- -----------------------------------------------------------------------------
+-- 15. Item_Collection — Lernpfad
+-- -----------------------------------------------------------------------------
+INSERT INTO item_collection (parent_item_id, "order") VALUES (6, 1);
 
 -- -----------------------------------------------------------------------------
 -- 15. Item_Collection_Sub_Item — Aufgaben im Lernpfad
@@ -199,6 +207,10 @@ INSERT INTO item_content_types (item_type_id, item_content_type_id) VALUES
 -- Modellierung erlaubt: markdown, JSON, image
 INSERT INTO item_content_types (item_type_id, item_content_type_id) VALUES
     (2, 2), (2, 3), (2, 4);
+
+-- exercise erlaubt: text/plain, markdown, JSON, image, PDF
+INSERT INTO item_content_types (item_type_id, item_content_type_id) VALUES
+    (5, 1), (5, 2), (5, 3), (5, 4), (5, 5), (5, 6);
 
 -- =============================================================================
 -- Verifikations-Abfragen (auskommentiert — manuell ausführen zum Testen)

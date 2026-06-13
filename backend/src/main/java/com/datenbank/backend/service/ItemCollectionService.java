@@ -1,9 +1,6 @@
 package com.datenbank.backend.service;
 
-import com.datenbank.backend.dto.CollectionSubItemDto;
-import com.datenbank.backend.dto.ItemCollectionCreateDto;
-import com.datenbank.backend.dto.ItemCollectionResponseDto;
-import com.datenbank.backend.dto.ItemResponseDto;
+import com.datenbank.backend.dto.*;
 import com.datenbank.backend.entity.*;
 import com.datenbank.backend.repository.*;
 import org.springframework.http.HttpStatus;
@@ -14,243 +11,240 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Service-Schicht für die Geschäftslogik der ItemCollection-Entität.
- *
- * Aufgaben:
- *  - Umwandlung zwischen DTOs (Frontend) und Entities (Datenbank)
- *  - Verwaltung von Sub-Items mit Position
- *  - CRUD-Operationen mit korrekter Fehlerbehandlung
- */
 @Service
 public class ItemCollectionService {
 
     private final ItemCollectionRepository collectionRepository;
     private final ItemRepository itemRepository;
     private final ItemCollectionSubItemRepository subItemRepository;
+    private final AuthorRepository authorRepository;
+    private final LicenseRepository licenseRepository;
+    private final ItemTypeRepository itemTypeRepository;
+    private final ItemContentRepository contentRepository;
+    private final ItemContentTypeRepository contentTypeRepository;
+    private final ItemContentsRepository itemContentsRepository;
 
-    /**
-     * Constructor-Injection: Spring übergibt automatisch die Repositories.
-     */
-    public ItemCollectionService(
-            ItemCollectionRepository collectionRepository,
-            ItemRepository itemRepository,
-            ItemCollectionSubItemRepository subItemRepository) {
+    public ItemCollectionService(ItemCollectionRepository collectionRepository,
+                                  ItemRepository itemRepository,
+                                  ItemCollectionSubItemRepository subItemRepository,
+                                  AuthorRepository authorRepository,
+                                  LicenseRepository licenseRepository,
+                                  ItemTypeRepository itemTypeRepository,
+                                  ItemContentRepository contentRepository,
+                                  ItemContentTypeRepository contentTypeRepository,
+                                  ItemContentsRepository itemContentsRepository) {
         this.collectionRepository = collectionRepository;
         this.itemRepository = itemRepository;
         this.subItemRepository = subItemRepository;
+        this.authorRepository = authorRepository;
+        this.licenseRepository = licenseRepository;
+        this.itemTypeRepository = itemTypeRepository;
+        this.contentRepository = contentRepository;
+        this.contentTypeRepository = contentTypeRepository;
+        this.itemContentsRepository = itemContentsRepository;
     }
 
-
-    // CRUD-Operationen
-
-
-    /**
-     * Liefert alle Kollektionen als Liste von ResponseDTOs.
-     */
     @Transactional(readOnly = true)
-    public List<ItemCollectionResponseDto> getAll() {
-        return collectionRepository.findAll().stream()
-                .map(this::convertToResponseDto)
+    public List<FrontendCollectionItemDto> getSubItemsForCollection(Integer collectionId) {
+        ItemCollection collection = findCollectionOrThrow(collectionId);
+        return collection.getSubItems().stream()
+                .map(FrontendDtoMapper::toCollectionItemDto)
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Liefert alle Root-Kollektionen (ohne Eltern-Item).
-     */
-    @Transactional(readOnly = true)
-    public List<ItemCollectionResponseDto> getRootCollections() {
-        return collectionRepository.findByParentItemIsNull().stream()
-                .map(this::convertToResponseDto)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Liefert eine einzelne Kollektion als ResponseDTO.
-     * Wirft 404, falls nicht gefunden.
-     */
-    @Transactional(readOnly = true)
-    public ItemCollectionResponseDto getById(Integer id) {
-        ItemCollection collection = findCollectionOrThrow(id);
-        return convertToResponseDto(collection);
-    }
-
-    /**
-     * Erstellt eine neue Kollektion aus einem CreateDTO.
-     */
     @Transactional
-    public ItemCollectionResponseDto create(ItemCollectionCreateDto dto) {
+    public FrontendItemDto createCollection(FrontendCreateCollectionRequest request) {
+        ensureItemTypeExists("collection");
+        ItemType collectionType = itemTypeRepository.findByItemTypeName("collection")
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                        "ItemType 'collection' nicht gefunden"));
+
+        Author author = null;
+        if (request.getAuthor() != null) {
+            author = authorRepository.findByDescriptor(request.getAuthor())
+                    .orElseGet(() -> {
+                        Author a = new Author();
+                        a.setDescriptor(request.getAuthor());
+                        return authorRepository.save(a);
+                    });
+        }
+        if (author == null) {
+            author = authorRepository.findAll().stream().findFirst()
+                    .orElseGet(() -> {
+                        Author a = new Author();
+                        a.setDescriptor("System");
+                        return authorRepository.save(a);
+                    });
+        }
+
+        License license = licenseRepository.findByLicense("Internal-THM")
+                .orElseGet(() -> {
+                    License l = new License();
+                    l.setLicense("Internal-THM");
+                    return licenseRepository.save(l);
+                });
+
+        Item item = new Item();
+        item.setAuthor(author);
+        item.setLicense(license);
+        item.setItemType(collectionType);
+        Item savedItem = itemRepository.save(item);
+
         ItemCollection collection = new ItemCollection();
-        applyDtoToEntity(dto, collection);
-        ItemCollection saved = collectionRepository.save(collection);
-        return convertToResponseDto(saved);
-    }
+        collection.setParentItem(savedItem);
+        collection.setCollectionOrder(request.getOrder() != null ? request.getOrder() : false);
+        collectionRepository.save(collection);
 
-    /**
-     * Aktualisiert eine existierende Kollektion.
-     * Wirft 404, falls die Kollektion nicht existiert.
-     */
-    @Transactional
-    public ItemCollectionResponseDto update(
-            Integer id, ItemCollectionCreateDto dto) {
-        ItemCollection collection = findCollectionOrThrow(id);
-        applyDtoToEntity(dto, collection);
-        ItemCollection saved = collectionRepository.save(collection);
-        return convertToResponseDto(saved);
-    }
-
-    /**
-     * Löscht eine Kollektion samt Sub-Items (CASCADE).
-     * Wirft 404, falls nicht gefunden.
-     */
-    @Transactional
-    public void delete(Integer id) {
-        if (!collectionRepository.existsById(id)) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "Collection nicht gefunden");
+        if (request.getContents() != null) {
+            for (FrontendCreateContentRequest contentReq : request.getContents()) {
+                createContentForItem(savedItem, contentReq);
+            }
         }
-        collectionRepository.deleteById(id);
+
+        Item refreshedItem = itemRepository.findByIdWithDetails(savedItem.getItemId())
+                .orElse(savedItem);
+
+        return FrontendDtoMapper.toItemDto(refreshedItem, true, collection.getCollectionOrder(), collection.getSubItems());
     }
 
+    @Transactional
+    public FrontendCollectionItemDto addItemToCollection(Integer collectionId, Integer itemId) {
+        ItemCollection collection = findCollectionOrThrow(collectionId);
+        Item subItem = itemRepository.findById(itemId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item nicht gefunden"));
 
-    // Hilfsmethoden
+        boolean exists = subItemRepository
+                .findByCollection_ItemCollectionIdAndSubItem_ItemId(collectionId, itemId)
+                .isPresent();
+        if (exists) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Item bereits in der Kollektion");
+        }
 
+        Integer nextPosition = null;
+        if (Boolean.TRUE.equals(collection.getCollectionOrder())) {
+            nextPosition = collection.getSubItems().stream()
+                    .mapToInt(s -> s.getPosition() != null ? s.getPosition() : 0)
+                    .max()
+                    .orElse(0) + 1;
+        }
 
-    /**
-     * Gibt alle SubItems einer Kollektion zurück, sortiert nach Position.
-     * Wirft 404 wenn Kollektion nicht existiert.
-     */
-    @Transactional(readOnly = true)
-    public List<CollectionSubItemDto> getSubItemsForCollection(
-            Integer collectionId) {
+        ItemCollectionSubItem sub = new ItemCollectionSubItem(collection, subItem, nextPosition);
+        subItemRepository.save(sub);
+        collection.getSubItems().add(sub);
 
-        // Prüfen ob Collection existiert
+        return FrontendDtoMapper.toCollectionItemDto(sub);
+    }
+
+    @Transactional
+    public void removeItemFromCollection(Integer collectionId, Integer itemId) {
         if (!collectionRepository.existsById(collectionId)) {
-            throw new ResponseStatusException(
-                HttpStatus.NOT_FOUND, "Collection nicht gefunden");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Collection nicht gefunden");
         }
-
-        return subItemRepository
-            .findByCollection_ItemCollectionIdOrderByPositionAsc(collectionId)
-            .stream()
-            .map(sub -> {
-                CollectionSubItemDto dto = new CollectionSubItemDto();
-                dto.setSubItemId(sub.getSubItem().getItemId());
-                dto.setPosition(sub.getPosition());
-
-                // Optionale vollständige Item-Daten
-                ItemResponseDto itemDto = new ItemResponseDto();
-                itemDto.setItemId(sub.getSubItem().getItemId());
-                itemDto.setAuthorId(
-                    sub.getSubItem().getAuthor().getAuthorId());
-                itemDto.setAuthorDescriptor(
-                    sub.getSubItem().getAuthor().getDescriptor());
-                dto.setItem(itemDto);
-
-                return dto;
-            })
-            .collect(Collectors.toList());
+        ItemCollectionSubItem sub = subItemRepository
+                .findByCollection_ItemCollectionIdAndSubItem_ItemId(collectionId, itemId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Item nicht in der Kollektion"));
+        subItemRepository.delete(sub);
     }
 
+    @Transactional
+    public void updatePosition(Integer collectionId, Integer itemId, Integer newPosition) {
+        ItemCollection collection = findCollectionOrThrow(collectionId);
+        ItemCollectionSubItem sub = subItemRepository
+                .findByCollection_ItemCollectionIdAndSubItem_ItemId(collectionId, itemId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Item nicht in der Kollektion"));
 
-    /**
-     * Holt eine Kollektion aus der DB oder wirft 404.
-     */
+        if (Boolean.TRUE.equals(collection.getCollectionOrder())) {
+            recalculatePositions(collection, sub, newPosition);
+        } else {
+            sub.setPosition(newPosition);
+            subItemRepository.save(sub);
+        }
+    }
+
+    @Transactional
+    public FrontendItemDto updateCollectionOrder(Integer collectionId, Boolean newOrder) {
+        ItemCollection collection = findCollectionOrThrow(collectionId);
+        collection.setCollectionOrder(newOrder);
+        collectionRepository.save(collection);
+
+        if (Boolean.TRUE.equals(newOrder)) {
+            recalculateAllPositions(collection);
+        }
+
+        Item parentItem = collection.getParentItem();
+        if (parentItem == null) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Collection hat kein Parent-Item");
+        }
+        Item refreshedItem = itemRepository.findByIdWithDetails(parentItem.getItemId())
+                .orElse(parentItem);
+        return FrontendDtoMapper.toItemDto(refreshedItem, true, collection.getCollectionOrder(), collection.getSubItems());
+    }
+
+    private void recalculatePositions(ItemCollection collection, ItemCollectionSubItem movedSub, Integer newPosition) {
+        List<ItemCollectionSubItem> siblings = collection.getSubItems().stream()
+                .filter(s -> !s.equals(movedSub))
+                .sorted((a, b) -> {
+                    int pa = a.getPosition() != null ? a.getPosition() : Integer.MAX_VALUE;
+                    int pb = b.getPosition() != null ? b.getPosition() : Integer.MAX_VALUE;
+                    return Integer.compare(pa, pb);
+                })
+                .collect(Collectors.toList());
+
+        movedSub.setPosition(newPosition);
+        subItemRepository.save(movedSub);
+
+        int pos = 1;
+        for (ItemCollectionSubItem sibling : siblings) {
+            if (pos == newPosition) pos++;
+            sibling.setPosition(pos);
+            subItemRepository.save(sibling);
+            pos++;
+        }
+    }
+
+    private void recalculateAllPositions(ItemCollection collection) {
+        List<ItemCollectionSubItem> items = collection.getSubItems();
+        for (int i = 0; i < items.size(); i++) {
+            items.get(i).setPosition(i + 1);
+            subItemRepository.save(items.get(i));
+        }
+    }
+
     private ItemCollection findCollectionOrThrow(Integer id) {
         return collectionRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Collection nicht gefunden"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Collection nicht gefunden"));
     }
 
-
-    /**
-     * Wendet die Daten eines CreateDTO auf eine ItemCollection-Entity an.
-     * Wird sowohl bei Create als auch bei Update verwendet.
-     */
-    private void applyDtoToEntity(
-            ItemCollectionCreateDto dto, ItemCollection collection) {
-
-        // Optionales Eltern-Item setzen
-        if (dto.getParentItemId() != null) {
-            Item parentItem = itemRepository
-                    .findById(dto.getParentItemId())
-                    .orElseThrow(() -> new ResponseStatusException(
-                            HttpStatus.NOT_FOUND, "Parent Item nicht gefunden"));
-            collection.setParentItem(parentItem);
-        } else {
-            collection.setParentItem(null);
-        }
-
-        // Reihenfolge setzen
-        collection.setCollectionOrder(dto.getCollectionOrder());
-
-        // Sub-Items setzen mit Position
-        if (dto.getSubItems() != null && !dto.getSubItems().isEmpty()) {
-            List<ItemCollectionSubItem> subItems = dto.getSubItems()
-                    .stream()
-                    .map(subDto -> {
-                        Item subItem = itemRepository
-                                .findById(subDto.getSubitemId())
-                                .orElseThrow(() -> new ResponseStatusException(
-                                        HttpStatus.NOT_FOUND,
-                                        "SubItem nicht gefunden: " + subDto.getSubitemId()));
-
-                        return new ItemCollectionSubItem(
-                                collection,
-                                subItem,
-                                subDto.getPosition()
-                        );
-                    })
-                    .collect(Collectors.toList());
-
-            collection.setSubItems(subItems);
-        } else {
-            collection.setSubItems(new java.util.ArrayList<>());
+    private void ensureItemTypeExists(String name) {
+        if (itemTypeRepository.findByItemTypeName(name).isEmpty()) {
+            ItemType type = new ItemType();
+            type.setItemTypeName(name);
+            type.setDescription(name.equals("exercise") ? "Einzelne Aufgabe" : "Sammlung von Aufgaben");
+            itemTypeRepository.save(type);
         }
     }
 
-    /**
-     * Wandelt eine ItemCollection-Entity in ein ResponseDTO um.
-     */
-    private ItemCollectionResponseDto convertToResponseDto(
-            ItemCollection collection) {
+    private void createContentForItem(Item item, FrontendCreateContentRequest request) {
+        ItemContentType contentType = contentTypeRepository
+                .findByItemContentTypeName(request.getContentType())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "ContentType '" + request.getContentType() + "' nicht gefunden"));
 
-        ItemCollectionResponseDto dto = new ItemCollectionResponseDto();
-
-        dto.setItemCollectionId(collection.getItemCollectionId());
-        dto.setCollectionOrder(collection.getCollectionOrder());
-        dto.setCreatedAt(collection.getCreatedAt());
-
-        // Eltern-Item ID
-        if (collection.getParentItem() != null) {
-            dto.setParentItemId(
-                    collection.getParentItem().getItemId());
+        ItemContent content = new ItemContent();
+        content.setLicense(item.getLicense());
+        content.setAuthor(item.getAuthor());
+        content.setItemContentType(contentType);
+        content.setJsonSerializedContent(request.getJsonContent());
+        if (request.getBlobContent() != null) {
+            content.setBlobSerializedContent(request.getBlobContent().getBytes());
         }
+        ItemContent savedContent = contentRepository.save(content);
 
-        // Sub-Items mit Position
-        if (collection.getSubItems() != null) {
-            List<ItemCollectionResponseDto.SubItemResponseDto> subDtos =
-                    collection.getSubItems().stream()
-                            .map(sub -> {
-                                ItemCollectionResponseDto.SubItemResponseDto subDto =
-                                        new ItemCollectionResponseDto.SubItemResponseDto();
-                                subDto.setSubitemId(
-                                        sub.getSubItem().getItemId());
-                                subDto.setPosition(sub.getPosition());
-                                return subDto;
-                            })
-                            .collect(Collectors.toList());
-
-            dto.setSubItems(subDtos);
-        }
-
-            // Anzahl SubItems hinzufügen
-        dto.setSubItemCount(
-            collection.getSubItems() != null 
-                ? collection.getSubItems().size() 
-                : 0
-        );
-
-        return dto;
+        ItemContentsId id = new ItemContentsId(item.getItemId(), savedContent.getItemContentId());
+        ItemContents itemContents = new ItemContents(id, item, savedContent, request.getPurpose());
+        itemContentsRepository.save(itemContents);
     }
 }

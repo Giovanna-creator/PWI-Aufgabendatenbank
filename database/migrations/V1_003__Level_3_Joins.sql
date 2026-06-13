@@ -157,7 +157,7 @@ COMMENT ON TABLE item_modifier IS 'Zuweisung von Modifiers zu Aufgaben (horizont
 CREATE TABLE item_collection_sub_item (
     item_collection_id  INTEGER NOT NULL,
     subitem_id          INTEGER NOT NULL,
-    position            INTEGER NOT NULL,
+    position            INTEGER,
     PRIMARY KEY (item_collection_id, subitem_id),
     CONSTRAINT fk_item_collection_sub_item_collection
         FOREIGN KEY (item_collection_id)

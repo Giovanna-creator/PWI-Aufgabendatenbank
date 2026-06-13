@@ -1,7 +1,6 @@
 package com.datenbank.backend.service;
 
-import com.datenbank.backend.dto.ItemContentCreateDto;
-import com.datenbank.backend.dto.ItemContentResponseDto;
+import com.datenbank.backend.dto.*;
 import com.datenbank.backend.entity.*;
 import com.datenbank.backend.repository.*;
 
@@ -10,205 +9,65 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 @Service
 public class ItemContentService {
 
     private final ItemContentRepository contentRepository;
-    private final AuthorRepository authorRepository;
-    private final LicenseRepository licenseRepository;
     private final ItemContentTypeRepository contentTypeRepository;
-    private final TagRepository tagRepository;
 
-    public ItemContentService(
-            ItemContentRepository contentRepository,
-            AuthorRepository authorRepository,
-            LicenseRepository licenseRepository,
-            ItemContentTypeRepository contentTypeRepository,
-            TagRepository tagRepository) {
-
+    public ItemContentService(ItemContentRepository contentRepository,
+                               ItemContentTypeRepository contentTypeRepository) {
         this.contentRepository = contentRepository;
-        this.authorRepository = authorRepository;
-        this.licenseRepository = licenseRepository;
         this.contentTypeRepository = contentTypeRepository;
-        this.tagRepository = tagRepository;
-    }
-
-
-    // CRUD
-
-    @Transactional(readOnly = true)
-    public List<ItemContentResponseDto> getAll() {
-        return contentRepository.findAll().stream()
-                .map(this::convertToResponseDto)
-                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public ItemContentResponseDto getById(Integer id) {
+    public FrontendContentDto getById(Integer id) {
         ItemContent content = findContentOrThrow(id);
-        return convertToResponseDto(content);
+        String purpose = content.getItemContentId() != null ? "Aufgabenstellung" : null;
+        return FrontendDtoMapper.toContentDto(content, purpose);
     }
-    /**
-     * Liefert die Blob-Daten eines Contents direkt als byte[].
-     * Wirft 404 falls Content nicht gefunden.
-     * Wirft 404 falls keine Blob-Daten vorhanden.
-     */
+
     @Transactional(readOnly = true)
     public byte[] getBlobById(Integer id) {
         ItemContent content = findContentOrThrow(id);
         if (content.getBlobSerializedContent() == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "Keine Blob-Daten vorhanden");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Keine Blob-Daten vorhanden");
         }
         return content.getBlobSerializedContent();
     }
 
     @Transactional
-    public ItemContentResponseDto create(ItemContentCreateDto dto) {
-        ItemContent content = new ItemContent();
-        applyDtoToEntity(dto, content);
-
-        ItemContent saved = contentRepository.save(content);
-
-        return convertToResponseDto(saved);
-    }
-
-    @Transactional
-    public ItemContentResponseDto update(
-            Integer id,
-            ItemContentCreateDto dto) {
-
+    public FrontendContentDto update(Integer id, FrontendCreateContentRequest request) {
         ItemContent content = findContentOrThrow(id);
 
-        applyDtoToEntity(dto, content);
+        if (request.getContentType() != null) {
+            ItemContentType contentType = contentTypeRepository
+                    .findByItemContentTypeName(request.getContentType())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "ContentType '" + request.getContentType() + "' nicht gefunden"));
+            content.setItemContentType(contentType);
+        }
+
+        content.setJsonSerializedContent(request.getJsonContent());
+        if (request.getBlobContent() != null) {
+            content.setBlobSerializedContent(request.getBlobContent().getBytes());
+        }
 
         ItemContent saved = contentRepository.save(content);
-
-        return convertToResponseDto(saved);
-    }
-
-    /**
-     * Speichert Blob-Daten für einen existierenden Content.
-     * Wirft 404, falls Content nicht gefunden.
-     */
-    @Transactional
-    public ItemContentResponseDto uploadBlob(Integer id, byte[] blob) {
-        ItemContent content = findContentOrThrow(id);
-        content.setBlobSerializedContent(blob);
-        ItemContent saved = contentRepository.save(content);
-        return convertToResponseDto(saved);
+        return FrontendDtoMapper.toContentDto(saved, request.getPurpose());
     }
 
     @Transactional
     public void delete(Integer id) {
-
         if (!contentRepository.existsById(id)) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Content nicht gefunden");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Content nicht gefunden");
         }
-
         contentRepository.deleteById(id);
     }
 
-
-    // Hilfsmethoden
-
-
     private ItemContent findContentOrThrow(Integer id) {
         return contentRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Content nicht gefunden"));
-    }
-
-    private void applyDtoToEntity(ItemContentCreateDto dto, ItemContent content) {
-
-        // Pflicht-Beziehungen (NOT NULL in Entity)
-        content.setAuthor(authorRepository.findById(dto.getAuthorId())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Author nicht gefunden")));
-
-        content.setLicense(licenseRepository.findById(dto.getLicenseId())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "License nicht gefunden")));
-
-        content.setItemContentType(
-                contentTypeRepository.findById(dto.getItemContentTypeId())
-                        .orElseThrow(() -> new ResponseStatusException(
-                                HttpStatus.NOT_FOUND, "ContentType nicht gefunden")));
-
-        // Optionaler JSON-Inhalt
-        content.setJsonSerializedContent(dto.getJsonSerializedContent());
-
-        // Optionaler Blob-Inhalt (Bild, PDF)
-        content.setBlobSerializedContent(dto.getBlobSerializedContent());
-
-        // Many-to-Many: Tags
-        if (dto.getTagIds() != null && !dto.getTagIds().isEmpty()) {
-            Set<Tag> tags = new HashSet<>(
-                    tagRepository.findAllById(dto.getTagIds()));
-            if (tags.size() != dto.getTagIds().size()) {
-                throw new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Mindestens ein Tag wurde nicht gefunden");
-            }
-            content.setTags(tags);
-        } else {
-            content.setTags(new HashSet<>());
-        }
-    }
-
-    /**
-     * Wandelt eine ItemContent-Entity in ein ResponseDTO um.
-     * Blob-Daten werden NICHT eingebettet — nur ein Flag ob vorhanden.
-     */
-    private ItemContentResponseDto convertToResponseDto(ItemContent content) {
-        ItemContentResponseDto dto = new ItemContentResponseDto();
-
-        dto.setItemContentId(content.getItemContentId());
-
-        // Author
-        if (content.getAuthor() != null) {
-            dto.setAuthorId(content.getAuthor().getAuthorId());
-            dto.setAuthorDescriptor(content.getAuthor().getDescriptor());
-        }
-
-        // License
-        if (content.getLicense() != null) {
-            dto.setLicenseId(content.getLicense().getLicenseId());
-            dto.setLicenseName(content.getLicense().getLicense());
-        }
-
-        // ContentType
-        if (content.getItemContentType() != null) {
-            dto.setItemContentTypeId(
-                    content.getItemContentType().getItemContentTypeId());
-            dto.setItemContentTypeName(
-                    content.getItemContentType().getItemContentTypeName());
-        }
-
-        // JSON-Inhalt direkt zurückgeben
-        dto.setJsonSerializedContent(content.getJsonSerializedContent());
-
-        // Blob: nur Flag setzen, nicht den Inhalt
-        dto.setHasBlobContent(content.getBlobSerializedContent() != null);
-
-        // Tags als IDs
-        dto.setTagIds(content.getTags().stream()
-                .map(Tag::getTagId)
-                .collect(Collectors.toSet()));
-
-        // Timestamps
-        dto.setCreatedAt(content.getCreatedAt());
-        dto.setUpdatedAt(content.getUpdatedAt());
-
-        return dto;
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Content nicht gefunden"));
     }
 }
-

@@ -1,13 +1,17 @@
 package com.datenbank.backend.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-/**
- * Entspricht der Tabelle "validator".
- * Validatoren für Aufgaben (z.B. "muss INNER JOIN enthalten").
- */
 @Entity
 @Table(name = "validator")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Validator {
 
     @Id
@@ -20,36 +24,4 @@ public class Validator {
 
     @Column(name = "validator", nullable = false, columnDefinition = "TEXT")
     private String validator;
-
-    public Validator() {
-    }
-
-    public Validator(String description, String validator) {
-        this.description = description;
-        this.validator = validator;
-    }
-
-    public Integer getValidatorId() {
-        return validatorId;
-    }
-
-    public void setValidatorId(Integer validatorId) {
-        this.validatorId = validatorId;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getValidator() {
-        return validator;
-    }
-
-    public void setValidator(String validator) {
-        this.validator = validator;
-    }
 }

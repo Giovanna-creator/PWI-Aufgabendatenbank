@@ -1,13 +1,17 @@
 package com.datenbank.backend.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-/**
- * Entspricht der Tabelle "item_representation_template".
- * Templates zur Darstellung der Aufgaben in der Oberfläche.
- */
 @Entity
 @Table(name = "item_representation_template")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class ItemRepresentationTemplate {
 
     @Id
@@ -17,27 +21,4 @@ public class ItemRepresentationTemplate {
 
     @Column(name = "template", nullable = false, columnDefinition = "TEXT")
     private String template;
-
-    public ItemRepresentationTemplate() {
-    }
-
-    public ItemRepresentationTemplate(String template) {
-        this.template = template;
-    }
-
-    public Integer getItemTemplateId() {
-        return itemTemplateId;
-    }
-
-    public void setItemTemplateId(Integer itemTemplateId) {
-        this.itemTemplateId = itemTemplateId;
-    }
-
-    public String getTemplate() {
-        return template;
-    }
-
-    public void setTemplate(String template) {
-        this.template = template;
-    }
 }

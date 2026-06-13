@@ -1,10 +1,17 @@
 package com.datenbank.backend.entity;
 
 import jakarta.persistence.*;
-
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "author")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Author {
 
     @Id
@@ -15,38 +22,6 @@ public class Author {
     @Column(name = "descriptor", nullable = false)
     private String descriptor;
 
-    @Column(name = "mail", columnDefinition = "TEXT" )
+    @Column(name = "mail", columnDefinition = "TEXT")
     private String mail;
-
-    public Author() {
-    }
-
-    public Author(String descriptor, String mail) {
-        this.descriptor = descriptor;
-        this.mail = mail;
-    }
-
-    public Integer getAuthorId() {
-        return authorId;
-    }
-
-    public void setAuthorId(Integer authorId) { 
-        this.authorId = authorId;
-    }
-
-    public String getDescriptor() {
-        return descriptor;
-    }
-
-    public void setDescriptor(String descriptor) {
-        this.descriptor = descriptor;
-    }
-
-    public String getMail() {
-        return mail;
-    }
-
-    public void setMail(String mail) {
-        this.mail = mail;
-    }
 }

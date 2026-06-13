@@ -1,20 +1,19 @@
 package com.datenbank.backend.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
-
-/**
- * Entspricht der Tabelle "item_collection".
- * Sammlungen von Aufgaben (Lernpfade, Sequenzen).
- *
- * Hinweis: Die Spalte "order" ist ein reserviertes SQL-Wort,
- * daher in der SQL-Definition in Anführungszeichen. In JPA mappen
- * wir das Feld als "collectionOrder" auf die Spalte "order".
- */
 @Entity
 @Table(name = "item_collection")
+@Getter
+@Setter
+@NoArgsConstructor
 public class ItemCollection {
 
     @Id
@@ -22,31 +21,19 @@ public class ItemCollection {
     @Column(name = "item_collection_id")
     private Integer itemCollectionId;
 
-    /**
-     * Optionale Verbindung zu einem übergeordneten Item.
-     * ON DELETE CASCADE im Schema.
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_item_id")
     private Item parentItem;
 
-    /**
-     * "order" ist reserviert -> wir nutzen Anführungszeichen im Spaltennamen.
-     */
     @Column(name = "\"order\"")
-    private Integer collectionOrder;
+    private Boolean collectionOrder;
 
-    /**
-     * Liste aller Aufgaben (Items) die zu dieser Kollektion gehören.
-     * Geordnet nach Position (aufsteigend).
-     * Wird automatisch mitgelöscht wenn die Kollektion gelöscht wird (CASCADE).
-     */
     @OneToMany(mappedBy = "itemCollection",
             fetch = FetchType.LAZY,
-            cascade = CascadeType.ALL)
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
     @OrderBy("position ASC")
-    private List<ItemCollectionSubItem> subItems;
-
+    private List<ItemCollectionSubItem> subItems = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -55,43 +42,4 @@ public class ItemCollection {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
-
-    public ItemCollection() {
-    }
-
-    public Integer getItemCollectionId() {
-        return itemCollectionId;
-    }
-
-    public void setItemCollectionId(Integer itemCollectionId) {
-        this.itemCollectionId = itemCollectionId;
-    }
-
-    public Item getParentItem() {
-        return parentItem;
-    }
-
-    public void setParentItem(Item parentItem) {
-        this.parentItem = parentItem;
-    }
-
-    public Integer getCollectionOrder() {
-        return collectionOrder;
-    }
-
-    public void setCollectionOrder(Integer collectionOrder) {
-        this.collectionOrder = collectionOrder;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public List<ItemCollectionSubItem> getSubItems() { return subItems; }
-
-    public void setSubItems(List<ItemCollectionSubItem> s) { this.subItems = s; }
 }

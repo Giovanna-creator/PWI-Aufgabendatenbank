@@ -1,10 +1,17 @@
 package com.datenbank.backend.entity;
 
 import jakarta.persistence.*;
-
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "license")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class License {
 
     @Id
@@ -14,27 +21,4 @@ public class License {
 
     @Column(name = "license", nullable = false, unique = true, columnDefinition = "TEXT")
     private String license;
-
-    public License() {
-    }
-
-    public License(String license) {
-        this.license = license;
-    }
-
-    public Integer getLicenseId() {
-        return licenseId;
-    }
-
-    public void setLicenseId(Integer licenseId) {
-        this.licenseId = licenseId;
-    }
-
-    public String getLicense() {
-        return license;
-    }
-
-    public void setLicense(String license) {
-        this.license = license;
-    }
 }

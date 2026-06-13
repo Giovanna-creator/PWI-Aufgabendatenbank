@@ -1,43 +1,18 @@
 package com.datenbank.backend.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-/**
- * Entspricht der Tabelle "item_collection_sub_item".
- *
- * Diese Join-Tabelle hat ein zusätzliches Attribut "position"
- * (die Reihenfolge der Aufgabe in der Sequenz), daher braucht sie
- * eine eigene Entity-Klasse mit Composite Key (statt @ManyToMany).
- *
- * @MapsId verknüpft die Teile des Composite Keys mit den
- * jeweiligen @ManyToOne-Beziehungen.
- */
 @Entity
 @Table(name = "item_collection_sub_item")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class ItemCollectionSubItem {
-
-    @EmbeddedId
-    private ItemCollectionSubItemId id;
-
-    /**
-     * @MapsId("itemCollectionId"): verbindet das Feld itemCollectionId
-     * des Composite Keys mit dieser Beziehung.
-     */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("itemCollectionId")
-    @JoinColumn(name = "item_collection_id")
-    private ItemCollection itemCollection;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("subitemId")
-    @JoinColumn(name = "subitem_id")
-    private Item subItem;
-
-    @Column(name = "position", nullable = false)
-    private Integer position;
-
-    public ItemCollectionSubItem() {
-    }
 
     public ItemCollectionSubItem(ItemCollection itemCollection, Item subItem, Integer position) {
         this.itemCollection = itemCollection;
@@ -49,35 +24,19 @@ public class ItemCollectionSubItem {
         );
     }
 
-    public ItemCollectionSubItemId getId() {
-        return id;
-    }
+    @EmbeddedId
+    private ItemCollectionSubItemId id;
 
-    public void setId(ItemCollectionSubItemId id) {
-        this.id = id;
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId("itemCollectionId")
+    @JoinColumn(name = "item_collection_id")
+    private ItemCollection itemCollection;
 
-    public ItemCollection getItemCollection() {
-        return itemCollection;
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId("subitemId")
+    @JoinColumn(name = "subitem_id")
+    private Item subItem;
 
-    public void setItemCollection(ItemCollection itemCollection) {
-        this.itemCollection = itemCollection;
-    }
-
-    public Item getSubItem() {
-        return subItem;
-    }
-
-    public void setSubItem(Item subItem) {
-        this.subItem = subItem;
-    }
-
-    public Integer getPosition() {
-        return position;
-    }
-
-    public void setPosition(Integer position) {
-        this.position = position;
-    }
+    @Column(name = "position")
+    private Integer position;
 }

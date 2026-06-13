@@ -1,13 +1,17 @@
 package com.datenbank.backend.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-/**
- * Entspricht der Tabelle "item_content_type".
- * Typen von Item-Inhalten (z.B. text/plain, application/json, image/png).
- */
 @Entity
 @Table(name = "item_content_type")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class ItemContentType {
 
     @Id
@@ -20,36 +24,4 @@ public class ItemContentType {
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
-
-    public ItemContentType() {
-    }
-
-    public ItemContentType(String itemContentTypeName, String description) {
-        this.itemContentTypeName = itemContentTypeName;
-        this.description = description;
-    }
-
-    public Integer getItemContentTypeId() {
-        return itemContentTypeId;
-    }
-
-    public void setItemContentTypeId(Integer itemContentTypeId) {
-        this.itemContentTypeId = itemContentTypeId;
-    }
-
-    public String getItemContentTypeName() {
-        return itemContentTypeName;
-    }
-
-    public void setItemContentTypeName(String itemContentTypeName) {
-        this.itemContentTypeName = itemContentTypeName;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
 }

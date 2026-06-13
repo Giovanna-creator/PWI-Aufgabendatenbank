@@ -3,14 +3,14 @@ package com.datenbank.backend.repository;
 import com.datenbank.backend.entity.ItemCollection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import java.util.List;
+
+import java.util.Optional;
 
 @Repository
 public interface ItemCollectionRepository
         extends JpaRepository<ItemCollection, Integer> {
 
-    List<ItemCollection> findByParentItemIsNull();
+    Optional<ItemCollection> findByParentItem_ItemId(Integer parentItemId);
 
-    // 1.3 prüfen ob ein Item eine Kollektion ist
     boolean existsByParentItem_ItemId(Integer itemId);
 }

@@ -88,7 +88,7 @@ COMMENT ON COLUMN item.root_item_id IS 'Self-Reference: Verweist auf die Ursprun
 CREATE TABLE item_collection (
     item_collection_id  SERIAL PRIMARY KEY,
     parent_item_id      INTEGER,
-    "order"             INTEGER,
+    "order"             BOOLEAN DEFAULT false,
     created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_item_collection_parent_item
         FOREIGN KEY (parent_item_id)
@@ -99,4 +99,4 @@ CREATE TABLE item_collection (
 CREATE INDEX idx_item_collection_parent_item ON item_collection(parent_item_id);
 
 COMMENT ON TABLE item_collection IS 'Sammlungen von Aufgaben (Lernpfade, Sequenzen)';
-COMMENT ON COLUMN item_collection."order" IS 'Reihenfolge der Collection (order ist ein reserviertes SQL-Wort, daher in Anführungszeichen)';
+COMMENT ON COLUMN item_collection."order" IS 'true=geordnete Sequenz (Positionen 1,2,3...), false=ungeordnete Gruppe (order ist ein reserviertes SQL-Wort, daher in Anführungszeichen)';
