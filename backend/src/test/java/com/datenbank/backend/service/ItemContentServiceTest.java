@@ -10,12 +10,20 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ItemContentServiceTest {
+
+    private static final UUID AUTHOR_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    private static final UUID LICENSE_ID = UUID.fromString("00000000-0000-0000-0000-000000000002");
+    private static final UUID CONTENT_TYPE_ID = UUID.fromString("00000000-0000-0000-0000-000000000003");
+    private static final UUID ITEM_ID = UUID.fromString("00000000-0000-0000-0000-000000000100");
+    private static final UUID CONTENT_1_ID = UUID.fromString("00000000-0000-0000-0000-000000000101");
+    private static final UUID CONTENT_2_ID = UUID.fromString("00000000-0000-0000-0000-000000000102");
 
     @Mock
     private ItemContentRepository contentRepository;
@@ -47,29 +55,29 @@ class ItemContentServiceTest {
     @BeforeEach
     void setUp() {
         Author author = new Author();
-        author.setAuthorId(1);
+        author.setAuthorId(AUTHOR_ID);
         author.setDescriptor("Test Author");
 
         License license = new License();
-        license.setLicenseId(1);
+        license.setLicenseId(LICENSE_ID);
         license.setLicense("CC-BY-4.0");
 
         ItemContentType contentType = new ItemContentType();
-        contentType.setItemContentTypeId(1);
+        contentType.setItemContentTypeId(CONTENT_TYPE_ID);
         contentType.setItemContentTypeName("text/markdown");
 
         item = new Item();
-        item.setItemId(100);
+        item.setItemId(ITEM_ID);
 
         content1 = new ItemContent();
-        content1.setItemContentId(1);
+        content1.setItemContentId(CONTENT_1_ID);
         content1.setAuthor(author);
         content1.setLicense(license);
         content1.setItemContentType(contentType);
         content1.setJsonSerializedContent("{\"text\": \"Content 1\"}");
 
         content2 = new ItemContent();
-        content2.setItemContentId(2);
+        content2.setItemContentId(CONTENT_2_ID);
         content2.setAuthor(author);
         content2.setLicense(license);
         content2.setItemContentType(contentType);
@@ -81,10 +89,10 @@ class ItemContentServiceTest {
 
     @Test
     void getContentsByItemId_returnsContents() {
-        when(itemContentsRepository.findByItem_ItemId(100))
+        when(itemContentsRepository.findByItem_ItemId(ITEM_ID))
                 .thenReturn(List.of(link1, link2));
 
-        List<ItemContentResponseDto> result = service.getContentsByItemId(100);
+        List<ItemContentResponseDto> result = service.getContentsByItemId(ITEM_ID);
 
         assertEquals(2, result.size());
         assertEquals("{\"text\": \"Content 1\"}", result.get(0).getJsonSerializedContent());
@@ -93,10 +101,10 @@ class ItemContentServiceTest {
 
     @Test
     void getContentsByItemId_noContents_returnsEmptyList() {
-        when(itemContentsRepository.findByItem_ItemId(100))
+        when(itemContentsRepository.findByItem_ItemId(ITEM_ID))
                 .thenReturn(List.of());
 
-        List<ItemContentResponseDto> result = service.getContentsByItemId(100);
+        List<ItemContentResponseDto> result = service.getContentsByItemId(ITEM_ID);
 
         assertTrue(result.isEmpty());
     }

@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/collections")
@@ -34,7 +35,7 @@ public class ItemCollectionController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ItemCollectionResponseDto> getById(@PathVariable Integer id) {
+    public ResponseEntity<ItemCollectionResponseDto> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(collectionService.getById(id));
     }
 
@@ -47,13 +48,13 @@ public class ItemCollectionController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ItemCollectionResponseDto> update(
-            @PathVariable Integer id,
+            @PathVariable UUID id,
             @Valid @RequestBody ItemCollectionCreateDto dto) {
         return ResponseEntity.ok(collectionService.update(id, dto));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Integer id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
         collectionService.delete(id);
         return ResponseEntity.noContent().build();
     }
@@ -64,7 +65,7 @@ public class ItemCollectionController {
      */
     @GetMapping("/{id}/items")
     public ResponseEntity<List<CollectionSubItemDto>> getSubItems(
-            @PathVariable Integer id) {
+            @PathVariable UUID id) {
         return ResponseEntity.ok(
             collectionService.getSubItemsForCollection(id));
     }
@@ -77,7 +78,7 @@ public class ItemCollectionController {
      */
     @PutMapping("/{id}/order")
     public ResponseEntity<ItemCollectionResponseDto> toggleOrder(
-            @PathVariable Integer id,
+            @PathVariable UUID id,
             @Valid @RequestBody OrderToggleDto dto) {
         return ResponseEntity.ok(
             collectionService.toggleOrder(id, dto.getOrder()));
@@ -90,8 +91,8 @@ public class ItemCollectionController {
      */
     @PutMapping("/{id}/items/{itemId}/position")
     public ResponseEntity<Void> updateSubItemPosition(
-            @PathVariable Integer id,
-            @PathVariable Integer itemId,
+            @PathVariable UUID id,
+            @PathVariable UUID itemId,
             @Valid @RequestBody PositionUpdateDto dto) {
         collectionService.updateSubItemPosition(id, itemId, dto.getPosition());
         return ResponseEntity.noContent().build();
@@ -103,8 +104,8 @@ public class ItemCollectionController {
      */
     @DeleteMapping("/{id}/items/{itemId}")
     public ResponseEntity<Void> removeItemFromCollection(
-            @PathVariable Integer id,
-            @PathVariable Integer itemId) {
+            @PathVariable UUID id,
+            @PathVariable UUID itemId) {
         collectionService.removeItemFromCollection(id, itemId);
         return ResponseEntity.noContent().build();
     }

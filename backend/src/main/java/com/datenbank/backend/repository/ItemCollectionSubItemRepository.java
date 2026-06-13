@@ -4,6 +4,7 @@ import com.datenbank.backend.entity.ItemCollectionSubItemId;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.UUID;
 
 @Repository
 public interface ItemCollectionSubItemRepository extends JpaRepository<ItemCollectionSubItem, ItemCollectionSubItemId> {
@@ -13,5 +14,5 @@ public interface ItemCollectionSubItemRepository extends JpaRepository<ItemColle
      */
     List<ItemCollectionSubItem> 
         findByCollection_ItemCollectionIdOrderByPositionAsc(
-            Integer collectionId);
+            UUID collectionId);
 }

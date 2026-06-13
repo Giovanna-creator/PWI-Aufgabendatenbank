@@ -1,12 +1,14 @@
 package com.datenbank.backend.dto;
 
+import java.util.UUID;
+
 /**
  * DTO für ein SubItem einer Kollektion.
  * Enthält Position und optional die vollständigen Item-Daten.
  */
 public class CollectionSubItemDto {
 
-    private Integer subItemId;
+    private UUID subItemId;
     private Integer position;
 
     /**
@@ -17,8 +19,8 @@ public class CollectionSubItemDto {
 
     public CollectionSubItemDto() {}
 
-    public Integer getSubItemId() { return subItemId; }
-    public void setSubItemId(Integer id) { this.subItemId = id; }
+    public UUID getSubItemId() { return subItemId; }
+    public void setSubItemId(UUID id) { this.subItemId = id; }
 
     public Integer getPosition() { return position; }
     public void setPosition(Integer p) { this.position = p; }

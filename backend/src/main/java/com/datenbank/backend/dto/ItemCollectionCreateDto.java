@@ -3,6 +3,7 @@ package com.datenbank.backend.dto;
 import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * DTO für das Erstellen und Aktualisieren einer Kollektion.
@@ -18,7 +19,7 @@ public class ItemCollectionCreateDto {
     /**
      * Optional: Verweis auf das übergeordnete Item (Eltern-Kollektion).
      */
-    private Integer parentItemId;
+    private UUID parentItemId;
 
     /**
      * Optional: Reihenfolge der Kollektion.
@@ -40,12 +41,12 @@ public class ItemCollectionCreateDto {
     public static class SubItemDto {
 
         @NotNull(message = "SubItem ID ist Pflicht")
-        private Integer subitemId;
+        private UUID subitemId;
 
         private Integer position;  // null erlaubt für ungeordnete Collections
 
-        public Integer getSubitemId() { return subitemId; }
-        public void setSubitemId(Integer id) { this.subitemId = id; }
+        public UUID getSubitemId() { return subitemId; }
+        public void setSubitemId(UUID id) { this.subitemId = id; }
 
         public Integer getPosition() { return position; }
         public void setPosition(Integer p) { this.position = p; }
@@ -53,8 +54,8 @@ public class ItemCollectionCreateDto {
 
     public ItemCollectionCreateDto() {}
 
-    public Integer getParentItemId() { return parentItemId; }
-    public void setParentItemId(Integer id) { this.parentItemId = id; }
+    public UUID getParentItemId() { return parentItemId; }
+    public void setParentItemId(UUID id) { this.parentItemId = id; }
 
     public Boolean getOrder() { return order; }
     public void setOrder(Boolean o) { this.order = o; }

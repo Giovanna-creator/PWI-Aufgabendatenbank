@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * REST-Controller für die Item-Entität.
@@ -26,7 +27,7 @@ public class ItemController {
 
     // GET /api/items/{id}
     @GetMapping("/{id}")
-    public ResponseEntity<ItemResponseDto> getById(@PathVariable Integer id) {
+    public ResponseEntity<ItemResponseDto> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(itemService.getItemById(id));
     }
 
@@ -39,14 +40,14 @@ public class ItemController {
     // PUT /api/items/{id}
     @PutMapping("/{id}")
     public ResponseEntity<ItemResponseDto> update(
-            @PathVariable Integer id,
+            @PathVariable UUID id,
             @Valid @RequestBody ItemCreateDto dto) {
         return ResponseEntity.ok(itemService.updateItem(id, dto));
     }
 
     // DELETE /api/items/{id}
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Integer id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
         itemService.deleteItem(id);
         return ResponseEntity.noContent().build();
     }
@@ -59,7 +60,7 @@ public class ItemController {
     @GetMapping
     public ResponseEntity<List<ItemResponseDto>> getAll(
             @RequestParam(required = false) Boolean root,
-            @RequestParam(required = false) Integer rootItemId) {
+            @RequestParam(required = false) UUID rootItemId) {
 
         // root=true hat Vorrang
         if (Boolean.TRUE.equals(root)) {

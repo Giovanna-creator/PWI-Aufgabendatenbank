@@ -43,10 +43,7 @@ public class ItemCollectionSubItem {
         this.itemCollection = itemCollection;
         this.subItem = subItem;
         this.position = position;
-        this.id = new ItemCollectionSubItemId(
-                itemCollection.getItemCollectionId(),
-                subItem.getItemId()
-        );
+        this.id = new ItemCollectionSubItemId(itemCollection.getItemCollectionId(), subItem.getItemId());
     }
 
     public ItemCollectionSubItemId getId() {

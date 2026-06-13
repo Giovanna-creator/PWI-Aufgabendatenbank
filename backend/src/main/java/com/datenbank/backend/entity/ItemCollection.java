@@ -3,6 +3,7 @@ package com.datenbank.backend.entity;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 
 /**
@@ -18,9 +19,9 @@ import java.util.List;
 public class ItemCollection {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "item_collection_id")
-    private Integer itemCollectionId;
+    private UUID itemCollectionId;
 
     /**
      * Optionale Verbindung zu einem übergeordneten Item.
@@ -61,11 +62,11 @@ public class ItemCollection {
     public ItemCollection() {
     }
 
-    public Integer getItemCollectionId() {
+    public UUID getItemCollectionId() {
         return itemCollectionId;
     }
 
-    public void setItemCollectionId(Integer itemCollectionId) {
+    public void setItemCollectionId(UUID itemCollectionId) {
         this.itemCollectionId = itemCollectionId;
     }
 
