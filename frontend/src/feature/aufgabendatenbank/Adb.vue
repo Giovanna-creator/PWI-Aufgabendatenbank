@@ -34,7 +34,7 @@ const store = useExerciseStore()
 const { sidebarWidth, containerRef, startResizing } = useSidebarResizer()
 
 onMounted(() => {
-  store.validate()
+  store.loadTree()
 })
 </script>
 
