@@ -83,7 +83,7 @@ class ItemCollectionServiceTest {
     @Test
     void toggleOrder_true_assignsSequentialPositions() {
         when(collectionRepository.findById(COLLECTION_ID)).thenReturn(Optional.of(collection));
-        when(subItemRepository.findByCollection_ItemCollectionIdOrderByPositionAsc(COLLECTION_ID))
+        when(subItemRepository.findByItemCollection_ItemCollectionIdOrderByPositionAsc(COLLECTION_ID))
                 .thenReturn(subItems);
         when(collectionRepository.save(collection)).thenReturn(collection);
         when(subItemRepository.saveAll(subItems)).thenReturn(subItems);
@@ -103,7 +103,7 @@ class ItemCollectionServiceTest {
         sub3.setPosition(3);
 
         when(collectionRepository.findById(COLLECTION_ID)).thenReturn(Optional.of(collection));
-        when(subItemRepository.findByCollection_ItemCollectionIdOrderByPositionAsc(COLLECTION_ID))
+        when(subItemRepository.findByItemCollection_ItemCollectionIdOrderByPositionAsc(COLLECTION_ID))
                 .thenReturn(subItems);
         when(collectionRepository.save(collection)).thenReturn(collection);
         when(subItemRepository.saveAll(subItems)).thenReturn(subItems);
@@ -132,7 +132,7 @@ class ItemCollectionServiceTest {
         sub2.setPosition(2);
         sub3.setPosition(3);
 
-        when(subItemRepository.findByCollection_ItemCollectionIdOrderByPositionAsc(COLLECTION_ID))
+        when(subItemRepository.findByItemCollection_ItemCollectionIdOrderByPositionAsc(COLLECTION_ID))
                 .thenReturn(new ArrayList<>(List.of(sub1, sub2, sub3)));
 
         service.updateSubItemPosition(COLLECTION_ID, ITEM_1_ID, 3);
@@ -149,7 +149,7 @@ class ItemCollectionServiceTest {
         sub2.setPosition(2);
         sub3.setPosition(3);
 
-        when(subItemRepository.findByCollection_ItemCollectionIdOrderByPositionAsc(COLLECTION_ID))
+        when(subItemRepository.findByItemCollection_ItemCollectionIdOrderByPositionAsc(COLLECTION_ID))
                 .thenReturn(new ArrayList<>(List.of(sub1, sub2, sub3)));
 
         service.updateSubItemPosition(COLLECTION_ID, ITEM_2_ID, 5);
@@ -161,7 +161,7 @@ class ItemCollectionServiceTest {
 
     @Test
     void updateSubItemPosition_itemNotFound_throws404() {
-        when(subItemRepository.findByCollection_ItemCollectionIdOrderByPositionAsc(COLLECTION_ID))
+        when(subItemRepository.findByItemCollection_ItemCollectionIdOrderByPositionAsc(COLLECTION_ID))
                 .thenReturn(new ArrayList<>(List.of(sub1, sub2)));
 
         assertThrows(ResponseStatusException.class,
@@ -176,7 +176,7 @@ class ItemCollectionServiceTest {
         sub2.setPosition(2);
         sub3.setPosition(3);
 
-        when(subItemRepository.findByCollection_ItemCollectionIdOrderByPositionAsc(COLLECTION_ID))
+        when(subItemRepository.findByItemCollection_ItemCollectionIdOrderByPositionAsc(COLLECTION_ID))
                 .thenReturn(new ArrayList<>(List.of(sub1, sub2, sub3)));
 
         service.removeItemFromCollection(COLLECTION_ID, ITEM_2_ID);
@@ -192,7 +192,7 @@ class ItemCollectionServiceTest {
         sub2.setPosition(2);
         sub3.setPosition(3);
 
-        when(subItemRepository.findByCollection_ItemCollectionIdOrderByPositionAsc(COLLECTION_ID))
+        when(subItemRepository.findByItemCollection_ItemCollectionIdOrderByPositionAsc(COLLECTION_ID))
                 .thenReturn(new ArrayList<>(List.of(sub1, sub2, sub3)));
 
         service.removeItemFromCollection(COLLECTION_ID, ITEM_3_ID);
@@ -204,7 +204,7 @@ class ItemCollectionServiceTest {
 
     @Test
     void removeItemFromCollection_itemNotFound_throws404() {
-        when(subItemRepository.findByCollection_ItemCollectionIdOrderByPositionAsc(COLLECTION_ID))
+        when(subItemRepository.findByItemCollection_ItemCollectionIdOrderByPositionAsc(COLLECTION_ID))
                 .thenReturn(new ArrayList<>(List.of(sub1, sub2)));
 
         assertThrows(ResponseStatusException.class,

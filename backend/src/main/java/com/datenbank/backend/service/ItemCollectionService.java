@@ -124,7 +124,7 @@ public class ItemCollectionService {
         collection.setCollectionOrder(newOrder);
 
         List<ItemCollectionSubItem> subItems = subItemRepository
-            .findByCollection_ItemCollectionIdOrderByPositionAsc(collectionId);
+            .findByItemCollection_ItemCollectionIdOrderByPositionAsc(collectionId);
 
         for (int i = 0; i < subItems.size(); i++) {
             subItems.get(i).setPosition(newOrder ? i + 1 : null);
@@ -141,7 +141,7 @@ public class ItemCollectionService {
     @Transactional
     public void updateSubItemPosition(UUID collectionId, UUID itemId, Integer newPosition) {
         List<ItemCollectionSubItem> subItems = subItemRepository
-            .findByCollection_ItemCollectionIdOrderByPositionAsc(collectionId);
+            .findByItemCollection_ItemCollectionIdOrderByPositionAsc(collectionId);
 
         // Altes Element finden
         ItemCollectionSubItem moved = subItems.stream()
@@ -184,7 +184,7 @@ public class ItemCollectionService {
         Integer position = null;
         if (Boolean.TRUE.equals(collection.getCollectionOrder())) {
             List<ItemCollectionSubItem> existing = subItemRepository
-                    .findByCollection_ItemCollectionIdOrderByPositionAsc(collectionId);
+                    .findByItemCollection_ItemCollectionIdOrderByPositionAsc(collectionId);
             position = existing.size() + 1;
         }
 
@@ -203,7 +203,7 @@ public class ItemCollectionService {
     @Transactional
     public void removeItemFromCollection(UUID collectionId, UUID itemId) {
         List<ItemCollectionSubItem> subItems = subItemRepository
-            .findByCollection_ItemCollectionIdOrderByPositionAsc(collectionId);
+            .findByItemCollection_ItemCollectionIdOrderByPositionAsc(collectionId);
 
         ItemCollectionSubItem toRemove = subItems.stream()
             .filter(s -> s.getSubItem().getItemId().equals(itemId))
@@ -240,7 +240,7 @@ public class ItemCollectionService {
         }
 
         return subItemRepository
-            .findByCollection_ItemCollectionIdOrderByPositionAsc(collectionId)
+            .findByItemCollection_ItemCollectionIdOrderByPositionAsc(collectionId)
             .stream()
             .map(sub -> {
                 CollectionSubItemDto dto = new CollectionSubItemDto();

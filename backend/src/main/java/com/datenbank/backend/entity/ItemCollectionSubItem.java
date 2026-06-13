@@ -33,7 +33,7 @@ public class ItemCollectionSubItem {
     @JoinColumn(name = "subitem_id")
     private Item subItem;
 
-    @Column(name = "position", nullable = false)
+    @Column(name = "position")
     private Integer position;
 
     public ItemCollectionSubItem() {
