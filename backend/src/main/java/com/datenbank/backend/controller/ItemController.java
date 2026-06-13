@@ -53,6 +53,15 @@ public class ItemController {
     }
 
     /**
+     * Konvertiert ein Item in eine Collection.
+     * POST /api/items/{id}/collection → 200 OK
+     */
+    @PostMapping("/{id}/collection")
+    public ResponseEntity<ItemResponseDto> convertToCollection(@PathVariable UUID id) {
+        return ResponseEntity.ok(itemService.convertToCollection(id));
+    }
+
+    /**
      * GET /api/items              → alle Items
      * GET /api/items?root=true    → nur Root-Items
      * GET /api/items?rootItemId=5 → Kinder von Item 5

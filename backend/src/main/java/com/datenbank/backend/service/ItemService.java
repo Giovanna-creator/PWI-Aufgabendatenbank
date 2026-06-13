@@ -143,6 +143,22 @@ public class ItemService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Konvertiert ein Item in eine Collection.
+     * Erstellt eine ItemCollection, die auf dieses Item verweist.
+     */
+    @Transactional
+    public ItemResponseDto convertToCollection(UUID itemId) {
+        Item item = findItemOrThrow(itemId);
+
+        ItemCollection collection = new ItemCollection();
+        collection.setParentItem(item);
+        collection.setCollectionOrder(false);
+        collectionRepository.save(collection);
+
+        return convertToResponseDto(item);
+    }
+
     // =========================================================================
     // Hilfsmethoden
     // =========================================================================

@@ -21,6 +21,7 @@ public class ItemContentService {
 
     private final ItemContentRepository contentRepository;
     private final ItemContentsRepository itemContentsRepository;
+    private final ItemRepository itemRepository;
     private final AuthorRepository authorRepository;
     private final LicenseRepository licenseRepository;
     private final ItemContentTypeRepository contentTypeRepository;
@@ -29,6 +30,7 @@ public class ItemContentService {
     public ItemContentService(
             ItemContentRepository contentRepository,
             ItemContentsRepository itemContentsRepository,
+            ItemRepository itemRepository,
             AuthorRepository authorRepository,
             LicenseRepository licenseRepository,
             ItemContentTypeRepository contentTypeRepository,
@@ -36,6 +38,7 @@ public class ItemContentService {
 
         this.contentRepository = contentRepository;
         this.itemContentsRepository = itemContentsRepository;
+        this.itemRepository = itemRepository;
         this.authorRepository = authorRepository;
         this.licenseRepository = licenseRepository;
         this.contentTypeRepository = contentTypeRepository;
@@ -89,6 +92,26 @@ public class ItemContentService {
         applyDtoToEntity(dto, content);
 
         ItemContent saved = contentRepository.save(content);
+
+        return convertToResponseDto(saved);
+    }
+
+    /**
+     * Erstellt einen neuen Content und verknüpft ihn mit einem Item.
+     * Der Purpose (z. B. "Aufgabenstellung") wird im ItemContents-Join gespeichert.
+     */
+    @Transactional
+    public ItemContentResponseDto createForItem(UUID itemId, ItemContentCreateDto dto) {
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Item nicht gefunden"));
+
+        ItemContent content = new ItemContent();
+        applyDtoToEntity(dto, content);
+        ItemContent saved = contentRepository.save(content);
+
+        ItemContents link = new ItemContents(item, saved, dto.getPurpose());
+        itemContentsRepository.save(link);
 
         return convertToResponseDto(saved);
     }

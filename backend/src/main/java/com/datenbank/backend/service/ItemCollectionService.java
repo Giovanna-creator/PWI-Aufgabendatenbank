@@ -171,6 +171,33 @@ public class ItemCollectionService {
     }
 
     /**
+     * Fügt ein Item zu einer Kollektion hinzu.
+     * Bei geordneten Collections wird die Position automatisch vergeben.
+     */
+    @Transactional
+    public CollectionSubItemDto addItemToCollection(UUID collectionId, UUID itemId) {
+        ItemCollection collection = findCollectionOrThrow(collectionId);
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Item nicht gefunden"));
+
+        Integer position = null;
+        if (Boolean.TRUE.equals(collection.getCollectionOrder())) {
+            List<ItemCollectionSubItem> existing = subItemRepository
+                    .findByCollection_ItemCollectionIdOrderByPositionAsc(collectionId);
+            position = existing.size() + 1;
+        }
+
+        ItemCollectionSubItem subItem = new ItemCollectionSubItem(collection, item, position);
+        subItemRepository.save(subItem);
+
+        CollectionSubItemDto dto = new CollectionSubItemDto();
+        dto.setSubItemId(item.getItemId());
+        dto.setPosition(position);
+        return dto;
+    }
+
+    /**
      * Entfernt ein Item aus einer Kollektion.
      */
     @Transactional

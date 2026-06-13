@@ -27,6 +27,12 @@ public class ItemContentCreateDto {
     private UUID authorId;
 
     /**
+     * Optional: Zweck des Contents (z. B. "Aufgabenstellung", "Hinweis", "Lösung").
+     * Wird nur beim Verknüpfen mit einem Item benötigt (POST /by-item/{itemId}).
+     */
+    private String purpose;
+
+    /**
      * Optional: JSON-Inhalt (z. B. Aufgabenstruktur).
      */
     private String jsonSerializedContent;
@@ -67,6 +73,9 @@ public class ItemContentCreateDto {
     public void setAuthorId(UUID authorId) {
         this.authorId = authorId;
     }
+
+    public String getPurpose() { return purpose; }
+    public void setPurpose(String purpose) { this.purpose = purpose; }
 
     public String getJsonSerializedContent() {
         return jsonSerializedContent;

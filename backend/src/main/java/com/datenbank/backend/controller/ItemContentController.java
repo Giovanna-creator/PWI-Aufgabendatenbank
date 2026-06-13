@@ -100,6 +100,19 @@ public class ItemContentController {
     }
 
     /**
+     * Erstellt einen neuen Content und verknüpft ihn mit einem Item.
+     * POST /api/contents/by-item/{itemId} → 201 Created
+     * Der Purpose (z. B. "Aufgabenstellung") wird im body mitgegeben.
+     */
+    @PostMapping("/by-item/{itemId}")
+    public ResponseEntity<ItemContentResponseDto> createForItem(
+            @PathVariable UUID itemId,
+            @Valid @RequestBody ItemContentCreateDto dto) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(contentService.createForItem(itemId, dto));
+    }
+
+    /**
      * Lädt eine Datei (Bild, PDF) als Blob hoch.
      * POST /api/contents/{id}/blob → 200 OK
      *

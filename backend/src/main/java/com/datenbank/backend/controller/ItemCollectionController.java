@@ -1,5 +1,6 @@
 package com.datenbank.backend.controller;
 
+import com.datenbank.backend.dto.AddItemToCollectionDto;
 import com.datenbank.backend.dto.CollectionSubItemDto;
 import com.datenbank.backend.dto.ItemCollectionCreateDto;
 import com.datenbank.backend.dto.ItemCollectionResponseDto;
@@ -68,6 +69,19 @@ public class ItemCollectionController {
             @PathVariable UUID id) {
         return ResponseEntity.ok(
             collectionService.getSubItemsForCollection(id));
+    }
+
+    /**
+     * Fügt ein Item zu einer Kollektion hinzu.
+     * POST /api/collections/{id}/items → 201 Created
+     * Body: { "itemId": "uuid" }
+     */
+    @PostMapping("/{id}/items")
+    public ResponseEntity<CollectionSubItemDto> addItem(
+            @PathVariable UUID id,
+            @Valid @RequestBody AddItemToCollectionDto dto) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(collectionService.addItemToCollection(id, dto.getItemId()));
     }
 
     /**
