@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * DTO für das Erstellen und Aktualisieren eines ItemContents.
@@ -17,13 +18,13 @@ import java.util.Set;
 public class ItemContentCreateDto {
 
     @NotNull(message = "License ist Pflicht")
-    private Integer licenseId;
+    private UUID licenseId;
 
     @NotNull(message = "ItemContentType ist Pflicht")
-    private Integer itemContentTypeId;
+    private UUID itemContentTypeId;
 
     @NotNull(message = "Author ist Pflicht")
-    private Integer authorId;
+    private UUID authorId;
 
     /**
      * Optional: JSON-Inhalt (z. B. Aufgabenstruktur).
@@ -38,32 +39,32 @@ public class ItemContentCreateDto {
     /**
      * Optional: Verknüpfte Tags.
      */
-    private Set<Integer> tagIds = new HashSet<>();
+    private Set<UUID> tagIds = new HashSet<>();
 
     public ItemContentCreateDto() {
     }
 
-    public Integer getLicenseId() {
+    public UUID getLicenseId() {
         return licenseId;
     }
 
-    public void setLicenseId(Integer licenseId) {
+    public void setLicenseId(UUID licenseId) {
         this.licenseId = licenseId;
     }
 
-    public Integer getItemContentTypeId() {
+    public UUID getItemContentTypeId() {
         return itemContentTypeId;
     }
 
-    public void setItemContentTypeId(Integer itemContentTypeId) {
+    public void setItemContentTypeId(UUID itemContentTypeId) {
         this.itemContentTypeId = itemContentTypeId;
     }
 
-    public Integer getAuthorId() {
+    public UUID getAuthorId() {
         return authorId;
     }
 
-    public void setAuthorId(Integer authorId) {
+    public void setAuthorId(UUID authorId) {
         this.authorId = authorId;
     }
 
@@ -83,11 +84,11 @@ public class ItemContentCreateDto {
         this.blobSerializedContent = blobSerializedContent;
     }
 
-    public Set<Integer> getTagIds() {
+    public Set<UUID> getTagIds() {
         return tagIds;
     }
 
-    public void setTagIds(Set<Integer> tagIds) {
+    public void setTagIds(Set<UUID> tagIds) {
         this.tagIds = tagIds;
     }
 }

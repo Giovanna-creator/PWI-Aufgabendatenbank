@@ -1,6 +1,7 @@
 package com.datenbank.backend.entity;
 
 import jakarta.persistence.*;
+import java.util.UUID;
 
 /**
  * Entspricht der Tabelle "item_content_type".
@@ -11,9 +12,9 @@ import jakarta.persistence.*;
 public class ItemContentType {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "item_content_type_id")
-    private Integer itemContentTypeId;
+    private UUID itemContentTypeId;
 
     @Column(name = "item_content_type_name", nullable = false, columnDefinition = "TEXT")
     private String itemContentTypeName;
@@ -29,11 +30,11 @@ public class ItemContentType {
         this.description = description;
     }
 
-    public Integer getItemContentTypeId() {
+    public UUID getItemContentTypeId() {
         return itemContentTypeId;
     }
 
-    public void setItemContentTypeId(Integer itemContentTypeId) {
+    public void setItemContentTypeId(UUID itemContentTypeId) {
         this.itemContentTypeId = itemContentTypeId;
     }
 

@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Zusammengesetzter Primärschlüssel (Composite Key) für
@@ -19,32 +20,32 @@ import java.util.Objects;
 public class ItemCollectionSubItemId implements Serializable {
 
     @Column(name = "item_collection_id")
-    private Integer itemCollectionId;
+    private UUID itemCollectionId;
 
     @Column(name = "subitem_id")
-    private Integer subitemId;
+    private UUID subitemId;
 
     public ItemCollectionSubItemId() {
     }
 
-    public ItemCollectionSubItemId(Integer itemCollectionId, Integer subitemId) {
+    public ItemCollectionSubItemId(UUID itemCollectionId, UUID subitemId) {
         this.itemCollectionId = itemCollectionId;
         this.subitemId = subitemId;
     }
 
-    public Integer getItemCollectionId() {
+    public UUID getItemCollectionId() {
         return itemCollectionId;
     }
 
-    public void setItemCollectionId(Integer itemCollectionId) {
+    public void setItemCollectionId(UUID itemCollectionId) {
         this.itemCollectionId = itemCollectionId;
     }
 
-    public Integer getSubitemId() {
+    public UUID getSubitemId() {
         return subitemId;
     }
 
-    public void setSubitemId(Integer subitemId) {
+    public void setSubitemId(UUID subitemId) {
         this.subitemId = subitemId;
     }
 

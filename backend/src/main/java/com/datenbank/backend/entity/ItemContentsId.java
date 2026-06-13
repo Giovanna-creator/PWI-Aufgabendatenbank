@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import java.io.Serializable;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Zusammengesetzter Primärschlüssel für die Tabelle "item_contents".
@@ -13,32 +14,32 @@ import java.util.Objects;
 public class ItemContentsId implements Serializable {
 
     @Column(name = "item_id")
-    private Integer itemId;
+    private UUID itemId;
 
     @Column(name = "item_content_id")
-    private Integer itemContentId;
+    private UUID itemContentId;
 
     public ItemContentsId() {
     }
 
-    public ItemContentsId(Integer itemId, Integer itemContentId) {
+    public ItemContentsId(UUID itemId, UUID itemContentId) {
         this.itemId = itemId;
         this.itemContentId = itemContentId;
     }
 
-    public Integer getItemId() {
+    public UUID getItemId() {
         return itemId;
     }
 
-    public void setItemId(Integer itemId) {
+    public void setItemId(UUID itemId) {
         this.itemId = itemId;
     }
 
-    public Integer getItemContentId() {
+    public UUID getItemContentId() {
         return itemContentId;
     }
 
-    public void setItemContentId(Integer itemContentId) {
+    public void setItemContentId(UUID itemContentId) {
         this.itemContentId = itemContentId;
     }
 

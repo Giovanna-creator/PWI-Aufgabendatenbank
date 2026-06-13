@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * REST-Controller für ItemContent.
@@ -52,10 +53,21 @@ public class ItemContentController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ItemContentResponseDto> getById(
-            @PathVariable Integer id) {
+            @PathVariable UUID id) {
 
         return ResponseEntity.ok(
                 contentService.getById(id));
+    }
+
+    /**
+     * Liefert alle Contents eines Items (über item_contents Join-Tabelle).
+     * GET /api/contents/by-item/{itemId} → 200 OK
+     */
+    @GetMapping("/by-item/{itemId}")
+    public ResponseEntity<List<ItemContentResponseDto>> getContentsByItemId(
+            @PathVariable UUID itemId) {
+        return ResponseEntity.ok(
+                contentService.getContentsByItemId(itemId));
     }
 
     /**
@@ -65,7 +77,7 @@ public class ItemContentController {
      * Gibt die rohen Binärdaten zurück mit korrektem Content-Type.
      */
     @GetMapping("/{id}/blob")
-    public ResponseEntity<byte[]> getBlob(@PathVariable Integer id) {
+    public ResponseEntity<byte[]> getBlob(@PathVariable UUID id) {
         byte[] blob = contentService.getBlobById(id);
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
@@ -96,7 +108,7 @@ public class ItemContentController {
      */
     @PostMapping("/{id}/blob")
     public ResponseEntity<ItemContentResponseDto> uploadBlob(
-            @PathVariable Integer id,
+            @PathVariable UUID id,
             @RequestParam("file") MultipartFile file) throws IOException {
         return ResponseEntity.ok(
                 contentService.uploadBlob(id, file.getBytes()));
@@ -108,7 +120,7 @@ public class ItemContentController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ItemContentResponseDto> update(
-            @PathVariable Integer id,
+            @PathVariable UUID id,
             @Valid @RequestBody ItemContentCreateDto dto) {
 
         return ResponseEntity.ok(
@@ -121,7 +133,7 @@ public class ItemContentController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
-            @PathVariable Integer id) {
+            @PathVariable UUID id) {
 
         contentService.delete(id);
 

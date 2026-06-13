@@ -13,12 +13,14 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
 public class ItemContentService {
 
     private final ItemContentRepository contentRepository;
+    private final ItemContentsRepository itemContentsRepository;
     private final AuthorRepository authorRepository;
     private final LicenseRepository licenseRepository;
     private final ItemContentTypeRepository contentTypeRepository;
@@ -26,12 +28,14 @@ public class ItemContentService {
 
     public ItemContentService(
             ItemContentRepository contentRepository,
+            ItemContentsRepository itemContentsRepository,
             AuthorRepository authorRepository,
             LicenseRepository licenseRepository,
             ItemContentTypeRepository contentTypeRepository,
             TagRepository tagRepository) {
 
         this.contentRepository = contentRepository;
+        this.itemContentsRepository = itemContentsRepository;
         this.authorRepository = authorRepository;
         this.licenseRepository = licenseRepository;
         this.contentTypeRepository = contentTypeRepository;
@@ -49,9 +53,20 @@ public class ItemContentService {
     }
 
     @Transactional(readOnly = true)
-    public ItemContentResponseDto getById(Integer id) {
+    public ItemContentResponseDto getById(UUID id) {
         ItemContent content = findContentOrThrow(id);
         return convertToResponseDto(content);
+    }
+
+    /**
+     * Liefert alle Contents eines Items (über item_contents Join-Tabelle).
+     */
+    @Transactional(readOnly = true)
+    public List<ItemContentResponseDto> getContentsByItemId(UUID itemId) {
+        return itemContentsRepository.findByItem_ItemId(itemId)
+                .stream()
+                .map(ic -> convertToResponseDto(ic.getItemContent()))
+                .collect(Collectors.toList());
     }
     /**
      * Liefert die Blob-Daten eines Contents direkt als byte[].
@@ -59,7 +74,7 @@ public class ItemContentService {
      * Wirft 404 falls keine Blob-Daten vorhanden.
      */
     @Transactional(readOnly = true)
-    public byte[] getBlobById(Integer id) {
+    public byte[] getBlobById(UUID id) {
         ItemContent content = findContentOrThrow(id);
         if (content.getBlobSerializedContent() == null) {
             throw new ResponseStatusException(
@@ -80,7 +95,7 @@ public class ItemContentService {
 
     @Transactional
     public ItemContentResponseDto update(
-            Integer id,
+            UUID id,
             ItemContentCreateDto dto) {
 
         ItemContent content = findContentOrThrow(id);
@@ -97,7 +112,7 @@ public class ItemContentService {
      * Wirft 404, falls Content nicht gefunden.
      */
     @Transactional
-    public ItemContentResponseDto uploadBlob(Integer id, byte[] blob) {
+    public ItemContentResponseDto uploadBlob(UUID id, byte[] blob) {
         ItemContent content = findContentOrThrow(id);
         content.setBlobSerializedContent(blob);
         ItemContent saved = contentRepository.save(content);
@@ -105,7 +120,7 @@ public class ItemContentService {
     }
 
     @Transactional
-    public void delete(Integer id) {
+    public void delete(UUID id) {
 
         if (!contentRepository.existsById(id)) {
             throw new ResponseStatusException(
@@ -120,7 +135,7 @@ public class ItemContentService {
     // Hilfsmethoden
 
 
-    private ItemContent findContentOrThrow(Integer id) {
+    private ItemContent findContentOrThrow(UUID id) {
         return contentRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,

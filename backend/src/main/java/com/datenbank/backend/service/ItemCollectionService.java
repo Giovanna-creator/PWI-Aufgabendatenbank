@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -70,7 +71,7 @@ public class ItemCollectionService {
      * Wirft 404, falls nicht gefunden.
      */
     @Transactional(readOnly = true)
-    public ItemCollectionResponseDto getById(Integer id) {
+    public ItemCollectionResponseDto getById(UUID id) {
         ItemCollection collection = findCollectionOrThrow(id);
         return convertToResponseDto(collection);
     }
@@ -92,7 +93,7 @@ public class ItemCollectionService {
      */
     @Transactional
     public ItemCollectionResponseDto update(
-            Integer id, ItemCollectionCreateDto dto) {
+            UUID id, ItemCollectionCreateDto dto) {
         ItemCollection collection = findCollectionOrThrow(id);
         applyDtoToEntity(dto, collection);
         ItemCollection saved = collectionRepository.save(collection);
@@ -104,12 +105,93 @@ public class ItemCollectionService {
      * Wirft 404, falls nicht gefunden.
      */
     @Transactional
-    public void delete(Integer id) {
+    public void delete(UUID id) {
         if (!collectionRepository.existsById(id)) {
             throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND, "Collection nicht gefunden");
         }
         collectionRepository.deleteById(id);
+    }
+
+    /**
+     * Schaltet die Reihenfolge einer Kollektion um.
+     * true → geordnet (Positionen 1, 2, 3...)
+     * false → ungeordnet (Positionen null)
+     */
+    @Transactional
+    public ItemCollectionResponseDto toggleOrder(UUID collectionId, Boolean newOrder) {
+        ItemCollection collection = findCollectionOrThrow(collectionId);
+        collection.setCollectionOrder(newOrder);
+
+        List<ItemCollectionSubItem> subItems = subItemRepository
+            .findByCollection_ItemCollectionIdOrderByPositionAsc(collectionId);
+
+        for (int i = 0; i < subItems.size(); i++) {
+            subItems.get(i).setPosition(newOrder ? i + 1 : null);
+        }
+
+        subItemRepository.saveAll(subItems);
+        return convertToResponseDto(collectionRepository.save(collection));
+    }
+
+    /**
+     * Aktualisiert die Position eines SubItems in einer Kollektion.
+     * Berechnet die Positionen aller Geschwister-Items neu.
+     */
+    @Transactional
+    public void updateSubItemPosition(UUID collectionId, UUID itemId, Integer newPosition) {
+        List<ItemCollectionSubItem> subItems = subItemRepository
+            .findByCollection_ItemCollectionIdOrderByPositionAsc(collectionId);
+
+        // Altes Element finden
+        ItemCollectionSubItem moved = subItems.stream()
+            .filter(s -> s.getSubItem().getItemId().equals(itemId))
+            .findFirst()
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "SubItem nicht gefunden"));
+
+        // Aus Liste entfernen
+        subItems.remove(moved);
+        moved.setPosition(newPosition);
+
+        // An neue Position einfügen
+        int targetIndex = newPosition != null ? newPosition - 1 : subItems.size();
+        if (targetIndex >= 0 && targetIndex <= subItems.size()) {
+            subItems.add(targetIndex, moved);
+        } else {
+            subItems.add(moved);
+        }
+
+        // Alle Positionen neu berechnen (1, 2, 3...)
+        for (int i = 0; i < subItems.size(); i++) {
+            subItems.get(i).setPosition(i + 1);
+        }
+
+        subItemRepository.saveAll(subItems);
+    }
+
+    /**
+     * Entfernt ein Item aus einer Kollektion.
+     */
+    @Transactional
+    public void removeItemFromCollection(UUID collectionId, UUID itemId) {
+        List<ItemCollectionSubItem> subItems = subItemRepository
+            .findByCollection_ItemCollectionIdOrderByPositionAsc(collectionId);
+
+        ItemCollectionSubItem toRemove = subItems.stream()
+            .filter(s -> s.getSubItem().getItemId().equals(itemId))
+            .findFirst()
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "SubItem nicht gefunden in dieser Collection"));
+
+        subItemRepository.delete(toRemove);
+
+        // Positionen der verbleibenden SubItems neu berechnen
+        subItems.remove(toRemove);
+        for (int i = 0; i < subItems.size(); i++) {
+            subItems.get(i).setPosition(i + 1);
+        }
+        subItemRepository.saveAll(subItems);
     }
 
 
@@ -122,7 +204,7 @@ public class ItemCollectionService {
      */
     @Transactional(readOnly = true)
     public List<CollectionSubItemDto> getSubItemsForCollection(
-            Integer collectionId) {
+            UUID collectionId) {
 
         // Prüfen ob Collection existiert
         if (!collectionRepository.existsById(collectionId)) {
@@ -156,7 +238,7 @@ public class ItemCollectionService {
     /**
      * Holt eine Kollektion aus der DB oder wirft 404.
      */
-    private ItemCollection findCollectionOrThrow(Integer id) {
+    private ItemCollection findCollectionOrThrow(UUID id) {
         return collectionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Collection nicht gefunden"));
@@ -182,7 +264,7 @@ public class ItemCollectionService {
         }
 
         // Reihenfolge setzen
-        collection.setCollectionOrder(dto.getCollectionOrder());
+        collection.setCollectionOrder(dto.getOrder());
 
         // Sub-Items setzen mit Position
         if (dto.getSubItems() != null && !dto.getSubItems().isEmpty()) {
@@ -218,7 +300,7 @@ public class ItemCollectionService {
         ItemCollectionResponseDto dto = new ItemCollectionResponseDto();
 
         dto.setItemCollectionId(collection.getItemCollectionId());
-        dto.setCollectionOrder(collection.getCollectionOrder());
+        dto.setOrder(collection.getCollectionOrder());
         dto.setCreatedAt(collection.getCreatedAt());
 
         // Eltern-Item ID
