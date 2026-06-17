@@ -8,7 +8,8 @@ import type {
   CreateItemPayload,
   CreateContentPayload,
   CreateCollectionPayload,
-  UpdateCollectionPayload
+  UpdateCollectionPayload,
+  OrderTogglePayload
 } from './api-adapter.types'
 import type { Item, Content, CollectionItem } from '@/lib/types'
 
@@ -48,6 +49,7 @@ function toContentDTO(c: Content): ContentDTO {
     authorDescriptor: c.author,
     licenseId: null,
     licenseName: c.license,
+    purpose: c.purpose ?? null,
     jsonSerializedContent: c.jsonContent ? JSON.stringify(c.jsonContent) : null,
     hasBlobContent: !!c.blobContent,
     tagIds: [],
@@ -71,6 +73,8 @@ function toDTO(item: Item): ItemDTO {
     validatorIds: item.validators ?? [],
     modifierIds: item.modifiers ?? [],
     isCollection: item.item_type === 'collection' || !!item.items,
+    // Im Dummy-Modus ist die "collection id" identisch zur item id.
+    collectionId: item.item_type === 'collection' || !!item.items ? item.id : null,
     contents: (item.contents ?? []).map(toContentSummaryDTO),
     createdAt: nowISO(),
     updatedAt: nowISO(),
@@ -168,6 +172,7 @@ export class DevAdbApiService implements ApiAdapter {
       const dto = toDTO(item)
       dto.isCollection = true
       dto.itemTypeName = 'collection'
+      dto.collectionId = itemId
       dto.items = []
       dto.order = false
       return dto
@@ -186,6 +191,7 @@ export class DevAdbApiService implements ApiAdapter {
       validatorIds: [],
       modifierIds: [],
       isCollection: true,
+      collectionId: itemId,
       contents: [],
       createdAt: nowISO(),
       updatedAt: nowISO(),
@@ -258,6 +264,11 @@ export class DevAdbApiService implements ApiAdapter {
     }
   }
 
+  async toggleCollectionOrder(collectionId: string, payload: OrderTogglePayload): Promise<ItemDTO> {
+    log('PUT', `/api/collections/${collectionId}/order`, payload)
+    return this.updateCollection(collectionId, payload)
+  }
+
   async updateCollectionItemPosition(_collectionId: string, _itemId: string, _position: number): Promise<void> {
     log('PUT', `/api/collections/${_collectionId}/items/${_itemId}`, { position: _position })
   }
@@ -281,6 +292,7 @@ export class DevAdbApiService implements ApiAdapter {
       authorDescriptor: 'author',
       licenseId: payload.licenseId,
       licenseName: null,
+      purpose: payload.purpose ?? null,
       jsonSerializedContent: payload.jsonSerializedContent ?? null,
       hasBlobContent: false,
       tagIds: payload.tagIds ?? [],
@@ -299,6 +311,7 @@ export class DevAdbApiService implements ApiAdapter {
       authorDescriptor: 'author',
       licenseId: payload.licenseId,
       licenseName: null,
+      purpose: payload.purpose ?? null,
       jsonSerializedContent: payload.jsonSerializedContent ?? null,
       hasBlobContent: false,
       tagIds: payload.tagIds ?? [],

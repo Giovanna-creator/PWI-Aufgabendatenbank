@@ -6,6 +6,7 @@ export interface ContentDTO {
   authorDescriptor: string
   licenseId: string | null
   licenseName: string | null
+  purpose: string | null
   jsonSerializedContent: string | null
   hasBlobContent: boolean
   tagIds: string[]
@@ -33,6 +34,9 @@ export interface ItemDTO {
   validatorIds: string[]
   modifierIds: string[]
   isCollection: boolean
+  // item_collection_id, falls dieses Item eine Kollektion ist (sonst null).
+  // Wird für alle /api/collections/{id}/... Aufrufe benötigt.
+  collectionId?: string | null
   contents: ContentSummaryDTO[]
   createdAt: string
   updatedAt: string
@@ -77,6 +81,10 @@ export interface UpdateCollectionPayload {
   order: boolean
 }
 
+export interface OrderTogglePayload {
+  order: boolean
+}
+
 export interface ApiAdapter {
   getRootItems(): Promise<ItemDTO[]>
 
@@ -95,6 +103,8 @@ export interface ApiAdapter {
   deleteItem(itemId: string): Promise<void>
 
   updateCollection(collectionId: string, payload: UpdateCollectionPayload): Promise<ItemDTO>
+
+  toggleCollectionOrder(collectionId: string, payload: OrderTogglePayload): Promise<ItemDTO>
 
   updateCollectionItemPosition(collectionId: string, itemId: string, position: number): Promise<void>
 

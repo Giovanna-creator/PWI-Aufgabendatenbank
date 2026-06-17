@@ -1,5 +1,6 @@
 package com.datenbank.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -60,13 +61,35 @@ public class ItemResponseDto {
     private boolean isCollection;
 
     /**
+     * Reihenfolge-Flag, falls dieses Item eine Kollektion ist.
+     * true = geordnet, false = ungeordnet, null = keine Kollektion.
+     * Damit das Frontend den Order-Status auch beim Laden über /items kennt.
+     */
+    private Boolean order;
+
+    /**
+     * Die item_collection_id, falls dieses Item eine Kollektion ist (sonst null).
+     * Das Frontend braucht sie für alle /api/collections/{id}/... Aufrufe,
+     * da diese Endpunkte über die Collection-ID adressiert werden, nicht über
+     * die item_id.
+     */
+    private UUID collectionId;
+
+    /**
      * Inhalte dieses Items. Niemals null — leere Liste wenn keine vorhanden.
      */
     private List<ContentSummaryDto> contents = new ArrayList<>();
 
     // Getter & Setter
+    @JsonProperty("isCollection")
     public boolean isCollection() { return isCollection; }
     public void setCollection(boolean c) { this.isCollection = c; }
+
+    public Boolean getOrder() { return order; }
+    public void setOrder(Boolean order) { this.order = order; }
+
+    public UUID getCollectionId() { return collectionId; }
+    public void setCollectionId(UUID collectionId) { this.collectionId = collectionId; }
 
     public List<ContentSummaryDto> getContents() { return contents; }
     public void setContents(List<ContentSummaryDto> c) { this.contents = c; }

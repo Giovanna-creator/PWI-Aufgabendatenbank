@@ -7,7 +7,8 @@ import type {
   CreateItemPayload,
   CreateContentPayload,
   CreateCollectionPayload,
-  UpdateCollectionPayload
+  UpdateCollectionPayload,
+  OrderTogglePayload
 } from './api-adapter.types'
 
 export class AdbApiService implements ApiAdapter {
@@ -60,6 +61,11 @@ export class AdbApiService implements ApiAdapter {
 
   async updateCollection(collectionId: string, payload: UpdateCollectionPayload): Promise<ItemDTO> {
     const { data } = await this.http.put<ItemDTO>(`/collections/${collectionId}`, payload)
+    return data
+  }
+
+  async toggleCollectionOrder(collectionId: string, payload: OrderTogglePayload): Promise<ItemDTO> {
+    const { data } = await this.http.put<ItemDTO>(`/collections/${collectionId}/order`, payload)
     return data
   }
 

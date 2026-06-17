@@ -1,5 +1,5 @@
--- PWI-Aufgabendatenbank — Schema + Seeddaten für frisches PostgreSQL
--- Alle Tabellen mit UUID-Primärschlüsseln (keine Migration nötig)
+-- PWI-Aufgabendatenbank — Schema + minimale Referenzdaten
+-- Keine Demo-Items/Kollektionen — alles wird übers Frontend erstellt.
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
@@ -201,9 +201,10 @@ CREATE TABLE item_collection_sub_item (
 CREATE INDEX idx_item_collection_sub_item_collection ON item_collection_sub_item(item_collection_id);
 CREATE INDEX idx_item_collection_sub_item_item       ON item_collection_sub_item(subitem_id);
 
--- ── Seed-Daten ─────────────────────────────────────────────────────────────────
+-- ── Minimale Referenzdaten ────────────────────────────────────────────────────
+-- Nur Einträge, die das Frontend via hartcodierter UUIDs referenziert.
+-- Alles andere (Items, Kollektionen, Content) wird über die UI erstellt.
 
--- 1. Item_Content_Type
 INSERT INTO item_content_type (item_content_type_id, item_content_type_name, description) VALUES
     ('a0000000-0000-0000-0000-000000000001', 'text/plain',          'Einfacher Text'),
     ('a0000000-0000-0000-0000-000000000002', 'text/markdown',       'Markdown-formatierter Text'),
@@ -212,130 +213,23 @@ INSERT INTO item_content_type (item_content_type_id, item_content_type_name, des
     ('a0000000-0000-0000-0000-000000000005', 'image/jpeg',          'JPEG-Bilder'),
     ('a0000000-0000-0000-0000-000000000006', 'application/pdf',     'PDF-Dokumente');
 
--- 2. License
 INSERT INTO license (license_id, license) VALUES
     ('b0000000-0000-0000-0000-000000000001', 'CC-BY-4.0'),
     ('b0000000-0000-0000-0000-000000000002', 'CC-BY-SA-4.0'),
     ('b0000000-0000-0000-0000-000000000003', 'MIT'),
     ('b0000000-0000-0000-0000-000000000004', 'Internal-THM');
 
--- 3. Tag (hierarchisch)
-INSERT INTO tag (tag_id, tag, description, parent_tag_id) VALUES
-    ('c0000000-0000-0000-0000-000000000001', 'SQL',                   'SQL-Programmierung',      NULL),
-    ('c0000000-0000-0000-0000-000000000002', 'Modellierung',          'Datenmodellierung',       NULL),
-    ('c0000000-0000-0000-0000-000000000003', 'Wirtschaftsinformatik', 'Allgemeine WI-Themen',    NULL);
-
-INSERT INTO tag (tag_id, tag, description, parent_tag_id) VALUES
-    ('c0000000-0000-0000-0000-000000000004', 'Joins',       'SQL Joins',                'c0000000-0000-0000-0000-000000000001'),
-    ('c0000000-0000-0000-0000-000000000005', 'Aggregation', 'GROUP BY, COUNT, SUM',     'c0000000-0000-0000-0000-000000000001'),
-    ('c0000000-0000-0000-0000-000000000006', 'Subqueries',  'Verschachtelte Abfragen',  'c0000000-0000-0000-0000-000000000001');
-
-INSERT INTO tag (tag_id, tag, description, parent_tag_id) VALUES
-    ('c0000000-0000-0000-0000-000000000007', 'INNER JOIN', 'Inner Join Operationen',  'c0000000-0000-0000-0000-000000000004'),
-    ('c0000000-0000-0000-0000-000000000008', 'LEFT JOIN',  'Left Outer Join',         'c0000000-0000-0000-0000-000000000004'),
-    ('c0000000-0000-0000-0000-000000000009', 'OUTER JOIN', 'Outer Joins allgemein',   'c0000000-0000-0000-0000-000000000004');
-
-INSERT INTO tag (tag_id, tag, description, parent_tag_id) VALUES
-    ('c0000000-0000-0000-0000-00000000000a', 'ERM',  'Entity-Relationship-Modell',  'c0000000-0000-0000-0000-000000000002'),
-    ('c0000000-0000-0000-0000-00000000000b', 'SERM', 'Strukturiertes ERM',          'c0000000-0000-0000-0000-000000000002');
-
--- 4. Author
 INSERT INTO author (author_id, descriptor, mail) VALUES
     ('d0000000-0000-0000-0000-000000000001', 'Prof. Dr. Markus Siepermann', 'markus.siepermann@mni.thm.de'),
     ('d0000000-0000-0000-0000-000000000002', 'Johannes Kunz',               'johannes.kunz@mni.thm.de'),
     ('d0000000-0000-0000-0000-000000000003', 'Joelle Kamwa Mokam',          'joelle.kamwa@mni.thm.de');
 
--- 5. Item_Type
 INSERT INTO item_type (item_type_id, item_type_name, description) VALUES
     ('e0000000-0000-0000-0000-000000000001', 'SQL-Abfrage',      'Aufgaben, die das Schreiben einer SQL-Abfrage erfordern'),
     ('e0000000-0000-0000-0000-000000000002', 'Modellierung',     'Erstellung eines Datenmodells'),
     ('e0000000-0000-0000-0000-000000000003', 'Multiple-Choice',  'Auswahl der richtigen Antwort(en) aus mehreren Optionen'),
     ('e0000000-0000-0000-0000-000000000004', 'Freitext',         'Offene Textantwort');
 
--- 6. Item_Representation_Template
-INSERT INTO item_representation_template (item_template_id, template) VALUES
-    ('f0000000-0000-0000-0000-000000000001', 'default-text-template'),
-    ('f0000000-0000-0000-0000-000000000002', 'sql-task-template'),
-    ('f0000000-0000-0000-0000-000000000003', 'mc-task-template');
-
--- 7. Validator
-INSERT INTO validator (validator_id, description, validator) VALUES
-    ('10000000-0000-0000-0000-000000000001', 'Muss INNER JOIN enthalten',               'must_contain_inner_join'),
-    ('10000000-0000-0000-0000-000000000002', 'Muss ORDER BY enthalten',                  'must_contain_order_by'),
-    ('10000000-0000-0000-0000-000000000003', 'Keine verschachtelten Subqueries erlaubt', 'no_nested_subqueries'),
-    ('10000000-0000-0000-0000-000000000004', 'Mindestens 2 Tabellen referenzieren',     'min_two_tables');
-
--- 8. Modifier
-INSERT INTO modifier (modifier_id, description, modifier) VALUES
-    ('20000000-0000-0000-0000-000000000001', 'Variante mit INNER JOIN-Pflicht', 'variant_inner_join'),
-    ('20000000-0000-0000-0000-000000000002', 'Variante mit Sortierung',         'variant_with_sorting'),
-    ('20000000-0000-0000-0000-000000000003', 'Vereinfachte Variante',           'variant_simplified');
-
--- 9. Item_Content
-INSERT INTO item_content (item_content_id, license_id, item_content_type_id, author_id, json_serialized_content) VALUES
-    ('30000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000004', 'a0000000-0000-0000-0000-000000000002', 'd0000000-0000-0000-0000-000000000001',
-     '{"title": "Datenbank-Konzept für ein Bibliothekssystem", "instruction": "Entwerfen Sie ein Konzept für eine Bibliotheksdatenbank mit Büchern, Lesern und Ausleihen."}'),
-    ('30000000-0000-0000-0000-000000000002', 'b0000000-0000-0000-0000-000000000004', 'a0000000-0000-0000-0000-000000000002', 'd0000000-0000-0000-0000-000000000001',
-     '{"title": "SERM-Diagramm Bibliothek", "instruction": "Zeichnen Sie das SERM-Diagramm zu Ihrem Konzept aus Aufgabe 1."}'),
-    ('30000000-0000-0000-0000-000000000003', 'b0000000-0000-0000-0000-000000000004', 'a0000000-0000-0000-0000-000000000002', 'd0000000-0000-0000-0000-000000000001',
-     '{"title": "SQL-DDL für Bibliotheksdatenbank", "instruction": "Schreiben Sie die CREATE TABLE-Statements für Ihr Datenmodell."}'),
-    ('30000000-0000-0000-0000-000000000004', 'b0000000-0000-0000-0000-000000000004', 'a0000000-0000-0000-0000-000000000002', 'd0000000-0000-0000-0000-000000000001',
-     '{"title": "SQL-Abfrage Bibliothek", "instruction": "Geben Sie alle Bücher und deren aktuelle Ausleiher aus."}');
-
--- 10. Item
-INSERT INTO item (item_id, author_id, license_id, item_type_id, item_template_id, root_item_id) VALUES
-    ('40000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000004', 'e0000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000001', NULL),
-    ('40000000-0000-0000-0000-000000000002', 'd0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000004', 'e0000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000001', NULL),
-    ('40000000-0000-0000-0000-000000000003', 'd0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000004', 'e0000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000002', NULL),
-    ('40000000-0000-0000-0000-000000000004', 'd0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000004', 'e0000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000002', NULL),
-    ('40000000-0000-0000-0000-000000000005', 'd0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000004', 'e0000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000002', '40000000-0000-0000-0000-000000000004');
-
--- 11. Item_Contents
-INSERT INTO item_contents (item_id, item_content_id, purpose) VALUES
-    ('40000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', 'Aufgabenstellung'),
-    ('40000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000002', 'Aufgabenstellung'),
-    ('40000000-0000-0000-0000-000000000003', '30000000-0000-0000-0000-000000000003', 'Aufgabenstellung'),
-    ('40000000-0000-0000-0000-000000000004', '30000000-0000-0000-0000-000000000004', 'Aufgabenstellung'),
-    ('40000000-0000-0000-0000-000000000005', '30000000-0000-0000-0000-000000000004', 'Aufgabenstellung');
-
--- 12. Item_Tags
-INSERT INTO item_tags (item_id, tag_id) VALUES
-    ('40000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000002'),
-    ('40000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-00000000000a'),
-    ('40000000-0000-0000-0000-000000000002', 'c0000000-0000-0000-0000-000000000002'),
-    ('40000000-0000-0000-0000-000000000002', 'c0000000-0000-0000-0000-00000000000b'),
-    ('40000000-0000-0000-0000-000000000003', 'c0000000-0000-0000-0000-000000000001'),
-    ('40000000-0000-0000-0000-000000000004', 'c0000000-0000-0000-0000-000000000001'),
-    ('40000000-0000-0000-0000-000000000004', 'c0000000-0000-0000-0000-000000000004'),
-    ('40000000-0000-0000-0000-000000000005', 'c0000000-0000-0000-0000-000000000001'),
-    ('40000000-0000-0000-0000-000000000005', 'c0000000-0000-0000-0000-000000000004'),
-    ('40000000-0000-0000-0000-000000000005', 'c0000000-0000-0000-0000-000000000007');
-
--- 13. Item_Validator + Item_Modifier
-INSERT INTO item_validator (item_id, validator_id) VALUES
-    ('40000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000000001');
-INSERT INTO item_modifier (item_id, modifier_id) VALUES
-    ('40000000-0000-0000-0000-000000000005', '20000000-0000-0000-0000-000000000001');
-
--- 14. Item_Collection
-INSERT INTO item_collection (item_collection_id, parent_item_id, "order") VALUES
-    ('50000000-0000-0000-0000-000000000001', NULL, TRUE);
-
--- 15. Item_Collection_Sub_Item
-INSERT INTO item_collection_sub_item (item_collection_id, subitem_id, position) VALUES
-    ('50000000-0000-0000-0000-000000000001', '40000000-0000-0000-0000-000000000001', 1),
-    ('50000000-0000-0000-0000-000000000001', '40000000-0000-0000-0000-000000000002', 2),
-    ('50000000-0000-0000-0000-000000000001', '40000000-0000-0000-0000-000000000003', 3),
-    ('50000000-0000-0000-0000-000000000001', '40000000-0000-0000-0000-000000000004', 4);
-
--- 16. Item_Content_Tags
-INSERT INTO item_content_tags (item_content_id, tag_id) VALUES
-    ('30000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000002'),
-    ('30000000-0000-0000-0000-000000000002', 'c0000000-0000-0000-0000-00000000000b'),
-    ('30000000-0000-0000-0000-000000000003', 'c0000000-0000-0000-0000-000000000001'),
-    ('30000000-0000-0000-0000-000000000004', 'c0000000-0000-0000-0000-000000000004');
-
--- 17. Item_Content_Types
 INSERT INTO item_content_types (item_type_id, item_content_type_id) VALUES
     ('e0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001'),
     ('e0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002'),

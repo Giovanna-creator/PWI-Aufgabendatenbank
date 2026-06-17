@@ -30,6 +30,13 @@ public class ItemContentResponseDto {
     private UUID authorId;
     private String authorDescriptor;
 
+    /**
+     * Zweck dieses Contents (z. B. "Aufgabenstellung", "Hinweis", "Lösung").
+     * Lebt im item_contents-Join und wird nur bei GET /by-item/{itemId}
+     * gefüllt — bei den generischen Content-Endpoints null.
+     */
+    private String purpose;
+
     // Content
     private String jsonSerializedContent;
 
@@ -103,6 +110,14 @@ public class ItemContentResponseDto {
 
     public void setAuthorDescriptor(String authorDescriptor) {
         this.authorDescriptor = authorDescriptor;
+    }
+
+    public String getPurpose() {
+        return purpose;
+    }
+
+    public void setPurpose(String purpose) {
+        this.purpose = purpose;
     }
 
     public String getJsonSerializedContent() {

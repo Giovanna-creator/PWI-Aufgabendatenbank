@@ -298,10 +298,15 @@ public class ItemService {
         dto.setCreatedAt(item.getCreatedAt());
         dto.setUpdatedAt(item.getUpdatedAt());
 
-        // 1.3 isCollection setzen
-    dto.setCollection(
-        collectionRepository.existsByParentItem_ItemId(item.getItemId())
-    );
+        // 1.3 isCollection + order-Flag setzen (eine Abfrage statt nur exists)
+    ItemCollection collection = collectionRepository
+        .findFirstByParentItem_ItemId(item.getItemId())
+        .orElse(null);
+    dto.setCollection(collection != null);
+    if (collection != null) {
+        dto.setOrder(collection.getCollectionOrder());
+        dto.setCollectionId(collection.getItemCollectionId());
+    }
 
     // 1.4 contents setzen
     List<ContentSummaryDto> contentSummaries = itemContentsRepository

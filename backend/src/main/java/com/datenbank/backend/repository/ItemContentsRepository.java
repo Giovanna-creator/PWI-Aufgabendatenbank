@@ -14,4 +14,7 @@ public interface ItemContentsRepository
 
     // Alle Contents eines Items laden
     List<ItemContents> findByItem_ItemId(UUID itemId);
+
+    // Alle Verknüpfungen eines Contents laden (für purpose-Update)
+    List<ItemContents> findByItemContent_ItemContentId(UUID itemContentId);
 }

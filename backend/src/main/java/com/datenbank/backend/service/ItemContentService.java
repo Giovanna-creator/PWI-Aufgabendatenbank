@@ -68,7 +68,12 @@ public class ItemContentService {
     public List<ItemContentResponseDto> getContentsByItemId(UUID itemId) {
         return itemContentsRepository.findByItem_ItemId(itemId)
                 .stream()
-                .map(ic -> convertToResponseDto(ic.getItemContent()))
+                .map(ic -> {
+                    ItemContentResponseDto dto = convertToResponseDto(ic.getItemContent());
+                    // purpose lebt im Join, nicht im ItemContent selbst
+                    dto.setPurpose(ic.getPurpose());
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
     /**
@@ -126,6 +131,16 @@ public class ItemContentService {
         applyDtoToEntity(dto, content);
 
         ItemContent saved = contentRepository.save(content);
+
+        // purpose lebt im item_contents-Join: nur aktualisieren wenn mitgeschickt.
+        // In dieser Iteration ist ein Content genau einem Item zugeordnet,
+        // daher werden alle Verknüpfungen dieses Contents gesetzt.
+        if (dto.getPurpose() != null) {
+            List<ItemContents> links =
+                    itemContentsRepository.findByItemContent_ItemContentId(id);
+            links.forEach(link -> link.setPurpose(dto.getPurpose()));
+            itemContentsRepository.saveAll(links);
+        }
 
         return convertToResponseDto(saved);
     }

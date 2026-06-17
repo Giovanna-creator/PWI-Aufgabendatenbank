@@ -68,7 +68,7 @@ function toFullContent(dto: ContentDTO): Content {
     contentType: dto.itemContentTypeName,
     author: dto.authorDescriptor,
     tags: dto.tagIds,
-    purpose: '',
+    purpose: dto.purpose ?? '',
     jsonContent,
     blobContent: dto.hasBlobContent ? '(binary)' : ''
   }
@@ -86,8 +86,12 @@ function toItem(dto: ItemDTO): Item {
     modifiers: [],
     rootItemId: dto.rootItemId ?? null,
     contents: (dto.contents ?? []).map(toContent),
-    items: dto.items?.map(toCollectionItem),
-    order: dto.order
+    // Eine Kollektion hat IMMER ein items-Array (zunächst leer, bis die
+    // Kinder via _loadChildrenRecursively nachgeladen werden). Sonst
+    // crasht z. B. die Validierung mit undefined.flatMap(...).
+    items: dto.items?.map(toCollectionItem) ?? (dto.isCollection ? [] : undefined),
+    order: dto.order,
+    collectionId: dto.collectionId ?? null
   }
 }
 
@@ -194,9 +198,13 @@ export const useExerciseStore = defineStore('exercise', {
         .filter((item) => item.item_type === 'collection' || checkIsCollection(item))
         .map(async (item) => {
           const collection = item as Collection
+          // Kollektion-Endpunkte brauchen die item_collection_id, nicht die item_id.
+          // Fehlt sie (z. B. optimistisch angelegt, Backend-Antwort noch unterwegs),
+          // überspringen — der Reload liefert sie später.
+          if (!collection.collectionId) return
           this.loadingChildrenIds = [...this.loadingChildrenIds, collection.id]
           try {
-            const dtos = await _adapter!.getCollectionItems(collection.id)
+            const dtos = await _adapter!.getCollectionItems(collection.collectionId)
             collection.items = dtos.map(toCollectionItem)
             // Recurse into sub-collections
             await this._loadChildrenRecursively(collection.items.map((ci) => ci.item))
@@ -221,9 +229,11 @@ export const useExerciseStore = defineStore('exercise', {
       this.loadingContent = true
       try {
         const dtos = await _adapter!.getContents(itemId)
-        const item = this._findItemById(itemId)
-        if (item) {
-          item.contents = dtos.map(toFullContent)
+        if (dtos.length > 0) {
+          const item = this._findItemById(itemId)
+          if (item) {
+            item.contents = dtos.map(toFullContent)
+          }
         }
       } catch (e) {
         this._notifyError(e)
@@ -266,8 +276,10 @@ export const useExerciseStore = defineStore('exercise', {
           }
         })
       }
-      _adapter?.updateCollection(collection.id, { order: collection.order })
-        .catch((e) => this._notifyError(e))
+      if (collection.collectionId) {
+        _adapter?.toggleCollectionOrder(collection.collectionId, { order: collection.order })
+          .catch((e) => this._notifyError(e))
+      }
       this._syncOrderedCollectionItems(collection)
     },
 
@@ -419,11 +431,12 @@ export const useExerciseStore = defineStore('exercise', {
      * where positions are pre-set in `.map()` but still need to be persisted.
      */
     _syncOrderedCollectionItems(collection: Collection, force = false) {
-      if (!collection.order || !_adapter) return
+      if (!collection.order || !_adapter || !collection.collectionId) return
+      const collectionId = collection.collectionId
       collection.items.forEach((item, index) => {
         const expected = index + 1
         if (force || item.position !== expected) {
-          _adapter!.updateCollectionItemPosition(collection.id, item.id, expected)
+          _adapter!.updateCollectionItemPosition(collectionId, item.item.id, expected)
             .catch((e) => this._notifyError(e))
           item.position = expected
         }
@@ -474,25 +487,29 @@ export const useExerciseStore = defineStore('exercise', {
         tags: [],
         validators: [],
         modifiers: [],
-        contents: [
-          {
-            id: 'content-coll-' + now,
-            license: null,
-            contentType: 'text',
-            author: 'author',
-            tags: [],
-            purpose: 'Neuer Inhalt',
-            jsonContent: { text: '' },
-            blobContent: ''
-          }
-        ],
+        // Eine Kollektion ist im Backend eine Item ohne eigenen Content.
+        contents: [],
         items: [],
         order: false
       }
       this.rootItems.push(collection)
-      _adapter?.createCollection({ order: false })
+      // Backend-Modell: erst eine Item anlegen, dann zur Kollektion machen
+      // (POST /items → POST /items/{id}/collection). So taucht die Kollektion
+      // beim Neuladen über GET /items?root=true wieder auf.
+      _adapter?.createItem({
+        authorId: SEED_AUTHOR_ID,
+        licenseId: SEED_LICENSE_ID,
+        itemTypeId: SEED_ITEM_TYPE_ID,
+        rootItemId: null
+      })
         .then((dto) => {
-          collection.id = (dto as any).itemId ?? (dto as any).itemCollectionId ?? collection.id
+          if (!dto) return
+          collection.id = dto.itemId
+          return _adapter?.convertItemToCollection(dto.itemId)
+        })
+        .then((collDto) => {
+          // item_collection_id merken — nötig für alle weiteren Collection-Calls
+          if (collDto) collection.collectionId = collDto.collectionId ?? null
         })
         .catch((e) => this._notifyError(e))
       this.validate()
@@ -500,10 +517,12 @@ export const useExerciseStore = defineStore('exercise', {
     },
 
     addItemToCollection(collection: Collection): CollectionItem {
-      const rootId = collection.rootItemId ?? collection.id
+      const rootId = collection.rootItemId ?? null
       const item = this.createItem(rootId, false, (realId) => {
-        _adapter?.addItemToCollection(collection.id, realId)
-          .catch((e) => this._notifyError(e))
+        if (collection.collectionId) {
+          _adapter?.addItemToCollection(collection.collectionId, realId)
+            .catch((e) => this._notifyError(e))
+        }
       })
       const collectionItem: CollectionItem = {
         id: 'coll-item-' + Date.now().toString(),
@@ -523,6 +542,9 @@ export const useExerciseStore = defineStore('exercise', {
       item.items = []
       item.order = false
       _adapter?.convertItemToCollection(item.id)
+        .then((dto) => {
+          if (dto) item.collectionId = dto.collectionId ?? null
+        })
         .catch((e) => this._notifyError(e))
       this.validate()
       return item as Collection
@@ -558,21 +580,28 @@ export const useExerciseStore = defineStore('exercise', {
           if (oldParentId) {
             if (oldParentId !== collection.id) {
               // Cross-collection move: remove from source, add to target
-              _adapter?.removeItemFromCollection(oldParentId, inner.id)
-                .catch((e) => this._notifyError(e))
-              _adapter?.addItemToCollection(collection.id, inner.id)
-                .catch((e) => this._notifyError(e))
+              // (Collection-Calls über item_collection_id, nicht item_id)
               const oldParent = this._findCollectionById(oldParentId)
+              if (oldParent?.collectionId) {
+                _adapter?.removeItemFromCollection(oldParent.collectionId, inner.id)
+                  .catch((e) => this._notifyError(e))
+              }
+              if (collection.collectionId) {
+                _adapter?.addItemToCollection(collection.collectionId, inner.id)
+                  .catch((e) => this._notifyError(e))
+              }
               if (oldParent) this._syncOrderedCollectionItems(oldParent)
             }
             // oldParentId === collection.id → item stayed, skip API (reorder only)
           } else {
             // Root-to-collection move: add to target
-            _adapter?.addItemToCollection(collection.id, inner.id)
-              .catch((e) => this._notifyError(e))
+            if (collection.collectionId) {
+              _adapter?.addItemToCollection(collection.collectionId, inner.id)
+                .catch((e) => this._notifyError(e))
+            }
           }
         }
-        inner.rootItemId = collection.rootItemId ?? collection.id
+        inner.rootItemId = collection.rootItemId ?? null
         if (isCollectionItem(item)) {
           return { ...item, collectionId: collection.id, position: collection.order ? index + 1 : null } as CollectionItem
         }
@@ -593,9 +622,11 @@ export const useExerciseStore = defineStore('exercise', {
         const parentId = this._detachItem(inner.id)
         // Moved from a collection to root: notify backend
         if (parentId) {
-          _adapter?.removeItemFromCollection(parentId, inner.id)
-            .catch((e) => this._notifyError(e))
           const oldParent = this._findCollectionById(parentId)
+          if (oldParent?.collectionId) {
+            _adapter?.removeItemFromCollection(oldParent.collectionId, inner.id)
+              .catch((e) => this._notifyError(e))
+          }
           if (oldParent) this._syncOrderedCollectionItems(oldParent)
         }
         return inner as Item
