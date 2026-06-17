@@ -12,6 +12,12 @@ export interface Content {
   purpose: string
   jsonContent: Record<string, any>
   blobContent: string
+
+  // Backend-IDs (für Dropdown-Auswahl). Optional, da viele Stellen
+  // Content-Objekte als Literal bauen.
+  authorId?: string | null
+  licenseId?: string | null
+  contentTypeId?: string | null
 }
 
 export interface Item {
@@ -30,6 +36,12 @@ export interface Item {
   // Backend item_collection_id (nur bei Kollektionen gesetzt). Wird für
   // alle /api/collections/{id}/... Aufrufe verwendet — NICHT die item_id (id).
   collectionId?: string | null
+  // Backend-IDs für Dropdown-Auswahl (Autor/Lizenz/Typ). Optional, da
+  // viele Stellen Item-Objekte als Literal bauen.
+  authorId?: string | null
+  licenseId?: string | null
+  itemTypeId?: string | null
+  itemTypeName?: string | null
 }
 
 export type Collection = Item & {

@@ -69,6 +69,33 @@
           @keydown.escape="editingText = false"
         />
       </div>
+
+      <div class="content-meta-row">
+        <v-select
+          :model-value="content.contentTypeId"
+          :items="store.contentTypes"
+          item-title="name"
+          item-value="id"
+          label="Inhaltstyp"
+          density="compact"
+          variant="outlined"
+          hide-details
+          class="content-meta-select"
+          @update:model-value="(v) => emit('update:meta', { contentTypeId: v })"
+        />
+        <v-select
+          :model-value="content.licenseId"
+          :items="store.licenses"
+          item-title="name"
+          item-value="id"
+          label="Lizenz"
+          density="compact"
+          variant="outlined"
+          hide-details
+          class="content-meta-select"
+          @update:model-value="(v) => emit('update:meta', { licenseId: v })"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -76,6 +103,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue'
 import type { Content } from '@/lib/types'
+import { useExerciseStore } from '@/stores/exerciseStore'
 
 const props = defineProps<{
   content: Content
@@ -84,8 +112,11 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:text': [value: string]
   'update:purpose': [value: string]
+  'update:meta': [meta: { contentTypeId?: string; licenseId?: string }]
   delete: []
 }>()
+
+const store = useExerciseStore()
 
 const editingText = ref(false)
 const editingPurpose = ref(false)
@@ -239,6 +270,18 @@ function startEditText() {
 
 .card-body {
   padding-left: 0;
+}
+
+.content-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.content-meta-select {
+  flex: 1 1 140px;
+  min-width: 120px;
 }
 
 .content-text {
