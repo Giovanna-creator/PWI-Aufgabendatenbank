@@ -16,7 +16,11 @@ import type {
   ItemDTO,
   ContentDTO,
   ContentSummaryDTO,
-  CollectionItemDTO
+  CollectionItemDTO,
+  AuthorDTO,
+  LicenseDTO,
+  ItemTypeDTO,
+  ContentTypeDTO
 } from '@/feature/aufgabendatenbank/api-adapter.types'
 
 // ── Seed-UUIDs (müssen mit database/init/init.sql übereinstimmen) ─────────────
@@ -70,7 +74,10 @@ function toFullContent(dto: ContentDTO): Content {
     tags: dto.tagIds,
     purpose: dto.purpose ?? '',
     jsonContent,
-    blobContent: dto.hasBlobContent ? '(binary)' : ''
+    blobContent: dto.hasBlobContent ? '(binary)' : '',
+    authorId: dto.authorId ?? null,
+    licenseId: dto.licenseId ?? null,
+    contentTypeId: dto.itemContentTypeId ?? null
   }
 }
 
@@ -91,7 +98,11 @@ function toItem(dto: ItemDTO): Item {
     // crasht z. B. die Validierung mit undefined.flatMap(...).
     items: dto.items?.map(toCollectionItem) ?? (dto.isCollection ? [] : undefined),
     order: dto.order,
-    collectionId: dto.collectionId ?? null
+    collectionId: dto.collectionId ?? null,
+    authorId: dto.authorId ?? null,
+    licenseId: dto.licenseId ?? null,
+    itemTypeId: dto.itemTypeId ?? null,
+    itemTypeName: dto.itemTypeName ?? null
   }
 }
 
@@ -113,6 +124,11 @@ interface ExerciseState {
   loadingContent: boolean
   error: string | null
   loadingChildrenIds: string[]
+  // Referenzdaten für Dropdowns (Autor/Lizenz/Typ/Content-Typ)
+  authors: AuthorDTO[]
+  licenses: LicenseDTO[]
+  itemTypes: ItemTypeDTO[]
+  contentTypes: ContentTypeDTO[]
 }
 
 // ── Store ─────────────────────────────────────────────────────────────────────
@@ -124,7 +140,11 @@ export const useExerciseStore = defineStore('exercise', {
     loading: false,
     loadingContent: false,
     error: null,
-    loadingChildrenIds: []
+    loadingChildrenIds: [],
+    authors: [],
+    licenses: [],
+    itemTypes: [],
+    contentTypes: []
   }),
 
   getters: {
@@ -132,6 +152,13 @@ export const useExerciseStore = defineStore('exercise', {
       if (!state.selectedItem) return null
       return getInnerItem(state.selectedItem)
     },
+
+    // Default-IDs für die Erstellung: erster Eintrag der jeweiligen
+    // Referenzliste, Fallback auf die festen Seed-UUIDs (falls Liste leer).
+    defaultAuthorId: (state): string => state.authors[0]?.id ?? SEED_AUTHOR_ID,
+    defaultLicenseId: (state): string => state.licenses[0]?.id ?? SEED_LICENSE_ID,
+    defaultItemTypeId: (state): string => state.itemTypes[0]?.id ?? SEED_ITEM_TYPE_ID,
+    defaultContentTypeId: (state): string => state.contentTypes[0]?.id ?? SEED_CONTENT_TYPE_ID,
 
     isCollectionSelected(): boolean {
       const inner = this.selectedInnerItem
@@ -158,6 +185,30 @@ export const useExerciseStore = defineStore('exercise', {
       const msg = (e as any)?.response?.data?.message || (e as any)?.response?.data || String(e)
       const status = (e as any)?.response?.status ? `[${(e as any).response.status}] ` : ''
       notifStore.push(status + JSON.stringify(msg), 'error', 12000)
+    },
+
+    // ── Referenzdaten ─────────────────────────────────────────────────────────
+
+    /**
+     * Load reference lists (authors, licenses, item types, content types)
+     * used to populate the editor dropdowns. Called once on mount.
+     */
+    async loadReferenceData() {
+      if (!_adapter) return
+      try {
+        const [authors, licenses, itemTypes, contentTypes] = await Promise.all([
+          _adapter.getAuthors(),
+          _adapter.getLicenses(),
+          _adapter.getItemTypes(),
+          _adapter.getContentTypes()
+        ])
+        this.authors = authors
+        this.licenses = licenses
+        this.itemTypes = itemTypes
+        this.contentTypes = contentTypes
+      } catch (e) {
+        this._notifyError(e)
+      }
     },
 
     // ── Initialisation (progressive loading) ──────────────────────────────────
@@ -289,21 +340,27 @@ export const useExerciseStore = defineStore('exercise', {
       const inner = this.selectedInnerItem
       if (!inner) return
       const now = Date.now().toString()
+      const licenseId = inner.licenseId ?? this.defaultLicenseId
+      const authorId = inner.authorId ?? this.defaultAuthorId
+      const contentTypeId = this.defaultContentTypeId
       const content: Content = {
         id: 'content-' + now,
-        license: null,
-        contentType: 'text',
+        license: inner.license ?? null,
+        contentType: this.contentTypes.find((c) => c.id === contentTypeId)?.name ?? 'text',
         author: inner.author ?? 'author',
         tags: [],
         purpose: 'Neuer Inhalt',
         jsonContent: { text: '' },
-        blobContent: ''
+        blobContent: '',
+        authorId,
+        licenseId,
+        contentTypeId
       }
       inner.contents.push(content)
       _adapter?.createContent(inner.id, {
-        licenseId: SEED_LICENSE_ID,
-        itemContentTypeId: SEED_CONTENT_TYPE_ID,
-        authorId: SEED_AUTHOR_ID,
+        licenseId,
+        itemContentTypeId: contentTypeId,
+        authorId,
         purpose: content.purpose,
         jsonSerializedContent: JSON.stringify(content.jsonContent)
       }).then((dto) => {
@@ -327,9 +384,9 @@ export const useExerciseStore = defineStore('exercise', {
       const content = inner.contents[index]
       content.jsonContent.text = text
       _adapter?.updateContent(content.id ?? '', {
-        licenseId: SEED_LICENSE_ID,
-        itemContentTypeId: SEED_CONTENT_TYPE_ID,
-        authorId: SEED_AUTHOR_ID,
+        licenseId: content.licenseId ?? this.defaultLicenseId,
+        itemContentTypeId: content.contentTypeId ?? this.defaultContentTypeId,
+        authorId: content.authorId ?? this.defaultAuthorId,
         purpose: content.purpose,
         jsonSerializedContent: JSON.stringify(content.jsonContent)
       }).catch((e) => this._notifyError(e))
@@ -341,9 +398,35 @@ export const useExerciseStore = defineStore('exercise', {
       const content = inner.contents[index]
       content.purpose = purpose
       _adapter?.updateContent(content.id ?? '', {
-        licenseId: SEED_LICENSE_ID,
-        itemContentTypeId: SEED_CONTENT_TYPE_ID,
-        authorId: SEED_AUTHOR_ID,
+        licenseId: content.licenseId ?? this.defaultLicenseId,
+        itemContentTypeId: content.contentTypeId ?? this.defaultContentTypeId,
+        authorId: content.authorId ?? this.defaultAuthorId,
+        purpose: content.purpose,
+        jsonSerializedContent: JSON.stringify(content.jsonContent)
+      }).catch((e) => this._notifyError(e))
+    },
+
+    /**
+     * Update a content block's type / license from the editor dropdowns.
+     * Updates local labels and persists via PUT /contents/{id}.
+     */
+    updateContentMeta(index: number, meta: { contentTypeId?: string; licenseId?: string }) {
+      const inner = this.selectedInnerItem
+      if (!inner || !inner.contents[index]) return
+      const content = inner.contents[index]
+      if (meta.contentTypeId !== undefined) {
+        content.contentTypeId = meta.contentTypeId
+        content.contentType =
+          this.contentTypes.find((c) => c.id === meta.contentTypeId)?.name ?? content.contentType
+      }
+      if (meta.licenseId !== undefined) {
+        content.licenseId = meta.licenseId
+        content.license = this.licenses.find((l) => l.id === meta.licenseId)?.name ?? content.license
+      }
+      _adapter?.updateContent(content.id ?? '', {
+        licenseId: content.licenseId ?? this.defaultLicenseId,
+        itemContentTypeId: content.contentTypeId ?? this.defaultContentTypeId,
+        authorId: content.authorId ?? this.defaultAuthorId,
         purpose: content.purpose,
         jsonSerializedContent: JSON.stringify(content.jsonContent)
       }).catch((e) => this._notifyError(e))
@@ -390,26 +473,41 @@ export const useExerciseStore = defineStore('exercise', {
     /** Build a minimal Item object with a unique ID and single Content block. */
     _createItemData(rootItemId: string | null = null): Item {
       const now = Date.now().toString()
+      const authorId = this.defaultAuthorId
+      const licenseId = this.defaultLicenseId
+      const itemTypeId = this.defaultItemTypeId
+      const contentTypeId = this.defaultContentTypeId
+      const authorName = this.authors.find((a) => a.id === authorId)?.descriptor ?? 'author'
+      const licenseName = this.licenses.find((l) => l.id === licenseId)?.name ?? null
+      const typeName = this.itemTypes.find((t) => t.id === itemTypeId)?.name ?? null
+      const contentTypeName = this.contentTypes.find((c) => c.id === contentTypeId)?.name ?? 'text'
       return {
         id: 'item-' + now,
         item_type: 'exercise',
-        author: 'author',
+        author: authorName,
         representationTemplate: null,
-        license: null,
+        license: licenseName,
         tags: [],
         validators: [],
         modifiers: [],
         rootItemId,
+        authorId,
+        licenseId,
+        itemTypeId,
+        itemTypeName: typeName,
         contents: [
           {
             id: 'content-' + now,
-            license: null,
-            contentType: 'text',
-            author: 'author',
+            license: licenseName,
+            contentType: contentTypeName,
+            author: authorName,
             tags: [],
             purpose: 'Neuer Inhalt',
             jsonContent: { text: '' },
-            blobContent: ''
+            blobContent: '',
+            authorId,
+            licenseId,
+            contentTypeId
           }
         ]
       }
@@ -445,25 +543,52 @@ export const useExerciseStore = defineStore('exercise', {
 
     // ── CRUD Actions ──
 
+    /**
+     * Update an item's metadata (author / license / item-type) from the
+     * editor dropdowns. Updates the local item (incl. display labels) and
+     * persists via PUT /items/{id}.
+     */
+    updateItemMeta(item: Item, meta: { authorId?: string; licenseId?: string; itemTypeId?: string }) {
+      if (meta.authorId !== undefined) item.authorId = meta.authorId
+      if (meta.licenseId !== undefined) item.licenseId = meta.licenseId
+      if (meta.itemTypeId !== undefined) item.itemTypeId = meta.itemTypeId
+
+      // Anzeige-Labels mitziehen, damit die UI ohne Reload stimmt
+      const author = this.authors.find((a) => a.id === item.authorId)
+      if (author) item.author = author.descriptor
+      const license = this.licenses.find((l) => l.id === item.licenseId)
+      item.license = license ? license.name : item.license
+      const type = this.itemTypes.find((t) => t.id === item.itemTypeId)
+      if (type) item.itemTypeName = type.name
+
+      _adapter?.updateItem(item.id, {
+        authorId: item.authorId ?? this.defaultAuthorId,
+        licenseId: item.licenseId ?? this.defaultLicenseId,
+        itemTypeId: item.itemTypeId ?? this.defaultItemTypeId,
+        rootItemId: item.rootItemId ?? null
+      }).catch((e) => this._notifyError(e))
+    },
+
     createItem(rootItemId: string | null = null, addToRoot = true, onCreated?: (realId: string) => void): Item {
       const item = this._createItemData(rootItemId)
       if (addToRoot) this.rootItems.push(item)
       _adapter?.createItem({
-        authorId: SEED_AUTHOR_ID,
-        licenseId: SEED_LICENSE_ID,
-        itemTypeId: SEED_ITEM_TYPE_ID,
+        authorId: item.authorId ?? this.defaultAuthorId,
+        licenseId: item.licenseId ?? this.defaultLicenseId,
+        itemTypeId: item.itemTypeId ?? this.defaultItemTypeId,
         rootItemId: item.rootItemId ?? null
       }).then((dto) => {
         if (dto) {
           item.id = dto.itemId
           onCreated?.(dto.itemId)
           if (item.contents.length > 0) {
+            const c0 = item.contents[0]
             _adapter?.createContent(dto.itemId, {
-              licenseId: SEED_LICENSE_ID,
-              itemContentTypeId: SEED_CONTENT_TYPE_ID,
-              authorId: SEED_AUTHOR_ID,
-              purpose: item.contents[0].purpose,
-              jsonSerializedContent: JSON.stringify(item.contents[0].jsonContent)
+              licenseId: c0.licenseId ?? this.defaultLicenseId,
+              itemContentTypeId: c0.contentTypeId ?? this.defaultContentTypeId,
+              authorId: c0.authorId ?? this.defaultAuthorId,
+              purpose: c0.purpose,
+              jsonSerializedContent: JSON.stringify(c0.jsonContent)
             }).then((contentDto) => {
               if (contentDto && item.contents[0]) {
                 item.contents[0].id = contentDto.itemContentId
@@ -478,15 +603,22 @@ export const useExerciseStore = defineStore('exercise', {
 
     createCollection(): Collection {
       const now = Date.now().toString()
+      const authorId = this.defaultAuthorId
+      const licenseId = this.defaultLicenseId
+      const itemTypeId = this.defaultItemTypeId
       const collection: Collection = {
         id: 'coll-' + now,
         item_type: 'collection',
-        author: 'author',
+        author: this.authors.find((a) => a.id === authorId)?.descriptor ?? 'author',
         representationTemplate: null,
-        license: null,
+        license: this.licenses.find((l) => l.id === licenseId)?.name ?? null,
         tags: [],
         validators: [],
         modifiers: [],
+        authorId,
+        licenseId,
+        itemTypeId,
+        itemTypeName: this.itemTypes.find((t) => t.id === itemTypeId)?.name ?? null,
         // Eine Kollektion ist im Backend eine Item ohne eigenen Content.
         contents: [],
         items: [],
@@ -497,9 +629,9 @@ export const useExerciseStore = defineStore('exercise', {
       // (POST /items → POST /items/{id}/collection). So taucht die Kollektion
       // beim Neuladen über GET /items?root=true wieder auf.
       _adapter?.createItem({
-        authorId: SEED_AUTHOR_ID,
-        licenseId: SEED_LICENSE_ID,
-        itemTypeId: SEED_ITEM_TYPE_ID,
+        authorId,
+        licenseId,
+        itemTypeId,
         rootItemId: null
       })
         .then((dto) => {

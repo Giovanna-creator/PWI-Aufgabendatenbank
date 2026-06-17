@@ -9,7 +9,11 @@ import type {
   CreateContentPayload,
   CreateCollectionPayload,
   UpdateCollectionPayload,
-  OrderTogglePayload
+  OrderTogglePayload,
+  AuthorDTO,
+  LicenseDTO,
+  ItemTypeDTO,
+  ContentTypeDTO
 } from './api-adapter.types'
 import type { Item, Content, CollectionItem } from '@/lib/types'
 
@@ -137,6 +141,33 @@ export class DevAdbApiService implements ApiAdapter {
       contents: [],
       createdAt: nowISO(),
       updatedAt: nowISO()
+    }
+  }
+
+  async updateItem(itemId: string, payload: CreateItemPayload): Promise<ItemDTO> {
+    log('PUT', `/api/items/${itemId}`, payload)
+    const item = findItem(itemId, dummyData.rootItems)
+    const base = item ? toDTO(item) : null
+    return {
+      itemId,
+      authorId: payload.authorId,
+      authorDescriptor: base?.authorDescriptor ?? 'author',
+      licenseId: payload.licenseId,
+      licenseName: base?.licenseName ?? null,
+      itemTypeId: payload.itemTypeId,
+      itemTypeName: base?.itemTypeName ?? 'exercise',
+      itemTemplateId: payload.itemTemplateId ?? null,
+      rootItemId: payload.rootItemId ?? null,
+      tagIds: payload.tagIds ?? [],
+      validatorIds: payload.validatorIds ?? [],
+      modifierIds: payload.modifierIds ?? [],
+      isCollection: base?.isCollection ?? false,
+      collectionId: base?.collectionId ?? null,
+      contents: base?.contents ?? [],
+      createdAt: base?.createdAt ?? nowISO(),
+      updatedAt: nowISO(),
+      items: base?.items,
+      order: base?.order
     }
   }
 
@@ -327,6 +358,49 @@ export class DevAdbApiService implements ApiAdapter {
   async loadFullTree(): Promise<ItemDTO[]> {
     log('GET', '/api/items?root=true (loadFullTree)')
     return dummyData.rootItems.map(toDTO)
+  }
+
+  // ── Referenzdaten (gleiche Seeds wie database/init/init.sql) ───────────────
+
+  async getAuthors(): Promise<AuthorDTO[]> {
+    log('GET', '/api/authors')
+    return [
+      { id: 'd0000000-0000-0000-0000-000000000001', descriptor: 'Prof. Dr. Markus Siepermann', mail: 'markus.siepermann@mni.thm.de' },
+      { id: 'd0000000-0000-0000-0000-000000000002', descriptor: 'Johannes Kunz', mail: 'johannes.kunz@mni.thm.de' },
+      { id: 'd0000000-0000-0000-0000-000000000003', descriptor: 'Joelle Kamwa Mokam', mail: 'joelle.kamwa@mni.thm.de' }
+    ]
+  }
+
+  async getLicenses(): Promise<LicenseDTO[]> {
+    log('GET', '/api/licenses')
+    return [
+      { id: 'b0000000-0000-0000-0000-000000000001', name: 'CC-BY-4.0' },
+      { id: 'b0000000-0000-0000-0000-000000000002', name: 'CC-BY-SA-4.0' },
+      { id: 'b0000000-0000-0000-0000-000000000003', name: 'MIT' },
+      { id: 'b0000000-0000-0000-0000-000000000004', name: 'Internal-THM' }
+    ]
+  }
+
+  async getItemTypes(): Promise<ItemTypeDTO[]> {
+    log('GET', '/api/item-types')
+    return [
+      { id: 'e0000000-0000-0000-0000-000000000001', name: 'SQL-Abfrage', description: 'Aufgaben, die das Schreiben einer SQL-Abfrage erfordern' },
+      { id: 'e0000000-0000-0000-0000-000000000002', name: 'Modellierung', description: 'Erstellung eines Datenmodells' },
+      { id: 'e0000000-0000-0000-0000-000000000003', name: 'Multiple-Choice', description: 'Auswahl der richtigen Antwort(en) aus mehreren Optionen' },
+      { id: 'e0000000-0000-0000-0000-000000000004', name: 'Freitext', description: 'Offene Textantwort' }
+    ]
+  }
+
+  async getContentTypes(): Promise<ContentTypeDTO[]> {
+    log('GET', '/api/content-types')
+    return [
+      { id: 'a0000000-0000-0000-0000-000000000001', name: 'text/plain', description: 'Einfacher Text' },
+      { id: 'a0000000-0000-0000-0000-000000000002', name: 'text/markdown', description: 'Markdown-formatierter Text' },
+      { id: 'a0000000-0000-0000-0000-000000000003', name: 'application/json', description: 'Strukturierter JSON-Inhalt' },
+      { id: 'a0000000-0000-0000-0000-000000000004', name: 'image/png', description: 'PNG-Bilder' },
+      { id: 'a0000000-0000-0000-0000-000000000005', name: 'image/jpeg', description: 'JPEG-Bilder' },
+      { id: 'a0000000-0000-0000-0000-000000000006', name: 'application/pdf', description: 'PDF-Dokumente' }
+    ]
   }
 }
 

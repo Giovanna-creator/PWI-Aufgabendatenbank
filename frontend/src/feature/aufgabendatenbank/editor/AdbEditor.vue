@@ -46,6 +46,48 @@
           />
         </div>
 
+        <div
+          v-if="inner"
+          class="meta-row"
+        >
+          <v-select
+            :model-value="inner.itemTypeId"
+            :items="store.itemTypes"
+            item-title="name"
+            item-value="id"
+            label="Typ"
+            density="compact"
+            variant="outlined"
+            hide-details
+            class="meta-select"
+            @update:model-value="(v) => onMeta({ itemTypeId: v })"
+          />
+          <v-select
+            :model-value="inner.authorId"
+            :items="store.authors"
+            item-title="descriptor"
+            item-value="id"
+            label="Autor"
+            density="compact"
+            variant="outlined"
+            hide-details
+            class="meta-select"
+            @update:model-value="(v) => onMeta({ authorId: v })"
+          />
+          <v-select
+            :model-value="inner.licenseId"
+            :items="store.licenses"
+            item-title="name"
+            item-value="id"
+            label="Lizenz"
+            density="compact"
+            variant="outlined"
+            hide-details
+            class="meta-select"
+            @update:model-value="(v) => onMeta({ licenseId: v })"
+          />
+        </div>
+
         <AdbContentList />
 
         <p class="text-caption text-grey">
@@ -67,6 +109,12 @@ import { useExerciseStore } from '@/stores/exerciseStore'
 
 const store = useExerciseStore()
 const showDeleteDialog = ref(false)
+
+const inner = computed(() => store.selectedInnerItem)
+
+function onMeta(meta: { authorId?: string; licenseId?: string; itemTypeId?: string }) {
+  if (inner.value) store.updateItemMeta(inner.value, meta)
+}
 
 const itemTypeLabel = computed(() => {
   if (!store.selectedInnerItem) return ''
@@ -123,6 +171,18 @@ function deleteSelectedItem() {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
+}
+
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.meta-select {
+  flex: 1 1 160px;
+  min-width: 140px;
 }
 
 .order-toggle-area {
