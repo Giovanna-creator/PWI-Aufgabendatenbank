@@ -1,80 +1,89 @@
 # Konzept: Aufgabenbeziehungen und Metadaten
 
-Dieses Dokument beschreibt unser Verständnis der noch offenen Anforderungen und wie
-wir sie im Frontend abbilden möchten. Es dient als Diskussionsgrundlage für die
-Abstimmung mit Prof. Dr. Siepermann. Betrachtet werden die Punkte, die bisher noch
-nicht umgesetzt sind: **Autor, Lizenz, Tags, Validatoren, Modifikatoren** sowie die
-**vertikalen und horizontalen Aufgabenbeziehungen**.
+Dieses Dokument fasst – nach Rücksprache mit Prof. Dr. Siepermann – unser Konzept für
+die noch nicht (vollständig) umgesetzten Punkte zusammen: **Autor, Lizenz, Tags,
+Validatoren, Modifikatoren**, die **Aufgabenbeziehungen** (vertikal/horizontal) sowie
+**Collections** und den **Erstellungs-Workflow**.
 
 ## 1. Abgrenzung (Was unsere Anwendung leistet – und was nicht)
 
 Die Aufgabendatenbank ist ein Werkzeug zum **Beschreiben, Strukturieren und Speichern**
 von Aufgaben. Sie ist **kein** Lern- oder Abgabesystem.
 
-- **In unserem Verantwortungsbereich:** Aufgaben erfassen, mit Metadaten (Autor,
-  Lizenz, Tags) versehen, in Sequenzen und Varianten in Beziehung setzen sowie die
-  zugehörigen Prüf- und Anpassungsregeln (Validator/Modifier) **definieren und
-  speichern**.
+- **In unserem Verantwortungsbereich:** Aufgaben erfassen, mit Metadaten (Autor, Lizenz,
+  Tags, Typ) versehen, in Sequenzen und Varianten in Beziehung setzen sowie die
+  zugehörigen Regeln (Validatoren) **definieren und speichern**.
 - **Nicht in unserem Verantwortungsbereich:** die **Korrektur** bzw. das Lösen von
-  Aufgaben durch Lernende. Die eigentliche Ausführung der Validatoren und Modifikatoren
-  (Antwort prüfen, Varianten generieren) übernimmt ein **anderer Service** der
-  Plattform.
+  Aufgaben durch Lernende. Die eigentliche Ausführung (Antwort prüfen, Varianten
+  erzeugen) übernimmt ein **anderer Service**.
+- **Zugriff:** In dieser Iteration gibt es **keine Rechteeinschränkung** – jeder Nutzer
+  kann Aufgaben anlegen und bearbeiten (Vorgabe: „jeder kann alles machen“). Eine echte
+  Anmeldung (THM-CAS) kommt später zentral; bis dahin wird der Nutzer gemockt.
 
 ## 2. Aufgabenbeziehungen (Kernpunkt)
 
-Laut Pflichtenheft (Abschnitt 3.1) gibt es zwei Arten von Abhängigkeiten:
+Maßgeblich ist die Struktur des vorgegebenen Schemas: Eine **Reihenfolge** (`position`)
+gibt es nur bei `item_collection_sub_item`, **nicht** bei `root_item_id`. Daraus ergibt
+sich folgende Zuordnung:
 
-### Vertikal: Sequenzen (Lernpfade)
+### Vertikal: Sequenzen (Lernpfade) über geordnete Collections
 
-Aufeinander aufbauende Aufgaben, die in einer **festen Reihenfolge** durchlaufen werden.
+Aufeinander aufbauende Aufgaben in **fester Reihenfolge** (Lernpfad).
 
-> Beispiel-Pipeline: 1. Datenbank-Konzept entwerfen → 2. SERM-Diagramm zeichnen →
-> 3. SQL-DDL schreiben → 4. Komplexe SQL-Abfrage formulieren.
+> Beispiel-Pipeline: 1. Datenbank-Konzept → 2. SERM-Diagramm → 3. SQL-DDL →
+> 4. Komplexe SQL-Abfrage.
 
-- **Datenmodell:** `Item_Collection` / `Item_Collection_Sub_Item` mit `position`
-  (geordnete Sammlung).
-- **Darstellung:** als Baum bzw. „Lernpfad" in der Strukturansicht; die Kinder einer
-  geordneten Sequenz zeigen ihre Position (1, 2, 3 …) neben dem Namen.
+- **Datenmodell:** `Item_Collection` mit `order = true` und
+  `Item_Collection_Sub_Item.position` (1, 2, 3 …) – nur hier existiert eine echte
+  Reihenfolge.
+- **Darstellung:** als „Lernpfad" in der Strukturansicht; die Kinder zeigen ihre Position.
 
-### Horizontal: Variationen & Restriktionen
+### Horizontal: Variationen & Restriktionen über `root_item_id` + Validator/Modifier
 
 **Dieselbe** Problemstellung in **mehreren Ausprägungen** mit unterschiedlichen
-methodischen Vorgaben – nebeneinander, nicht aufeinander aufbauend.
+methodischen Vorgaben – nebeneinander, ohne Reihenfolge.
 
-> Beispiel (eine SQL-Abfrage): Variante A – zwingend mit `INNER JOIN`; Variante B –
-> ohne verschachtelte Subqueries; Variante C – Ergebnis sortiert (`ORDER BY`).
+> Beispiel (eine SQL-Abfrage): Variante A – zwingend mit `INNER JOIN`; Variante B – ohne
+> verschachtelte Subqueries; Variante C – Ergebnis sortiert (`ORDER BY`).
 
-- **Datenmodell:** `Modifier` und `Validator` (für die methodischen Vorgaben), `root_item_id`
-  (zum Verbinden zusammengehöriger Varianten).
-- **Darstellung:** als Konfigurationsbereich („Erweiterte Restriktionen") direkt an einer
-  Einzelaufgabe.
+- **Datenmodell:** `root_item_id` verbindet die zusammengehörigen Varianten (gemeinsames
+  Root-Item); `Validator`/`Modifier` halten die jeweilige methodische Vorgabe.
+- **Darstellung:** als Variantenbereich („Erweiterte Restriktionen") an der Aufgabe.
 
-> **Hinweis:** Die horizontalen Abhängigkeiten **sind** genau die Validatoren und
-> Modifikatoren. Ein Validator steht hier typischerweise für eine **Restriktion**
-> („muss `INNER JOIN` enthalten"), ein Modifier für die **Erzeugung einer Variante**.
+### Ungeordnete Collections (Sammlungen)
 
-## 3. Die fünf Konzepte im Überblick
+Eine **ungeordnete** Collection (`order = false`) ist eine einfache **Gruppierung** von
+Aufgaben ohne Reihenfolge – z. B. ein thematisches „Übungsblatt".
+
+- **Datenmodell:** `Item_Collection` mit `order = false` (Positionen `null`).
+- **Darstellung:** als Ordner/Liste ohne Nummern.
+
+## 3. Metadaten-Konzepte im Überblick
 
 | Konzept | Bedeutung | Geplante Darstellung | Stand |
 |---|---|---|---|
-| **Autor** | Wer die Aufgabe erstellt hat | „Erstellt von …"; Auswahl im Editor; Filter „Aufgaben eines Autors" | Auswahl prototypisch umgesetzt |
-| **Lizenz** | Nutzungsrechte (z. B. CC-BY, MIT, Internal-THM) | Auswahlfeld im Editor + kleines Badge an der Aufgabe | Auswahl prototypisch umgesetzt |
-| **Tag** | Hierarchische thematische Schlagwörter (SQL → Joins → INNER JOIN) | Mehrfachauswahl als Baum, Anzeige als Chips, Filter nach Thema | konzipiert |
-| **Validator** | Prüf-/Restriktionsregel zur Aufgabe (Ausführung extern) | Bereich „Validatoren": Beschreibung + Regeltext, mehrere möglich | konzipiert |
-| **Modifier** | Regel zur Erzeugung von Varianten (Ausführung extern) | Bereich „Modifikatoren": Beschreibung + Regeltext, mehrere möglich | konzipiert |
+| **Autor** | Autor einer Aufgabe (frei wählbar **und** änderbar) | Auswahl im Editor, Default = aktueller (gemockter) Nutzer; Filter „Aufgaben eines Autors“ | Auswahl prototypisch umgesetzt |
+| **Lizenz** | Nutzungsrechte – **jeder Inhalt** (`ItemContent`) hat eine Lizenz (Pflicht) | Auswahlfeld; Hinweis: `license` hat **kein** Beschreibungsfeld im Schema | Auswahl prototypisch umgesetzt |
+| **Tag** | **Hierarchische** Schlagwörter, Pfad-Schreibweise `#DBS/Relationale DB/NFormen/NF3` | Baum-/Pfad-Auswahl, Chips, Filter; **Hierarchie ist sehr wichtig** | konzipiert |
+| **Typ** | **Jedes Item** und **jeder ItemContent** bekommt einen Typ | Auswahl im Editor (Item-Typ und Inhalts-Typ) | Auswahl prototypisch umgesetzt |
+| **Validator** | Prüf-/Restriktionsregel (Ausführung extern) | Bereich „Validatoren“: Beschreibung + Regeltext (Freitext), mehrere möglich | konzipiert |
+| **Modifier** | Regel zur Erzeugung von Varianten | **vorerst zurückgestellt** (später, Umsetzung uns überlassen) | zurückgestellt |
+
+**Zusätzlich (Vorgabe Prof.):** Nutzer müssen **neue** Autoren, Lizenzen, Tags und Typen
+**anlegen** können – nicht nur aus festen Listen wählen.
 
 ## 4. Erstellungs-Workflow und Bearbeitung
 
 ### Aufgabe erstellen (Formular mit Bestätigung)
 
-Derzeit wird eine Aufgabe **sofort** beim Klick auf „Aufgabe erstellen" angelegt.
+Derzeit wird eine Aufgabe **sofort** beim Klick auf „Aufgabe erstellen“ angelegt.
 Geplant ist stattdessen ein bewusster Ablauf:
 
-1. „Aufgabe erstellen" öffnet ein **Formular** mit allen Angaben – Typ, Autor, Lizenz,
-   Tags, Inhalte sowie Validatoren und Modifikatoren.
-2. Erst mit **„Erstellen / Bestätigen"** wird die Aufgabe gespeichert; danach erscheint
+1. „Aufgabe erstellen“ öffnet ein **Formular** mit allen Angaben – Typ, Autor, Lizenz,
+   Tags, Inhalte sowie Validatoren.
+2. Erst mit **„Erstellen / Bestätigen“** wird die Aufgabe gespeichert; danach erscheint
    sie in der Strukturansicht links neben dem Editor.
-3. Über die Strukturansicht lässt sie sich auswählen und – eingeschränkt – bearbeiten.
+3. Über die Strukturansicht lässt sie sich auswählen und bearbeiten.
 
 **Wichtig für die erste Iteration:** Das Formular ist **nicht strikt**. Felder dürfen
 leer bleiben, und die Aufgabe kann trotzdem bestätigt werden. Grund: Teile der
@@ -82,83 +91,68 @@ Funktionalität (z. B. das Hochladen von Dateien in allen Formaten) sind noch ni
 umgesetzt. Eine verpflichtende Vollständigkeitsprüfung würde das Erstellen aktuell
 unnötig blockieren. Pflichtfelder können später ergänzt werden.
 
-### Bearbeitung nach der Erstellung
+### Bearbeitung
 
-Welche Felder nach der Erstellung änderbar sind, richtet sich nach **zwei voneinander
-unabhängigen** Regeln:
-
-- **Fachliche Unveränderlichkeit (unabhängig von der Anmeldung):** Der **Autor
-  (Ersteller)** und das Erstellungsdatum sind historische Angaben und nach der
-  Erstellung **schreibgeschützt**.
-- **Bearbeitungsrechte (später über die Anmeldung):** Wer eine bestehende Aufgabe ändern
-  darf, wird später über die zentrale THM-CAS-Anmeldung geregelt – voraussichtlich nur
-  der Ersteller bzw. eine berechtigte Rolle, alle anderen nur lesend. Solange die
-  Anmeldung gemockt ist, sehen wir bereits einen Lese-/Bearbeitungsmodus vor, den die
-  Anmeldung später nur noch zuweisen muss.
-
-| Feld | Nach Erstellung änderbar? | Wer (später, mit Anmeldung) |
-|---|---|---|
-| **Autor** (Ersteller) | nein – schreibgeschützt | – |
-| Lizenz / Tags / Typ / Inhalte | ja | Ersteller bzw. berechtigte Rolle |
+Es gibt **keine** Rechteeinschränkung: **jeder kann alles bearbeiten** (Vorgabe Prof.).
+Alle Felder – inklusive Autor – bleiben nach der Erstellung änderbar. Eine spätere
+THM-CAS-Anmeldung kann darauf bei Bedarf Rechte aufsetzen.
 
 ## 5. Use Cases
 
-1. **Aufgabe erstellen und beschreiben:** Eine Lehrkraft legt eine Aufgabe an, wählt
-   Typ, Autor und Lizenz und vergibt Tags.
-2. **Inhalte hinzufügen:** Zu einer Aufgabe werden Inhaltsbausteine (Text, Bild, PDF)
-   mit einem Zweck (Aufgabenstellung, Hinweis …) ergänzt.
-3. **Sequenz bilden (vertikal):** Mehrere Aufgaben werden zu einem geordneten Lernpfad
-   zusammengefügt und in der Reihenfolge angeordnet.
-4. **Variante/Restriktion anlegen (horizontal):** Zu einer Aufgabe wird eine Variante
-   mit einer methodischen Vorgabe definiert (z. B. „muss `INNER JOIN` enthalten").
-5. **Wiederfinden:** Aufgaben werden über Tags, Typ oder Autor gefiltert und gesucht.
+1. **Aufgabe erstellen und beschreiben:** Nutzer legt eine Aufgabe an, wählt Typ, Autor,
+   Lizenz und vergibt Tags (oder legt neue Tags/Lizenzen/Autoren an).
+2. **Inhalte hinzufügen:** Inhaltsbausteine (Text, Bild, PDF) mit einem Zweck
+   (Aufgabenstellung, Hinweis …) und je einer Lizenz ergänzen.
+3. **Vertikale Sequenz (Lernpfad) bilden:** Aufgaben in einer **geordneten** Collection
+   in Reihenfolge anordnen (1, 2, 3 …).
+4. **Horizontale Variante anlegen:** Zu einer Aufgabe eine Variante mit Restriktion
+   definieren (gemeinsames `root_item_id`, Validator „muss `INNER JOIN` enthalten“).
+5. **Sammlung anlegen:** Aufgaben in einer **ungeordneten** Collection gruppieren.
+6. **Wiederfinden:** Aufgaben über Tags, Typ oder Autor filtern und suchen.
 
 ## 6. Frontend-Skizze
 
-**Editor einer Einzelaufgabe** (Metadaten + Inhalte + horizontale Abhängigkeiten):
+**Editor einer Einzelaufgabe** (Metadaten + Inhalte + horizontale Restriktionen):
 
 ```
 ┌─ Aufgabe-Editor ───────────────────────────────────────────┐
 │ Typ:[SQL-Abfrage ▾] Autor:[Siepermann ▾] Lizenz:[CC-BY ▾]   │  Metadaten
-│ Tags: [SQL ✕] [Joins ✕] [+]                                 │
+│ Tags: [#DBS/Joins ✕] [+]                                    │
 ├────────────────────────────────────────────────────────────┤
-│ Inhalte: • Aufgabenstellung (Text / PDF / Bild)             │  Inhaltsbausteine
+│ Inhalte: • Aufgabenstellung (Text / PDF / Bild)  Lizenz:▾   │  Inhaltsbausteine
 │          • Hinweis …                                        │
 ├────────────────────────────────────────────────────────────┤
 │ Validatoren (Restriktion, wird extern ausgeführt):          │  horizontal
-│   ▸ Beschreibung:[ muss INNER JOIN enthalten ]              │
-│     Regel:[ … ]                                             │
-│ Modifikatoren (Varianten-Regel):                            │
-│   ▸ Beschreibung:[ Zahlenwert variieren ]                   │
-│     Regel:[ … ]                                             │
+│   ▸ Beschreibung:[ muss INNER JOIN enthalten ]  Regel:[ … ] │
+│   (Modifier: später)                                        │
 └────────────────────────────────────────────────────────────┘
 ```
 
-**Strukturansicht** (vertikale Sequenzen als Lernpfad):
+**Strukturansicht** (geordnete Collection = Lernpfad; ungeordnete = Sammlung):
 
 ```
-📁 SQL-Grundkurs (geordnete Sequenz)
-   1. Datenbank-Konzept entwerfen
-   2. SERM-Diagramm zeichnen
-   3. SQL-DDL schreiben
-   4. Komplexe SQL-Abfrage
+📁 Lernpfad „SQL-Grundlagen" (Collection, geordnet)
+    1. Datenbank-Konzept   2. SERM-Diagramm   3. SQL-DDL   4. SQL-Abfrage
+
+📁 Sammlung „Übungsblatt 1" (Collection, ungeordnet)
+    • Aufgabe A   • Aufgabe B   • Aufgabe C
 ```
 
-## 7. Offene Fragen zur Abstimmung
+## 7. Stand der Klärung
 
-1. **Validatoren/Modifikatoren – Umfang:** Wir gehen davon aus, dass wir die Regeln
-   nur **definieren und speichern**, während die Ausführung (Korrektur, Varianten-
-   erzeugung) in einem anderen Service liegt. Ist das so richtig?
-2. **Format der Regeln:** In welcher Form soll eine Validator-/Modifier-Regel erfasst
-   werden (Freitext, JSON, eine festgelegte Syntax)? Da ein anderer Service sie
-   ausführt, brauchen wir hier ein gemeinsames Format. Bis dahin würden wir ein
-   **Freitextfeld** vorsehen.
-3. **Typabhängigkeit:** Sollen Validatoren/Modifikatoren **je Aufgabentyp**
-   unterschiedlich dargestellt werden, oder genügt eine generische Regel-Eingabe?
-4. **Tags:** Sind die Tags **vorgegeben** (festes hierarchisches Vokabular), oder dürfen
-   Autorinnen und Autoren eigene Tags anlegen?
-5. **Autor/Anmeldung:** Bis zur zentralen THM-CAS-Anmeldung mocken wir den
-   angemeldeten Benutzer. Ist das für die erste Iteration in Ordnung?
-6. **Autor & Bearbeitungsrechte:** Soll der Autor nach der Erstellung unveränderlich
-   sein (= Ersteller)? Und wer darf eine bestehende Aufgabe bearbeiten – nur der
-   Ersteller bzw. eine bestimmte Rolle?
+**Bereits geklärt (mit Prof.):**
+- Korrektur/Lösen ist **nicht** unsere Aufgabe; Validatoren werden nur **definiert und
+  gespeichert**, extern ausgeführt.
+- **Jeder kann alles** anlegen und bearbeiten (keine Rechteeinschränkung).
+- **Tags hierarchisch**, Nutzer dürfen eigene anlegen.
+- **Modifier** vorerst zurückgestellt.
+- Vertikal (geordnete Sequenz) = **geordnete Collection** (`position`); horizontal
+  (Varianten) = `root_item_id` + Validator/Modifier; **ungeordnete Collection** = Sammlung.
+
+**Noch offen:**
+- **Template** (`item_representation_template`): legt fest, wo/wie die Inhalte einer
+  Aufgabe dargestellt werden – Konzept noch nicht abschließend verstanden (eigenes
+  Ticket).
+- **Lizenz-Ebene:** primär am Inhalt (`ItemContent`) – soll die Aufgabe (`Item`)
+  zusätzlich eine Lizenz tragen?
+- **Validator-Format:** Freitext für den Anfang (Umsetzung ist uns überlassen).
