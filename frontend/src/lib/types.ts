@@ -1,3 +1,7 @@
+/**
+ * @deprecated Use types from `@/feature/aufgabendatenbank/api-adapter.types` instead.
+ * These old types will be removed in a future cleanup.
+ */
 export interface Content {
   id?: string
   license: string | null
@@ -23,6 +27,9 @@ export interface Item {
   contents: Content[]
   items?: CollectionItem[]
   order?: boolean
+  // Backend item_collection_id (nur bei Kollektionen gesetzt). Wird für
+  // alle /api/collections/{id}/... Aufrufe verwendet — NICHT die item_id (id).
+  collectionId?: string | null
 }
 
 export type Collection = Item & {

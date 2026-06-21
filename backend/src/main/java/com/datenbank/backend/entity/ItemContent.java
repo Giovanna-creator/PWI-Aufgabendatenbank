@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Entspricht der Tabelle "item_content".
@@ -20,9 +21,9 @@ import java.util.Set;
 public class ItemContent {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "item_content_id")
-    private Integer itemContentId;
+    private UUID itemContentId;
 
     /**
      * FK auf license. @ManyToOne: viele Contents können dieselbe Lizenz haben.
@@ -92,11 +93,11 @@ public class ItemContent {
     public ItemContent() {
     }
 
-    public Integer getItemContentId() {
+    public UUID getItemContentId() {
         return itemContentId;
     }
 
-    public void setItemContentId(Integer itemContentId) {
+    public void setItemContentId(UUID itemContentId) {
         this.itemContentId = itemContentId;
     }
 

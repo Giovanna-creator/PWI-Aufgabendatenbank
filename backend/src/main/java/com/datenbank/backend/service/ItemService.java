@@ -13,6 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -82,7 +83,7 @@ public class ItemService {
      * Wirft 404, falls nicht gefunden.
      */
     @Transactional(readOnly = true)
-    public ItemResponseDto getItemById(Integer id) {
+    public ItemResponseDto getItemById(UUID id) {
         Item item = findItemOrThrow(id);
         return convertToResponseDto(item);
     }
@@ -103,7 +104,7 @@ public class ItemService {
      * Wirft 404, falls das Item nicht existiert.
      */
     @Transactional
-    public ItemResponseDto updateItem(Integer id, ItemCreateDto dto) {
+    public ItemResponseDto updateItem(UUID id, ItemCreateDto dto) {
         Item item = findItemOrThrow(id);
         applyDtoToEntity(dto, item);
         Item saved = itemRepository.save(item);
@@ -115,7 +116,7 @@ public class ItemService {
      * Wirft 404, falls das Item nicht existiert.
      */
     @Transactional
-    public void deleteItem(Integer id) {
+    public void deleteItem(UUID id) {
         if (!itemRepository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Item nicht gefunden");
         }
@@ -136,10 +137,26 @@ public class ItemService {
      * Liefert alle Kinder eines Items
      */
     @Transactional(readOnly = true)
-    public List<ItemResponseDto> getItemsByRootId(Integer rootItemId) {
+    public List<ItemResponseDto> getItemsByRootId(UUID rootItemId) {
         return itemRepository.findByRootItem_ItemId(rootItemId).stream()
                 .map(this::convertToResponseDto)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Konvertiert ein Item in eine Collection.
+     * Erstellt eine ItemCollection, die auf dieses Item verweist.
+     */
+    @Transactional
+    public ItemResponseDto convertToCollection(UUID itemId) {
+        Item item = findItemOrThrow(itemId);
+
+        ItemCollection collection = new ItemCollection();
+        collection.setParentItem(item);
+        collection.setCollectionOrder(false);
+        collectionRepository.save(collection);
+
+        return convertToResponseDto(item);
     }
 
     // =========================================================================
@@ -149,7 +166,7 @@ public class ItemService {
     /**
      * Holt ein Item aus der DB oder wirft 404.
      */
-    private Item findItemOrThrow(Integer id) {
+    private Item findItemOrThrow(UUID id) {
         return itemRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Item nicht gefunden"));
@@ -281,10 +298,15 @@ public class ItemService {
         dto.setCreatedAt(item.getCreatedAt());
         dto.setUpdatedAt(item.getUpdatedAt());
 
-        // 1.3 isCollection setzen
-    dto.setCollection(
-        collectionRepository.existsByParentItem_ItemId(item.getItemId())
-    );
+        // 1.3 isCollection + order-Flag setzen (eine Abfrage statt nur exists)
+    ItemCollection collection = collectionRepository
+        .findFirstByParentItem_ItemId(item.getItemId())
+        .orElse(null);
+    dto.setCollection(collection != null);
+    if (collection != null) {
+        dto.setOrder(collection.getCollectionOrder());
+        dto.setCollectionId(collection.getItemCollectionId());
+    }
 
     // 1.4 contents setzen
     List<ContentSummaryDto> contentSummaries = itemContentsRepository

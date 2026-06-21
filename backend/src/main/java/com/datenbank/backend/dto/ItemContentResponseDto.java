@@ -3,6 +3,7 @@ package com.datenbank.backend.dto;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * DTO für die Rückgabe eines ItemContents an das Frontend.
@@ -15,19 +16,26 @@ import java.util.Set;
  */
 public class ItemContentResponseDto {
 
-    private Integer itemContentId;
+    private UUID itemContentId;
 
     // License
-    private Integer licenseId;
+    private UUID licenseId;
     private String licenseName;
 
     // ItemContentType
-    private Integer itemContentTypeId;
+    private UUID itemContentTypeId;
     private String itemContentTypeName;
 
     // Author
-    private Integer authorId;
+    private UUID authorId;
     private String authorDescriptor;
+
+    /**
+     * Zweck dieses Contents (z. B. "Aufgabenstellung", "Hinweis", "Lösung").
+     * Lebt im item_contents-Join und wird nur bei GET /by-item/{itemId}
+     * gefüllt — bei den generischen Content-Endpoints null.
+     */
+    private String purpose;
 
     // Content
     private String jsonSerializedContent;
@@ -39,7 +47,7 @@ public class ItemContentResponseDto {
     private boolean hasBlobContent;
 
     // Tags
-    private Set<Integer> tagIds = new HashSet<>();
+    private Set<UUID> tagIds = new HashSet<>();
 
     // Timestamps
     private LocalDateTime createdAt;
@@ -48,19 +56,19 @@ public class ItemContentResponseDto {
     public ItemContentResponseDto() {
     }
 
-    public Integer getItemContentId() {
+    public UUID getItemContentId() {
         return itemContentId;
     }
 
-    public void setItemContentId(Integer itemContentId) {
+    public void setItemContentId(UUID itemContentId) {
         this.itemContentId = itemContentId;
     }
 
-    public Integer getLicenseId() {
+    public UUID getLicenseId() {
         return licenseId;
     }
 
-    public void setLicenseId(Integer licenseId) {
+    public void setLicenseId(UUID licenseId) {
         this.licenseId = licenseId;
     }
 
@@ -72,11 +80,11 @@ public class ItemContentResponseDto {
         this.licenseName = licenseName;
     }
 
-    public Integer getItemContentTypeId() {
+    public UUID getItemContentTypeId() {
         return itemContentTypeId;
     }
 
-    public void setItemContentTypeId(Integer itemContentTypeId) {
+    public void setItemContentTypeId(UUID itemContentTypeId) {
         this.itemContentTypeId = itemContentTypeId;
     }
 
@@ -88,11 +96,11 @@ public class ItemContentResponseDto {
         this.itemContentTypeName = itemContentTypeName;
     }
 
-    public Integer getAuthorId() {
+    public UUID getAuthorId() {
         return authorId;
     }
 
-    public void setAuthorId(Integer authorId) {
+    public void setAuthorId(UUID authorId) {
         this.authorId = authorId;
     }
 
@@ -102,6 +110,14 @@ public class ItemContentResponseDto {
 
     public void setAuthorDescriptor(String authorDescriptor) {
         this.authorDescriptor = authorDescriptor;
+    }
+
+    public String getPurpose() {
+        return purpose;
+    }
+
+    public void setPurpose(String purpose) {
+        this.purpose = purpose;
     }
 
     public String getJsonSerializedContent() {
@@ -116,11 +132,11 @@ public class ItemContentResponseDto {
 
     public void setHasBlobContent(boolean b) { this.hasBlobContent = b; }
 
-    public Set<Integer> getTagIds() {
+    public Set<UUID> getTagIds() {
         return tagIds;
     }
 
-    public void setTagIds(Set<Integer> tagIds) {
+    public void setTagIds(Set<UUID> tagIds) {
         this.tagIds = tagIds;
     }
 

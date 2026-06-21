@@ -1,6 +1,7 @@
 package com.datenbank.backend.entity;
 
 import jakarta.persistence.*;
+import java.util.UUID;
 
 
 @Entity
@@ -8,9 +9,9 @@ import jakarta.persistence.*;
 public class License {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "license_id")
-    private Integer licenseId;
+    private UUID licenseId;
 
     @Column(name = "license", nullable = false, unique = true, columnDefinition = "TEXT")
     private String license;
@@ -22,11 +23,11 @@ public class License {
         this.license = license;
     }
 
-    public Integer getLicenseId() {
+    public UUID getLicenseId() {
         return licenseId;
     }
 
-    public void setLicenseId(Integer licenseId) {
+    public void setLicenseId(UUID licenseId) {
         this.licenseId = licenseId;
     }
 

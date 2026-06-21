@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Entspricht der Tabelle "item" - die zentrale Aufgaben-Entität.
@@ -20,9 +21,9 @@ import java.util.Set;
 public class Item {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "item_id")
-    private Integer itemId;
+    private UUID itemId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "author_id", nullable = false)
@@ -100,11 +101,11 @@ public class Item {
     public Item() {
     }
 
-    public Integer getItemId() {
+    public UUID getItemId() {
         return itemId;
     }
 
-    public void setItemId(Integer itemId) {
+    public void setItemId(UUID itemId) {
         this.itemId = itemId;
     }
 

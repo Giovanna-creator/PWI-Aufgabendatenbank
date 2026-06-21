@@ -8,8 +8,8 @@ export interface ValidationIssue {
 // ── Tree flattening ──────────────────────────────────────────────────────────
 
 /** Recursively flatten a collection's items[] into a single-level array. */
-function flattenCollectionItems(items: CollectionItem[]): Item[] {
-  return items.flatMap(ci =>
+function flattenCollectionItems(items: CollectionItem[] | undefined): Item[] {
+  return (items ?? []).flatMap(ci =>
     // Drill into nested collections to collect their items too
     checkIsCollection(ci.item)
       ? [ci.item, ...flattenCollectionItems(ci.item.items)]

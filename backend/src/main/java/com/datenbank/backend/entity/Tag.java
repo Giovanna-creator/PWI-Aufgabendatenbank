@@ -1,6 +1,7 @@
 package com.datenbank.backend.entity;
 
 import jakarta.persistence.*;
+import java.util.UUID;
 
 
 @Entity
@@ -8,9 +9,9 @@ import jakarta.persistence.*;
 public class Tag {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "tag_id")
-    private Integer tagId;
+    private UUID tagId;
 
     /**
      * Self-Reference: ein Tag kann ein Eltern-Tag haben.
@@ -35,11 +36,11 @@ public class Tag {
         this.parentTag = parentTag;
     }
 
-    public Integer getTagId() {
+    public UUID getTagId() {
         return tagId;
     }
 
-    public void setTagId(Integer tagId) {
+    public void setTagId(UUID tagId) {
         this.tagId = tagId;
     }
 

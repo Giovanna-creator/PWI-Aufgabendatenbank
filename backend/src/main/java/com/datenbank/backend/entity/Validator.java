@@ -1,6 +1,7 @@
 package com.datenbank.backend.entity;
 
 import jakarta.persistence.*;
+import java.util.UUID;
 
 /**
  * Entspricht der Tabelle "validator".
@@ -11,9 +12,9 @@ import jakarta.persistence.*;
 public class Validator {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "validator_id")
-    private Integer validatorId;
+    private UUID validatorId;
 
     @Column(name = "description", nullable = false, columnDefinition = "TEXT")
     private String description;
@@ -29,11 +30,11 @@ public class Validator {
         this.validator = validator;
     }
 
-    public Integer getValidatorId() {
+    public UUID getValidatorId() {
         return validatorId;
     }
 
-    public void setValidatorId(Integer validatorId) {
+    public void setValidatorId(UUID validatorId) {
         this.validatorId = validatorId;
     }
 

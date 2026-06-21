@@ -1,6 +1,7 @@
 package com.datenbank.backend.entity;
 
 import jakarta.persistence.*;
+import java.util.UUID;
 
 /**
  * Modifikatoren für Aufgaben-Varianten (z.B. "Variante mit INNER JOIN-Pflicht").
@@ -10,9 +11,9 @@ import jakarta.persistence.*;
 public class Modifier {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "modifier_id")
-    private Integer  modifierId;
+    private UUID  modifierId;
 
     @Column(name = "description", nullable = false, columnDefinition = "TEXT")
     private String description;
@@ -28,11 +29,11 @@ public class Modifier {
         this.modifier = modifier;
     }
 
-    public Integer getModifierId() {
+    public UUID getModifierId() {
         return modifierId;
     }
 
-    public void setModifierId(Integer  modifierId) {
+    public void setModifierId(UUID  modifierId) {
         this.modifierId = modifierId;
     }
 

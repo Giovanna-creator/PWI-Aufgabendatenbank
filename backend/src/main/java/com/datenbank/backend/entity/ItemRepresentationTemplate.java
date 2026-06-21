@@ -1,6 +1,7 @@
 package com.datenbank.backend.entity;
 
 import jakarta.persistence.*;
+import java.util.UUID;
 
 /**
  * Entspricht der Tabelle "item_representation_template".
@@ -11,9 +12,9 @@ import jakarta.persistence.*;
 public class ItemRepresentationTemplate {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "item_template_id")
-    private Integer itemTemplateId;
+    private UUID itemTemplateId;
 
     @Column(name = "template", nullable = false, columnDefinition = "TEXT")
     private String template;
@@ -25,11 +26,11 @@ public class ItemRepresentationTemplate {
         this.template = template;
     }
 
-    public Integer getItemTemplateId() {
+    public UUID getItemTemplateId() {
         return itemTemplateId;
     }
 
-    public void setItemTemplateId(Integer itemTemplateId) {
+    public void setItemTemplateId(UUID itemTemplateId) {
         this.itemTemplateId = itemTemplateId;
     }
 

@@ -1,10 +1,12 @@
 package com.datenbank.backend.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * DTO für die Rückgabe einer Aufgabe (Item) an das Frontend.
@@ -21,30 +23,30 @@ import java.util.List;
  */
 public class ItemResponseDto {
 
-    private Integer itemId;
+    private UUID itemId;
 
     // Author
-    private Integer authorId;
+    private UUID authorId;
     private String authorDescriptor;
 
     // License
-    private Integer licenseId;
+    private UUID licenseId;
     private String licenseName;
 
     // ItemType
-    private Integer itemTypeId;
+    private UUID itemTypeId;
     private String itemTypeName;
 
     // Optional: Template
-    private Integer itemTemplateId;
+    private UUID itemTemplateId;
 
     // Optional: Ursprungs-Aufgabe
-    private Integer rootItemId;
+    private UUID rootItemId;
 
     // Verknüpfte Tags, Validatoren, Modifier (nur IDs für Einfachheit)
-    private Set<Integer> tagIds = new HashSet<>();
-    private Set<Integer> validatorIds = new HashSet<>();
-    private Set<Integer> modifierIds = new HashSet<>();
+    private Set<UUID> tagIds = new HashSet<>();
+    private Set<UUID> validatorIds = new HashSet<>();
+    private Set<UUID> modifierIds = new HashSet<>();
 
     // Timestamps (vom System gesetzt)
     private LocalDateTime createdAt;
@@ -59,13 +61,35 @@ public class ItemResponseDto {
     private boolean isCollection;
 
     /**
+     * Reihenfolge-Flag, falls dieses Item eine Kollektion ist.
+     * true = geordnet, false = ungeordnet, null = keine Kollektion.
+     * Damit das Frontend den Order-Status auch beim Laden über /items kennt.
+     */
+    private Boolean order;
+
+    /**
+     * Die item_collection_id, falls dieses Item eine Kollektion ist (sonst null).
+     * Das Frontend braucht sie für alle /api/collections/{id}/... Aufrufe,
+     * da diese Endpunkte über die Collection-ID adressiert werden, nicht über
+     * die item_id.
+     */
+    private UUID collectionId;
+
+    /**
      * Inhalte dieses Items. Niemals null — leere Liste wenn keine vorhanden.
      */
     private List<ContentSummaryDto> contents = new ArrayList<>();
 
     // Getter & Setter
+    @JsonProperty("isCollection")
     public boolean isCollection() { return isCollection; }
     public void setCollection(boolean c) { this.isCollection = c; }
+
+    public Boolean getOrder() { return order; }
+    public void setOrder(Boolean order) { this.order = order; }
+
+    public UUID getCollectionId() { return collectionId; }
+    public void setCollectionId(UUID collectionId) { this.collectionId = collectionId; }
 
     public List<ContentSummaryDto> getContents() { return contents; }
     public void setContents(List<ContentSummaryDto> c) { this.contents = c; }
@@ -73,19 +97,19 @@ public class ItemResponseDto {
     public ItemResponseDto() {
     }
 
-    public Integer getItemId() {
+    public UUID getItemId() {
         return itemId;
     }
 
-    public void setItemId(Integer itemId) {
+    public void setItemId(UUID itemId) {
         this.itemId = itemId;
     }
 
-    public Integer getAuthorId() {
+    public UUID getAuthorId() {
         return authorId;
     }
 
-    public void setAuthorId(Integer authorId) {
+    public void setAuthorId(UUID authorId) {
         this.authorId = authorId;
     }
 
@@ -97,11 +121,11 @@ public class ItemResponseDto {
         this.authorDescriptor = authorDescriptor;
     }
 
-    public Integer getLicenseId() {
+    public UUID getLicenseId() {
         return licenseId;
     }
 
-    public void setLicenseId(Integer licenseId) {
+    public void setLicenseId(UUID licenseId) {
         this.licenseId = licenseId;
     }
 
@@ -113,11 +137,11 @@ public class ItemResponseDto {
         this.licenseName = licenseName;
     }
 
-    public Integer getItemTypeId() {
+    public UUID getItemTypeId() {
         return itemTypeId;
     }
 
-    public void setItemTypeId(Integer itemTypeId) {
+    public void setItemTypeId(UUID itemTypeId) {
         this.itemTypeId = itemTypeId;
     }
 
@@ -129,43 +153,43 @@ public class ItemResponseDto {
         this.itemTypeName = itemTypeName;
     }
 
-    public Integer getItemTemplateId() {
+    public UUID getItemTemplateId() {
         return itemTemplateId;
     }
 
-    public void setItemTemplateId(Integer itemTemplateId) {
+    public void setItemTemplateId(UUID itemTemplateId) {
         this.itemTemplateId = itemTemplateId;
     }
 
-    public Integer getRootItemId() {
+    public UUID getRootItemId() {
         return rootItemId;
     }
 
-    public void setRootItemId(Integer rootItemId) {
+    public void setRootItemId(UUID rootItemId) {
         this.rootItemId = rootItemId;
     }
 
-    public Set<Integer> getTagIds() {
+    public Set<UUID> getTagIds() {
         return tagIds;
     }
 
-    public void setTagIds(Set<Integer> tagIds) {
+    public void setTagIds(Set<UUID> tagIds) {
         this.tagIds = tagIds;
     }
 
-    public Set<Integer> getValidatorIds() {
+    public Set<UUID> getValidatorIds() {
         return validatorIds;
     }
 
-    public void setValidatorIds(Set<Integer> validatorIds) {
+    public void setValidatorIds(Set<UUID> validatorIds) {
         this.validatorIds = validatorIds;
     }
 
-    public Set<Integer> getModifierIds() {
+    public Set<UUID> getModifierIds() {
         return modifierIds;
     }
 
-    public void setModifierIds(Set<Integer> modifierIds) {
+    public void setModifierIds(Set<UUID> modifierIds) {
         this.modifierIds = modifierIds;
     }
 

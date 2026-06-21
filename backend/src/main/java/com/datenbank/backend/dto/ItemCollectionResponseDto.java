@@ -3,6 +3,7 @@ package com.datenbank.backend.dto;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * DTO für die Rückgabe einer Kollektion an das Frontend.
@@ -18,13 +19,13 @@ import java.util.List;
  */
 public class ItemCollectionResponseDto {
 
-    private Integer itemCollectionId;
+    private UUID itemCollectionId;
 
     // Optionales Eltern-Item
-    private Integer parentItemId;
+    private UUID parentItemId;
 
-    // Reihenfolge der Kollektion
-    private Integer collectionOrder;
+    // Reihenfolge der Kollektion: true = geordnet, false = ungeordnet
+    private Boolean order;
 
     /**
      * Aufgaben in dieser Kollektion, sortiert nach Position.
@@ -47,11 +48,11 @@ public class ItemCollectionResponseDto {
      * Gibt ID und Position zurück.
      */
     public static class SubItemResponseDto {
-        private Integer subitemId;
+        private UUID subitemId;
         private Integer position;
 
-        public Integer getSubitemId() { return subitemId; }
-        public void setSubitemId(Integer id) { this.subitemId = id; }
+        public UUID getSubitemId() { return subitemId; }
+        public void setSubitemId(UUID id) { this.subitemId = id; }
 
         public Integer getPosition() { return position; }
         public void setPosition(Integer p) { this.position = p; }
@@ -59,14 +60,14 @@ public class ItemCollectionResponseDto {
 
     public ItemCollectionResponseDto() {}
 
-    public Integer getItemCollectionId() { return itemCollectionId; }
-    public void setItemCollectionId(Integer id) { this.itemCollectionId = id; }
+    public UUID getItemCollectionId() { return itemCollectionId; }
+    public void setItemCollectionId(UUID id) { this.itemCollectionId = id; }
 
-    public Integer getParentItemId() { return parentItemId; }
-    public void setParentItemId(Integer id) { this.parentItemId = id; }
+    public UUID getParentItemId() { return parentItemId; }
+    public void setParentItemId(UUID id) { this.parentItemId = id; }
 
-    public Integer getCollectionOrder() { return collectionOrder; }
-    public void setCollectionOrder(Integer o) { this.collectionOrder = o; }
+    public Boolean getOrder() { return order; }
+    public void setOrder(Boolean o) { this.order = o; }
 
     public List<SubItemResponseDto> getSubItems() { return subItems; }
     public void setSubItems(List<SubItemResponseDto> s) { this.subItems = s; }

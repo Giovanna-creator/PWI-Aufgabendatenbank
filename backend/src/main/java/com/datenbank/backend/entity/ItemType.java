@@ -3,6 +3,7 @@ package com.datenbank.backend.entity;
 import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Beziehung: @ManyToMany zu ItemContentType über item_content_types
@@ -13,9 +14,9 @@ import java.util.Set;
 public class ItemType {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "item_type_id")
-    private Integer itemTypeId;
+    private UUID itemTypeId;
 
     @Column(name = "item_type_name", nullable = false, columnDefinition = "TEXT")
     private String itemTypeName;
@@ -39,11 +40,11 @@ public class ItemType {
         this.description = description;
     }
 
-    public Integer getItemTypeId() {
+    public UUID getItemTypeId() {
         return itemTypeId;
     }
 
-    public void setItemTypeId(Integer itemTypeId) {
+    public void setItemTypeId(UUID itemTypeId) {
         this.itemTypeId = itemTypeId;
     }
 

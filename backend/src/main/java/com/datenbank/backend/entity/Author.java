@@ -1,6 +1,7 @@
 package com.datenbank.backend.entity;
 
 import jakarta.persistence.*;
+import java.util.UUID;
 
 
 @Entity
@@ -8,9 +9,9 @@ import jakarta.persistence.*;
 public class Author {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "author_id")
-    private Integer authorId;
+    private UUID authorId;
 
     @Column(name = "descriptor", nullable = false)
     private String descriptor;
@@ -26,11 +27,11 @@ public class Author {
         this.mail = mail;
     }
 
-    public Integer getAuthorId() {
+    public UUID getAuthorId() {
         return authorId;
     }
 
-    public void setAuthorId(Integer authorId) { 
+    public void setAuthorId(UUID authorId) { 
         this.authorId = authorId;
     }
 
