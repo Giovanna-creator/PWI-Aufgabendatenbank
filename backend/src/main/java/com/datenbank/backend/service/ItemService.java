@@ -3,6 +3,7 @@ package com.datenbank.backend.service;
 import com.datenbank.backend.dto.ContentSummaryDto;
 import com.datenbank.backend.dto.ItemCreateDto;
 import com.datenbank.backend.dto.ItemResponseDto;
+import com.datenbank.backend.dto.ValidatorResponseDto;
 import com.datenbank.backend.entity.*;
 import com.datenbank.backend.repository.*;
 import org.springframework.http.HttpStatus;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -157,6 +159,47 @@ public class ItemService {
         collectionRepository.save(collection);
 
         return convertToResponseDto(item);
+    }
+
+    // =========================================================================
+    // Validator-Verknüpfungen
+    // =========================================================================
+
+    @Transactional(readOnly = true)
+    public List<ValidatorResponseDto> getValidatorsForItem(UUID itemId) {
+        Item item = findItemOrThrow(itemId);
+        return item.getValidators().stream()
+                .map(v -> {
+                    ValidatorResponseDto dto = new ValidatorResponseDto();
+                    dto.setValidatorId(v.getValidatorId());
+                    dto.setDescription(v.getDescription());
+                    dto.setValidator(v.getValidator());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public ItemResponseDto addValidatorToItem(UUID itemId, UUID validatorId) {
+        Item item = findItemOrThrow(itemId);
+        Validator validator = validatorRepository.findById(validatorId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Validator nicht gefunden"));
+        item.getValidators().add(validator);
+        Item saved = itemRepository.save(item);
+        return convertToResponseDto(saved);
+    }
+
+    @Transactional
+    public ItemResponseDto removeValidatorFromItem(UUID itemId, UUID validatorId) {
+        Item item = findItemOrThrow(itemId);
+        boolean removed = item.getValidators().removeIf(v -> v.getValidatorId().equals(validatorId));
+        if (!removed) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "Validator nicht mit diesem Item verknüpft");
+        }
+        Item saved = itemRepository.save(item);
+        return convertToResponseDto(saved);
     }
 
     // =========================================================================

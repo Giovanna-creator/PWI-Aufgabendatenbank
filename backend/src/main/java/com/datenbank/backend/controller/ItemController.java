@@ -2,6 +2,7 @@ package com.datenbank.backend.controller;
 
 import com.datenbank.backend.dto.ItemCreateDto;
 import com.datenbank.backend.dto.ItemResponseDto;
+import com.datenbank.backend.dto.ValidatorResponseDto;
 import com.datenbank.backend.service.ItemService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -83,5 +84,42 @@ public class ItemController {
 
         // Alle Items
         return ResponseEntity.ok(itemService.getAllItems());
+    }
+
+    // =========================================================================
+    // Validator-Verknüpfungen
+    // =========================================================================
+
+    /**
+     * Liefert alle Validatoren, die mit einem Item verknüpft sind.
+     * GET /api/items/{itemId}/validators
+     */
+    @GetMapping("/{itemId}/validators")
+    public ResponseEntity<List<ValidatorResponseDto>> getValidatorsForItem(
+            @PathVariable UUID itemId) {
+        return ResponseEntity.ok(itemService.getValidatorsForItem(itemId));
+    }
+
+    /**
+     * Verknüpft einen Validator mit einem Item.
+     * POST /api/items/{itemId}/validators/{validatorId}
+     */
+    @PostMapping("/{itemId}/validators/{validatorId}")
+    public ResponseEntity<ItemResponseDto> addValidatorToItem(
+            @PathVariable UUID itemId,
+            @PathVariable UUID validatorId) {
+        return ResponseEntity.ok(itemService.addValidatorToItem(itemId, validatorId));
+    }
+
+    /**
+     * Entfernt die Verknüpfung eines Validators von einem Item.
+     * DELETE /api/items/{itemId}/validators/{validatorId}
+     */
+    @DeleteMapping("/{itemId}/validators/{validatorId}")
+    public ResponseEntity<Void> removeValidatorFromItem(
+            @PathVariable UUID itemId,
+            @PathVariable UUID validatorId) {
+        itemService.removeValidatorFromItem(itemId, validatorId);
+        return ResponseEntity.noContent().build();
     }
 }
