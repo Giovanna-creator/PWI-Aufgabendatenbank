@@ -324,6 +324,18 @@ export class DevAdbApiService implements ApiAdapter {
     log('DELETE', `/api/contents/${contentId}`)
   }
 
+  async uploadBlob(contentId: string, file: File): Promise<void> {
+    log('POST', `/api/contents/${contentId}/blob`, {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type
+    })
+  }
+
+  getBlobUrl(contentId: string): string {
+    return `/api/contents/${contentId}/blob`
+  }
+
   async loadFullTree(): Promise<ItemDTO[]> {
     log('GET', '/api/items?root=true (loadFullTree)')
     return dummyData.rootItems.map(toDTO)

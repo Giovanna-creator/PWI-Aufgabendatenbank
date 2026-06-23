@@ -349,6 +349,21 @@ export const useExerciseStore = defineStore('exercise', {
       }).catch((e) => this._notifyError(e))
     },
 
+    async uploadBlob(index: number, file: File) {
+      const inner = this.selectedInnerItem
+      if (!inner || !inner.contents[index]) return
+      const content = inner.contents[index]
+      const contentId = content.id
+      if (!contentId) return
+      try {
+        await _adapter!.uploadBlob(contentId, file)
+        content.blobMimeType = file.type
+        content.blobContent = file.type.startsWith('image/') ? '(image)' : '(binary)'
+      } catch (e) {
+        this._notifyError(e)
+      }
+    },
+
     // ── Tree helpers ──
 
     /**

@@ -92,6 +92,18 @@ export class AdbApiService implements ApiAdapter {
     await this.http.delete(`/contents/${contentId}`)
   }
 
+  async uploadBlob(contentId: string, file: File): Promise<void> {
+    const formData = new FormData()
+    formData.append('file', file)
+    await this.http.post(`/contents/${contentId}/blob`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  }
+
+  getBlobUrl(contentId: string): string {
+    return `/api/contents/${contentId}/blob`
+  }
+
   async loadFullTree(): Promise<ItemDTO[]> {
     return this.getRootItems()
   }
