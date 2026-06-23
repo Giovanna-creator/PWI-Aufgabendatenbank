@@ -117,4 +117,6 @@ export interface ApiAdapter {
   deleteContent(contentId: string): Promise<void>
 
   loadFullTree(): Promise<ItemDTO[]>
+
+  getItemsByRootId(rootItemId: string): Promise<ItemDTO[]>
 }

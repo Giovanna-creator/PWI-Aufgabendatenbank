@@ -109,6 +109,7 @@ function toCollectionItem(dto: CollectionItemDTO): CollectionItem {
 interface ExerciseState {
   rootItems: Item[]
   selectedItem: TreeItem | null
+  variants: Item[]
   loading: boolean
   loadingContent: boolean
   error: string | null
@@ -121,6 +122,7 @@ export const useExerciseStore = defineStore('exercise', {
   state: (): ExerciseState => ({
     rootItems: [],
     selectedItem: null,
+    variants: [],
     loading: false,
     loadingContent: false,
     error: null,
@@ -221,8 +223,13 @@ export const useExerciseStore = defineStore('exercise', {
 
     selectItem(item: TreeItem) {
       this.selectedItem = item
+      this.variants = []
       const inner = getInnerItem(item)
       this.loadItemContent(inner.id)
+      if (!checkIsCollection(inner)) {
+        const baseId = inner.rootItemId ?? inner.id
+        this.loadVariants(baseId)
+      }
     },
 
     async loadItemContent(itemId: string) {
@@ -347,6 +354,147 @@ export const useExerciseStore = defineStore('exercise', {
         purpose: content.purpose,
         jsonSerializedContent: JSON.stringify(content.jsonContent)
       }).catch((e) => this._notifyError(e))
+    },
+
+    async uploadBlob(index: number, file: File) {
+      const inner = this.selectedInnerItem
+      if (!inner || !inner.contents[index]) return
+      const content = inner.contents[index]
+      const contentId = content.id
+      if (!contentId) return
+      try {
+        await _adapter!.uploadBlob(contentId, file)
+        content.blobMimeType = file.type
+        content.blobContent = file.type.startsWith('image/') ? '(image)' : '(binary)'
+      } catch (e) {
+        this._notifyError(e)
+      }
+    },
+
+    // ── Variants ────────────────────────────────────────────────────────────────
+
+    async loadVariants(baseItemId: string) {
+      this.variants = []
+      try {
+        const dtos = await _adapter!.getItemsByRootId(baseItemId)
+        this.variants = dtos.map(toItem)
+        await Promise.all(this.variants.map(async (v) => {
+          const contentDtos = await _adapter!.getContents(v.id)
+          if (contentDtos.length > 0) {
+            v.contents = contentDtos.map(toFullContent)
+          }
+        }))
+      } catch (e) {
+        this._notifyError(e)
+      }
+    },
+
+    async createVariant(baseItemId: string) {
+      const variant = this._createItemData(baseItemId)
+      this.variants.push(variant)
+      try {
+        const dto = await _adapter!.createItem({
+          authorId: SEED_AUTHOR_ID,
+          licenseId: SEED_LICENSE_ID,
+          itemTypeId: SEED_ITEM_TYPE_ID,
+          rootItemId: baseItemId
+        })
+        variant.id = dto.itemId
+        if (variant.contents.length > 0) {
+          const contentDto = await _adapter!.createContent(dto.itemId, {
+            licenseId: SEED_LICENSE_ID,
+            itemContentTypeId: SEED_CONTENT_TYPE_ID,
+            authorId: SEED_AUTHOR_ID,
+            purpose: variant.contents[0].purpose,
+            jsonSerializedContent: JSON.stringify(variant.contents[0].jsonContent)
+          })
+          if (contentDto && variant.contents[0]) {
+            variant.contents[0].id = contentDto.itemContentId
+          }
+        }
+      } catch (e) {
+        this._notifyError(e)
+        this.variants = this.variants.filter((v) => v !== variant)
+      }
+    },
+
+    updateVariantText(variantIndex: number, contentIndex: number, text: string) {
+      const variant = this.variants[variantIndex]
+      if (!variant || !variant.contents[contentIndex]) return
+      const content = variant.contents[contentIndex]
+      content.jsonContent.text = text
+      _adapter?.updateContent(content.id ?? '', {
+        licenseId: SEED_LICENSE_ID,
+        itemContentTypeId: SEED_CONTENT_TYPE_ID,
+        authorId: SEED_AUTHOR_ID,
+        purpose: content.purpose,
+        jsonSerializedContent: JSON.stringify(content.jsonContent)
+      }).catch((e) => this._notifyError(e))
+    },
+
+    updateVariantPurpose(variantIndex: number, contentIndex: number, purpose: string) {
+      const variant = this.variants[variantIndex]
+      if (!variant || !variant.contents[contentIndex]) return
+      const content = variant.contents[contentIndex]
+      content.purpose = purpose
+      _adapter?.updateContent(content.id ?? '', {
+        licenseId: SEED_LICENSE_ID,
+        itemContentTypeId: SEED_CONTENT_TYPE_ID,
+        authorId: SEED_AUTHOR_ID,
+        purpose: content.purpose,
+        jsonSerializedContent: JSON.stringify(content.jsonContent)
+      }).catch((e) => this._notifyError(e))
+    },
+
+    addVariantContent(variantIndex: number) {
+      const variant = this.variants[variantIndex]
+      if (!variant) return
+      const now = Date.now().toString()
+      const content: Content = {
+        id: 'content-' + now,
+        license: null,
+        contentType: 'text',
+        author: variant.author ?? 'author',
+        tags: [],
+        purpose: 'Neuer Inhalt',
+        jsonContent: { text: '' },
+        blobContent: ''
+      }
+      variant.contents.push(content)
+      _adapter?.createContent(variant.id, {
+        licenseId: SEED_LICENSE_ID,
+        itemContentTypeId: SEED_CONTENT_TYPE_ID,
+        authorId: SEED_AUTHOR_ID,
+        purpose: content.purpose,
+        jsonSerializedContent: JSON.stringify(content.jsonContent)
+      }).then((dto) => {
+        if (dto) content.id = dto.itemContentId
+      }).catch((e) => this._notifyError(e))
+    },
+
+    removeVariantContent(variantIndex: number, contentIndex: number) {
+      const variant = this.variants[variantIndex]
+      if (!variant || !variant.contents[contentIndex]) return
+      const removedId = variant.contents[contentIndex].id
+      variant.contents.splice(contentIndex, 1)
+      if (removedId) {
+        _adapter?.deleteContent(removedId).catch((e) => this._notifyError(e))
+      }
+    },
+
+    async uploadVariantBlob(variantIndex: number, contentIndex: number, file: File) {
+      const variant = this.variants[variantIndex]
+      if (!variant || !variant.contents[contentIndex]) return
+      const content = variant.contents[contentIndex]
+      const contentId = content.id
+      if (!contentId) return
+      try {
+        await _adapter!.uploadBlob(contentId, file)
+        content.blobMimeType = file.type
+        content.blobContent = file.type.startsWith('image/') ? '(image)' : '(binary)'
+      } catch (e) {
+        this._notifyError(e)
+      }
     },
 
     // ── Tree helpers ──

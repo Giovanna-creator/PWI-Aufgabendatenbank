@@ -328,6 +328,14 @@ export class DevAdbApiService implements ApiAdapter {
     log('GET', '/api/items?root=true (loadFullTree)')
     return dummyData.rootItems.map(toDTO)
   }
+
+  async getItemsByRootId(rootItemId: string): Promise<ItemDTO[]> {
+    log('GET', `/api/items?rootItemId=${rootItemId}`)
+    return dummyData.rootItems
+      .flatMap(item => item.items ?? [])
+      .filter(ci => ci.item.rootItemId === rootItemId)
+      .map(ci => toDTO(ci.item))
+  }
 }
 
 export default new DevAdbApiService()
