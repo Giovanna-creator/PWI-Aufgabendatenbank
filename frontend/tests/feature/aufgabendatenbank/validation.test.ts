@@ -125,7 +125,7 @@ describe('validateTreeData', () => {
     expect(issues[0].message).toContain('kein Collection-Item')
   })
 
-  it('flags a duplicate item appearing in rootItems and inside a collection', () => {
+  it('does not flag an item that is both in rootItems and inside a collection (root_item_id bleibt null bei Collection-Sub-Items)', () => {
     const dup = item({ id: 'dup', rootItemId: null })
     const data = [
       dup,
@@ -138,7 +138,7 @@ describe('validateTreeData', () => {
     ]
     const issues = validateTreeData(data)
     const dupIssue = issues.find((i) => i.message.includes('sowohl in rootItems als auch in einer Kollektion'))
-    expect(dupIssue).toBeDefined()
+    expect(dupIssue).toBeUndefined()
   })
 
   it('flags a dangling rootItemId reference', () => {

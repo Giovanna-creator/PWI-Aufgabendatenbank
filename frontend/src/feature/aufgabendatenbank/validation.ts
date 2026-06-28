@@ -96,7 +96,6 @@ export function validateTreeData(rootItems: Item[]): ValidationIssue[] {
 
   return [
     ...checkOnlyCollectionsHaveChildren(allItems),
-    ...checkNoDuplicateItems(rootItems),
     ...checkNoDanglingRootItemId(allItems)
   ]
 }
