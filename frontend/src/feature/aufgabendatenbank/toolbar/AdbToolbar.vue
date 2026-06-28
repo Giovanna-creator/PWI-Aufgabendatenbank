@@ -14,7 +14,7 @@
       variant="flat"
       prepend-icon="mdi-plus"
       class="adb-btn-spacing"
-      @click="store.createItem()"
+      @click="store.openCreateDialog()"
     >
       Aufgabe erstellen
     </v-btn>
@@ -29,10 +29,13 @@
     </v-btn>
     <v-btn icon="mdi-dots-vertical" />
   </v-toolbar>
+
+  <AdbCreateDialog />
 </template>
 
 <script setup lang="ts">
 import { useExerciseStore } from '@/stores/exerciseStore'
+import AdbCreateDialog from './AdbCreateDialog.vue'
 
 const store = useExerciseStore()
 </script>

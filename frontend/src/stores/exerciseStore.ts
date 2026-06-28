@@ -129,6 +129,9 @@ interface ExerciseState {
   licenses: LicenseDTO[]
   itemTypes: ItemTypeDTO[]
   contentTypes: ContentTypeDTO[]
+  // Erstellungs-Dialog (von Toolbar und Collection-Kontextmenü geteilt)
+  createDialogOpen: boolean
+  createDialogTarget: Collection | null
 }
 
 // ── Store ─────────────────────────────────────────────────────────────────────
@@ -144,7 +147,9 @@ export const useExerciseStore = defineStore('exercise', {
     authors: [],
     licenses: [],
     itemTypes: [],
-    contentTypes: []
+    contentTypes: [],
+    createDialogOpen: false,
+    createDialogTarget: null
   }),
 
   getters: {
@@ -599,6 +604,84 @@ export const useExerciseStore = defineStore('exercise', {
       }).catch((e) => this._notifyError(e))
       this.validate()
       return item
+    },
+
+    /**
+     * Create an item from the creation form. Uses the chosen Typ/Autor/Lizenz
+     * (or defaults when left empty — the form is not strict) and the entered
+     * task text as the first content. Selects the new item afterwards.
+     */
+    createItemFromForm(
+      form: { itemTypeId?: string; authorId?: string; licenseId?: string; text?: string },
+      target: Collection | null = null
+    ): Item {
+      const item = this._createItemData(target?.rootItemId ?? null)
+      item.authorId = form.authorId ?? this.defaultAuthorId
+      item.licenseId = form.licenseId ?? this.defaultLicenseId
+      item.itemTypeId = form.itemTypeId ?? this.defaultItemTypeId
+      item.author = this.authors.find((a) => a.id === item.authorId)?.descriptor ?? item.author
+      item.license = this.licenses.find((l) => l.id === item.licenseId)?.name ?? item.license
+      item.itemTypeName = this.itemTypes.find((t) => t.id === item.itemTypeId)?.name ?? item.itemTypeName
+
+      const c0 = item.contents[0]
+      c0.authorId = item.authorId
+      c0.licenseId = item.licenseId
+      c0.license = item.license
+      c0.purpose = 'Aufgabenstellung'
+      c0.jsonContent = { text: form.text ?? '' }
+
+      // In eine Collection einsortieren oder auf Top-Level legen
+      let collectionItem: CollectionItem | null = null
+      if (target) {
+        collectionItem = {
+          id: 'coll-item-' + Date.now().toString(),
+          collectionId: target.id,
+          item,
+          position: target.order ? target.items.length + 1 : null
+        }
+        target.items.push(collectionItem)
+      } else {
+        this.rootItems.push(item)
+      }
+
+      _adapter?.createItem({
+        authorId: item.authorId ?? this.defaultAuthorId,
+        licenseId: item.licenseId ?? this.defaultLicenseId,
+        itemTypeId: item.itemTypeId ?? this.defaultItemTypeId,
+        rootItemId: item.rootItemId ?? null
+      }).then((dto) => {
+        if (!dto) return
+        item.id = dto.itemId
+        _adapter?.createContent(dto.itemId, {
+          licenseId: c0.licenseId ?? this.defaultLicenseId,
+          itemContentTypeId: c0.contentTypeId ?? this.defaultContentTypeId,
+          authorId: c0.authorId ?? this.defaultAuthorId,
+          purpose: c0.purpose,
+          jsonSerializedContent: JSON.stringify(c0.jsonContent)
+        }).then((contentDto) => {
+          if (contentDto) c0.id = contentDto.itemContentId
+        }).catch((e) => this._notifyError(e))
+        if (target && target.collectionId) {
+          _adapter?.addItemToCollection(target.collectionId, dto.itemId)
+            .catch((e) => this._notifyError(e))
+        }
+        this.selectItem(collectionItem ?? item)
+      }).catch((e) => this._notifyError(e))
+
+      if (target) this._syncOrderedCollectionItems(target)
+      this.validate()
+      return item
+    },
+
+    // ── Erstellungs-Dialog (geteilter Zustand) ──
+    openCreateDialog(target: Collection | null = null) {
+      this.createDialogTarget = target
+      this.createDialogOpen = true
+    },
+
+    closeCreateDialog() {
+      this.createDialogOpen = false
+      this.createDialogTarget = null
     },
 
     createCollection(): Collection {
