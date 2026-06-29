@@ -1,6 +1,8 @@
 <template>
+  <!-- Auch bei 0 Varianten zeigen, sonst lässt sich die erste Variante nie
+       anlegen (der Erstell-Button hing vorher selbst am v-if). -->
   <div
-    v-if="store.variants.length > 0"
+    v-if="store.selectedInnerItem && !store.isCollectionSelected"
     class="variants-panel"
   >
     <div class="variants-header">
