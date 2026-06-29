@@ -108,6 +108,8 @@ export interface ApiAdapter {
 
   updateCollectionItemPosition(collectionId: string, itemId: string, position: number): Promise<void>
 
+  uploadBlob(contentId: string, file: File): Promise<void>
+
   getContents(itemId: string): Promise<ContentDTO[]>
 
   createContent(itemId: string, payload: CreateContentPayload): Promise<ContentDTO>
@@ -115,6 +117,10 @@ export interface ApiAdapter {
   updateContent(contentId: string, payload: CreateContentPayload): Promise<ContentDTO>
 
   deleteContent(contentId: string): Promise<void>
+
+  uploadBlob(contentId: string, file: File): Promise<void>
+
+  getBlobUrl(contentId: string): string
 
   loadFullTree(): Promise<ItemDTO[]>
 

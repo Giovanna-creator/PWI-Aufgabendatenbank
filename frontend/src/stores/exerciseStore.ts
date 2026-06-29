@@ -19,12 +19,13 @@ import type {
   CollectionItemDTO
 } from '@/feature/aufgabendatenbank/api-adapter.types'
 
-// ── Seed-UUIDs (müssen mit database/init/init.sql übereinstimmen) ─────────────
+// ── Default-UUIDs (identisch mit database/init/init.sql) ───────────────────────
+// Werden genutzt, solange der Benutzer im UI keine eigene Auswahl trifft.
 
-const SEED_AUTHOR_ID = 'd0000000-0000-0000-0000-000000000001'
-const SEED_LICENSE_ID = 'b0000000-0000-0000-0000-000000000001'
-const SEED_ITEM_TYPE_ID = 'e0000000-0000-0000-0000-000000000001'
-const SEED_CONTENT_TYPE_ID = 'a0000000-0000-0000-0000-000000000003'
+const DEFAULT_AUTHOR_ID = 'd0000000-0000-0000-0000-000000000001'
+const DEFAULT_LICENSE_ID = 'b0000000-0000-0000-0000-000000000001'
+const DEFAULT_ITEM_TYPE_ID = 'e0000000-0000-0000-0000-000000000001'
+const DEFAULT_CONTENT_TYPE_ID = 'a0000000-0000-0000-0000-000000000003'
 
 // ── Adapter injection ─────────────────────────────────────────────────────────
 
@@ -114,6 +115,10 @@ interface ExerciseState {
   loadingContent: boolean
   error: string | null
   loadingChildrenIds: string[]
+  selectedAuthorId: string | null
+  selectedLicenseId: string | null
+  selectedItemTypeId: string | null
+  selectedContentTypeId: string | null
 }
 
 // ── Store ─────────────────────────────────────────────────────────────────────
@@ -126,10 +131,19 @@ export const useExerciseStore = defineStore('exercise', {
     loading: false,
     loadingContent: false,
     error: null,
-    loadingChildrenIds: []
+    loadingChildrenIds: [],
+    selectedAuthorId: null,
+    selectedLicenseId: null,
+    selectedItemTypeId: null,
+    selectedContentTypeId: null
   }),
 
   getters: {
+    authorId: (state): string => state.selectedAuthorId ?? DEFAULT_AUTHOR_ID,
+    licenseId: (state): string => state.selectedLicenseId ?? DEFAULT_LICENSE_ID,
+    itemTypeId: (state): string => state.selectedItemTypeId ?? DEFAULT_ITEM_TYPE_ID,
+    contentTypeId: (state): string => state.selectedContentTypeId ?? DEFAULT_CONTENT_TYPE_ID,
+
     selectedInnerItem: (state): Item | null => {
       if (!state.selectedItem) return null
       return getInnerItem(state.selectedItem)
@@ -308,9 +322,9 @@ export const useExerciseStore = defineStore('exercise', {
       }
       inner.contents.push(content)
       _adapter?.createContent(inner.id, {
-        licenseId: SEED_LICENSE_ID,
-        itemContentTypeId: SEED_CONTENT_TYPE_ID,
-        authorId: SEED_AUTHOR_ID,
+        licenseId: this.licenseId,
+        itemContentTypeId: this.contentTypeId,
+        authorId: this.authorId,
         purpose: content.purpose,
         jsonSerializedContent: JSON.stringify(content.jsonContent)
       }).then((dto) => {
@@ -334,9 +348,9 @@ export const useExerciseStore = defineStore('exercise', {
       const content = inner.contents[index]
       content.jsonContent.text = text
       _adapter?.updateContent(content.id ?? '', {
-        licenseId: SEED_LICENSE_ID,
-        itemContentTypeId: SEED_CONTENT_TYPE_ID,
-        authorId: SEED_AUTHOR_ID,
+        licenseId: this.licenseId,
+        itemContentTypeId: this.contentTypeId,
+        authorId: this.authorId,
         purpose: content.purpose,
         jsonSerializedContent: JSON.stringify(content.jsonContent)
       }).catch((e) => this._notifyError(e))
@@ -348,9 +362,9 @@ export const useExerciseStore = defineStore('exercise', {
       const content = inner.contents[index]
       content.purpose = purpose
       _adapter?.updateContent(content.id ?? '', {
-        licenseId: SEED_LICENSE_ID,
-        itemContentTypeId: SEED_CONTENT_TYPE_ID,
-        authorId: SEED_AUTHOR_ID,
+        licenseId: this.licenseId,
+        itemContentTypeId: this.contentTypeId,
+        authorId: this.authorId,
         purpose: content.purpose,
         jsonSerializedContent: JSON.stringify(content.jsonContent)
       }).catch((e) => this._notifyError(e))
@@ -394,17 +408,17 @@ export const useExerciseStore = defineStore('exercise', {
       this.variants.push(variant)
       try {
         const dto = await _adapter!.createItem({
-          authorId: SEED_AUTHOR_ID,
-          licenseId: SEED_LICENSE_ID,
-          itemTypeId: SEED_ITEM_TYPE_ID,
+          authorId: this.authorId,
+          licenseId: this.licenseId,
+          itemTypeId: this.itemTypeId,
           rootItemId: baseItemId
         })
         variant.id = dto.itemId
         if (variant.contents.length > 0) {
           const contentDto = await _adapter!.createContent(dto.itemId, {
-            licenseId: SEED_LICENSE_ID,
-            itemContentTypeId: SEED_CONTENT_TYPE_ID,
-            authorId: SEED_AUTHOR_ID,
+            licenseId: this.licenseId,
+            itemContentTypeId: this.contentTypeId,
+            authorId: this.authorId,
             purpose: variant.contents[0].purpose,
             jsonSerializedContent: JSON.stringify(variant.contents[0].jsonContent)
           })
@@ -424,9 +438,9 @@ export const useExerciseStore = defineStore('exercise', {
       const content = variant.contents[contentIndex]
       content.jsonContent.text = text
       _adapter?.updateContent(content.id ?? '', {
-        licenseId: SEED_LICENSE_ID,
-        itemContentTypeId: SEED_CONTENT_TYPE_ID,
-        authorId: SEED_AUTHOR_ID,
+        licenseId: this.licenseId,
+        itemContentTypeId: this.contentTypeId,
+        authorId: this.authorId,
         purpose: content.purpose,
         jsonSerializedContent: JSON.stringify(content.jsonContent)
       }).catch((e) => this._notifyError(e))
@@ -438,9 +452,9 @@ export const useExerciseStore = defineStore('exercise', {
       const content = variant.contents[contentIndex]
       content.purpose = purpose
       _adapter?.updateContent(content.id ?? '', {
-        licenseId: SEED_LICENSE_ID,
-        itemContentTypeId: SEED_CONTENT_TYPE_ID,
-        authorId: SEED_AUTHOR_ID,
+        licenseId: this.licenseId,
+        itemContentTypeId: this.contentTypeId,
+        authorId: this.authorId,
         purpose: content.purpose,
         jsonSerializedContent: JSON.stringify(content.jsonContent)
       }).catch((e) => this._notifyError(e))
@@ -462,9 +476,9 @@ export const useExerciseStore = defineStore('exercise', {
       }
       variant.contents.push(content)
       _adapter?.createContent(variant.id, {
-        licenseId: SEED_LICENSE_ID,
-        itemContentTypeId: SEED_CONTENT_TYPE_ID,
-        authorId: SEED_AUTHOR_ID,
+        licenseId: this.licenseId,
+        itemContentTypeId: this.contentTypeId,
+        authorId: this.authorId,
         purpose: content.purpose,
         jsonSerializedContent: JSON.stringify(content.jsonContent)
       }).then((dto) => {
@@ -496,7 +510,6 @@ export const useExerciseStore = defineStore('exercise', {
         this._notifyError(e)
       }
     },
-
     // ── Tree helpers ──
 
     /**
@@ -597,9 +610,9 @@ export const useExerciseStore = defineStore('exercise', {
       const item = this._createItemData(rootItemId)
       if (addToRoot) this.rootItems.push(item)
       _adapter?.createItem({
-        authorId: SEED_AUTHOR_ID,
-        licenseId: SEED_LICENSE_ID,
-        itemTypeId: SEED_ITEM_TYPE_ID,
+        authorId: this.authorId,
+        licenseId: this.licenseId,
+        itemTypeId: this.itemTypeId,
         rootItemId: item.rootItemId ?? null
       }).then((dto) => {
         if (dto) {
@@ -607,9 +620,9 @@ export const useExerciseStore = defineStore('exercise', {
           onCreated?.(dto.itemId)
           if (item.contents.length > 0) {
             _adapter?.createContent(dto.itemId, {
-              licenseId: SEED_LICENSE_ID,
-              itemContentTypeId: SEED_CONTENT_TYPE_ID,
-              authorId: SEED_AUTHOR_ID,
+              licenseId: this.licenseId,
+              itemContentTypeId: this.contentTypeId,
+              authorId: this.authorId,
               purpose: item.contents[0].purpose,
               jsonSerializedContent: JSON.stringify(item.contents[0].jsonContent)
             }).then((contentDto) => {
@@ -645,9 +658,9 @@ export const useExerciseStore = defineStore('exercise', {
       // (POST /items → POST /items/{id}/collection). So taucht die Kollektion
       // beim Neuladen über GET /items?root=true wieder auf.
       _adapter?.createItem({
-        authorId: SEED_AUTHOR_ID,
-        licenseId: SEED_LICENSE_ID,
-        itemTypeId: SEED_ITEM_TYPE_ID,
+        authorId: this.authorId,
+        licenseId: this.licenseId,
+        itemTypeId: this.itemTypeId,
         rootItemId: null
       })
         .then((dto) => {
@@ -689,13 +702,47 @@ export const useExerciseStore = defineStore('exercise', {
       item.item_type = 'collection'
       item.items = []
       item.order = false
+      this.validate()
       _adapter?.convertItemToCollection(item.id)
         .then((dto) => {
           if (dto) item.collectionId = dto.collectionId ?? null
+          this._loadVariantsAsChildren(item as Collection)
         })
         .catch((e) => this._notifyError(e))
-      this.validate()
       return item as Collection
+    },
+
+    _loadVariantsAsChildren(collection: Collection) {
+      const variants = this._findItemsByRootId(collection.id)
+      for (const variant of variants) {
+        this._detachItem(variant.id)
+        const collectionItem: CollectionItem = {
+          id: 'coll-item-' + Date.now() + '-' + variant.id,
+          collectionId: collection.id,
+          item: variant,
+          position: collection.order ? collection.items.length + 1 : null
+        }
+        collection.items.push(collectionItem)
+        if (collection.collectionId) {
+          _adapter?.addItemToCollection(collection.collectionId, variant.id)
+            .catch((e) => this._notifyError(e))
+        }
+      }
+      this.validate()
+    },
+
+    _findItemsByRootId(rootId: string, items?: Item[]): Item[] {
+      const searchItems = items ?? this.rootItems
+      const result: Item[] = []
+      for (const item of searchItems) {
+        if (item.rootItemId === rootId) {
+          result.push(item)
+        }
+        if (item.items) {
+          result.push(...this._findItemsByRootId(rootId, item.items.map((ci) => ci.item)))
+        }
+      }
+      return result
     },
 
     deleteItem(itemToDelete: Item) {
