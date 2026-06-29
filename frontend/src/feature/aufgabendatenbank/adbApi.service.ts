@@ -16,8 +16,7 @@ export class AdbApiService implements ApiAdapter {
 
   constructor(baseURL = '/api') {
     this.http = axios.create({
-      baseURL,
-      headers: { 'Content-Type': 'application/json' }
+      baseURL
     })
   }
 
