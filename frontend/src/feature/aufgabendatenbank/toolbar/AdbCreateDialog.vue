@@ -9,37 +9,28 @@
         {{ store.createDialogTarget ? 'Neue Aufgabe in Sammlung' : 'Neue Aufgabe' }}
       </v-card-title>
       <v-card-text>
-        <v-select
+        <AdbRefSelect
           v-model="itemTypeId"
           :items="store.itemTypes"
           item-title="name"
-          item-value="id"
           label="Typ"
-          variant="outlined"
-          density="compact"
-          hide-details
+          type="itemType"
           class="mb-3"
         />
-        <v-select
+        <AdbRefSelect
           v-model="authorId"
           :items="store.authors"
           item-title="descriptor"
-          item-value="id"
           label="Autor"
-          variant="outlined"
-          density="compact"
-          hide-details
+          type="author"
           class="mb-3"
         />
-        <v-select
+        <AdbRefSelect
           v-model="licenseId"
           :items="store.licenses"
           item-title="name"
-          item-value="id"
           label="Lizenz"
-          variant="outlined"
-          density="compact"
-          hide-details
+          type="license"
           class="mb-3"
         />
         <v-textarea
@@ -75,6 +66,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
+import AdbRefSelect from './AdbRefSelect.vue'
 
 const store = useExerciseStore()
 

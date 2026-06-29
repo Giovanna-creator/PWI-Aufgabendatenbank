@@ -50,39 +50,30 @@
           v-if="inner"
           class="meta-row"
         >
-          <v-select
+          <AdbRefSelect
             :model-value="inner.itemTypeId"
             :items="store.itemTypes"
             item-title="name"
-            item-value="id"
             label="Typ"
-            density="compact"
-            variant="outlined"
-            hide-details
+            type="itemType"
             class="meta-select"
             @update:model-value="(v) => onMeta({ itemTypeId: v })"
           />
-          <v-select
+          <AdbRefSelect
             :model-value="inner.authorId"
             :items="store.authors"
             item-title="descriptor"
-            item-value="id"
             label="Autor"
-            density="compact"
-            variant="outlined"
-            hide-details
+            type="author"
             class="meta-select"
             @update:model-value="(v) => onMeta({ authorId: v })"
           />
-          <v-select
+          <AdbRefSelect
             :model-value="inner.licenseId"
             :items="store.licenses"
             item-title="name"
-            item-value="id"
             label="Lizenz"
-            density="compact"
-            variant="outlined"
-            hide-details
+            type="license"
             class="meta-select"
             @update:model-value="(v) => onMeta({ licenseId: v })"
           />
@@ -105,6 +96,7 @@
 import { computed, ref } from 'vue'
 import AdbContentList from './components/AdbContentList.vue'
 import AdbDeleteDialog from './components/AdbDeleteDialog.vue'
+import AdbRefSelect from '../toolbar/AdbRefSelect.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
 
 const store = useExerciseStore()
@@ -181,8 +173,8 @@ function deleteSelectedItem() {
 }
 
 .meta-select {
-  flex: 1 1 160px;
-  min-width: 140px;
+  flex: 1 1 240px;
+  min-width: 220px;
 }
 
 .order-toggle-area {

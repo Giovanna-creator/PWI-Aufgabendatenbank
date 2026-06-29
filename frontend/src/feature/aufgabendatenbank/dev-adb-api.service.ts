@@ -402,6 +402,26 @@ export class DevAdbApiService implements ApiAdapter {
       { id: 'a0000000-0000-0000-0000-000000000006', name: 'application/pdf', description: 'PDF-Dokumente' }
     ]
   }
+
+  async createAuthor(payload: { descriptor: string; mail: string | null }): Promise<AuthorDTO> {
+    log('POST', '/api/authors', payload)
+    return { id: crypto.randomUUID(), descriptor: payload.descriptor, mail: payload.mail }
+  }
+
+  async createLicense(payload: { name: string }): Promise<LicenseDTO> {
+    log('POST', '/api/licenses', payload)
+    return { id: crypto.randomUUID(), name: payload.name }
+  }
+
+  async createItemType(payload: { name: string; description: string | null }): Promise<ItemTypeDTO> {
+    log('POST', '/api/item-types', payload)
+    return { id: crypto.randomUUID(), name: payload.name, description: payload.description }
+  }
+
+  async createContentType(payload: { name: string; description: string | null }): Promise<ContentTypeDTO> {
+    log('POST', '/api/content-types', payload)
+    return { id: crypto.randomUUID(), name: payload.name, description: payload.description }
+  }
 }
 
 export default new DevAdbApiService()

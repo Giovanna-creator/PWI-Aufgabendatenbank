@@ -216,6 +216,61 @@ export const useExerciseStore = defineStore('exercise', {
       }
     },
 
+    /**
+     * Neue Referenzdaten anlegen (Autor/Lizenz/Typ/Inhaltstyp). Legt sie per
+     * POST an, hängt sie an die passende Liste und gibt den neuen Datensatz
+     * zurück, damit die UI ihn direkt auswählen kann.
+     * `primary` = Name/Descriptor, `secondary` = Mail (Autor) bzw. Beschreibung.
+     */
+    async createReference(
+      type: 'author' | 'license' | 'itemType' | 'contentType',
+      primary: string,
+      secondary = ''
+    ): Promise<{ id: string } | null> {
+      if (!_adapter || !primary.trim()) return null
+      const name = primary.trim()
+      const extra = secondary.trim() || null
+
+      // Kein Duplikat (Name-Vergleich ohne Gross-/Kleinschreibung)
+      const lower = name.toLowerCase()
+      const exists =
+        type === 'author'
+          ? this.authors.some((a) => a.descriptor.toLowerCase() === lower)
+          : type === 'license'
+            ? this.licenses.some((l) => l.name.toLowerCase() === lower)
+            : type === 'itemType'
+              ? this.itemTypes.some((t) => t.name.toLowerCase() === lower)
+              : this.contentTypes.some((c) => c.name.toLowerCase() === lower)
+      if (exists) {
+        useNotificationStore().push(`„${name}" existiert bereits.`, 'error', 6000)
+        return null
+      }
+
+      try {
+        if (type === 'author') {
+          const dto = await _adapter.createAuthor({ descriptor: name, mail: extra })
+          this.authors.push(dto)
+          return dto
+        }
+        if (type === 'license') {
+          const dto = await _adapter.createLicense({ name })
+          this.licenses.push(dto)
+          return dto
+        }
+        if (type === 'itemType') {
+          const dto = await _adapter.createItemType({ name, description: extra })
+          this.itemTypes.push(dto)
+          return dto
+        }
+        const dto = await _adapter.createContentType({ name, description: extra })
+        this.contentTypes.push(dto)
+        return dto
+      } catch (e) {
+        this._notifyError(e)
+        return null
+      }
+    },
+
     // ── Initialisation (progressive loading) ──────────────────────────────────
 
     /**
