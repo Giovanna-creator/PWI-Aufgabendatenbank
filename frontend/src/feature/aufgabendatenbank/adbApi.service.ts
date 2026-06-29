@@ -95,9 +95,7 @@ export class AdbApiService implements ApiAdapter {
   async uploadBlob(contentId: string, file: File): Promise<void> {
     const formData = new FormData()
     formData.append('file', file)
-    await this.http.post(`/contents/${contentId}/blob`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
+    await this.http.post(`/contents/${contentId}/blob`, formData)
   }
 
   getBlobUrl(contentId: string): string {

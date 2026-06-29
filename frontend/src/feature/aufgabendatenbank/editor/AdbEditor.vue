@@ -116,6 +116,8 @@ function deleteSelectedItem() {
   padding: 28px 36px;
   font-size: 13px;
   color: #cccccc;
+  overflow-y: auto;
+  max-height: 100%;
 }
 
 .editor-header-row {

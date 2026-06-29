@@ -183,11 +183,12 @@ const hasBlob = computed(() => {
   return !!(props.content.blobMimeType || props.content.blobContent)
 })
 
+const detectedMimeType = computed(() => {
+  return props.content.blobMimeType || props.content.contentType || ''
+})
+
 const isImage = computed(() => {
-  if (props.content.blobMimeType) {
-    return props.content.blobMimeType.startsWith('image/')
-  }
-  return false
+  return detectedMimeType.value.startsWith('image/')
 })
 
 const isImageDisplayable = computed(() => {
