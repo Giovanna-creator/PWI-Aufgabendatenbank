@@ -16,8 +16,7 @@ export class AdbApiService implements ApiAdapter {
 
   constructor(baseURL = '/api') {
     this.http = axios.create({
-      baseURL,
-      headers: { 'Content-Type': 'application/json' }
+      baseURL
     })
   }
 
@@ -90,6 +89,16 @@ export class AdbApiService implements ApiAdapter {
 
   async deleteContent(contentId: string): Promise<void> {
     await this.http.delete(`/contents/${contentId}`)
+  }
+
+  async uploadBlob(contentId: string, file: File): Promise<void> {
+    const formData = new FormData()
+    formData.append('file', file)
+    await this.http.post(`/contents/${contentId}/blob`, formData)
+  }
+
+  getBlobUrl(contentId: string): string {
+    return `/api/contents/${contentId}/blob`
   }
 
   async loadFullTree(): Promise<ItemDTO[]> {

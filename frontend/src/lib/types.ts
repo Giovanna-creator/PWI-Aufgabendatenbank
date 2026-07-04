@@ -12,6 +12,7 @@ export interface Content {
   purpose: string
   jsonContent: Record<string, any>
   blobContent: string
+  blobMimeType?: string
 }
 
 export interface Item {
