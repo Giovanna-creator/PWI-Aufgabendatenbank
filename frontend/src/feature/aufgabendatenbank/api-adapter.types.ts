@@ -135,8 +135,6 @@ export interface ApiAdapter {
 
   getItemsByRootId(rootItemId: string): Promise<ItemDTO[]>
 
-  uploadBlob(contentId: string, file: File): Promise<void>
-
   // ── Validators ───────────────────────────────────────────────────────
 
   getValidators(): Promise<ValidatorDTO[]>
