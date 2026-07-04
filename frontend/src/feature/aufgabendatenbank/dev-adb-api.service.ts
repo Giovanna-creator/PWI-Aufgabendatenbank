@@ -369,10 +369,6 @@ export class DevAdbApiService implements ApiAdapter {
       .map(ci => toDTO(ci.item))
   }
 
-  async uploadBlob(contentId: string, file: File): Promise<void> {
-    log('POST', `/api/contents/${contentId}/blob`, { fileName: file.name, size: file.size })
-  }
-
   // ── Validators ───────────────────────────────────────────────────────
 
   private _validators: ValidatorDTO[] = [...seedValidators]

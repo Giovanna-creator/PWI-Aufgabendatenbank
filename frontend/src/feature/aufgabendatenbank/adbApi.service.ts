@@ -112,14 +112,6 @@ export class AdbApiService implements ApiAdapter {
     return data
   }
 
-  async uploadBlob(contentId: string, file: File): Promise<void> {
-    const formData = new FormData()
-    formData.append('file', file)
-    await this.http.post(`/contents/${contentId}/blob`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
-  }
-
   // ── Validators ───────────────────────────────────────────────────────
 
   async getValidators(): Promise<ValidatorDTO[]> {

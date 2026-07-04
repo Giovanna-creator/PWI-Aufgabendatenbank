@@ -134,7 +134,7 @@ export const useExerciseStore = defineStore('exercise', {
     loadingContent: false,
     error: null,
     loadingChildrenIds: [],
-    allValidators: []
+    allValidators: [],
     selectedAuthorId: null,
     selectedLicenseId: null,
     selectedItemTypeId: null,
