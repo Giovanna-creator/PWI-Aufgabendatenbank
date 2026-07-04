@@ -387,6 +387,21 @@ export const useExerciseStore = defineStore('exercise', {
 
     // ── Variants ────────────────────────────────────────────────────────────────
 
+    /**
+     * Zählt die Varianten eines Items (Items mit root_item_id === itemId),
+     * ohne den State zu verändern. Für die Warnung vor dem Umwandeln
+     * in eine Collection.
+     */
+    async getVariantCount(itemId: string): Promise<number> {
+      try {
+        const dtos = await _adapter!.getItemsByRootId(itemId)
+        return dtos.length
+      } catch (e) {
+        this._notifyError(e)
+        return 0
+      }
+    },
+
     async loadVariants(baseItemId: string) {
       this.variants = []
       try {
@@ -706,43 +721,9 @@ export const useExerciseStore = defineStore('exercise', {
       _adapter?.convertItemToCollection(item.id)
         .then((dto) => {
           if (dto) item.collectionId = dto.collectionId ?? null
-          this._loadVariantsAsChildren(item as Collection)
         })
         .catch((e) => this._notifyError(e))
       return item as Collection
-    },
-
-    _loadVariantsAsChildren(collection: Collection) {
-      const variants = this._findItemsByRootId(collection.id)
-      for (const variant of variants) {
-        this._detachItem(variant.id)
-        const collectionItem: CollectionItem = {
-          id: 'coll-item-' + Date.now() + '-' + variant.id,
-          collectionId: collection.id,
-          item: variant,
-          position: collection.order ? collection.items.length + 1 : null
-        }
-        collection.items.push(collectionItem)
-        if (collection.collectionId) {
-          _adapter?.addItemToCollection(collection.collectionId, variant.id)
-            .catch((e) => this._notifyError(e))
-        }
-      }
-      this.validate()
-    },
-
-    _findItemsByRootId(rootId: string, items?: Item[]): Item[] {
-      const searchItems = items ?? this.rootItems
-      const result: Item[] = []
-      for (const item of searchItems) {
-        if (item.rootItemId === rootId) {
-          result.push(item)
-        }
-        if (item.items) {
-          result.push(...this._findItemsByRootId(rootId, item.items.map((ci) => ci.item)))
-        }
-      }
-      return result
     },
 
     deleteItem(itemToDelete: Item) {
