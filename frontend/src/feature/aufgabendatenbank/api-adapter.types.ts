@@ -85,6 +85,17 @@ export interface OrderTogglePayload {
   order: boolean
 }
 
+export interface ValidatorDTO {
+  validatorId: string
+  description: string
+  validator: string
+}
+
+export interface CreateValidatorPayload {
+  description: string
+  validator: string
+}
+
 export interface ApiAdapter {
   getRootItems(): Promise<ItemDTO[]>
 
@@ -123,4 +134,22 @@ export interface ApiAdapter {
   loadFullTree(): Promise<ItemDTO[]>
 
   getItemsByRootId(rootItemId: string): Promise<ItemDTO[]>
+
+  uploadBlob(contentId: string, file: File): Promise<void>
+
+  // ── Validators ───────────────────────────────────────────────────────
+
+  getValidators(): Promise<ValidatorDTO[]>
+
+  createValidator(payload: CreateValidatorPayload): Promise<ValidatorDTO>
+
+  updateValidator(id: string, payload: CreateValidatorPayload): Promise<ValidatorDTO>
+
+  deleteValidator(id: string): Promise<void>
+
+  getValidatorsForItem(itemId: string): Promise<ValidatorDTO[]>
+
+  addValidatorToItem(itemId: string, validatorId: string): Promise<ItemDTO>
+
+  removeValidatorFromItem(itemId: string, validatorId: string): Promise<void>
 }

@@ -48,6 +48,8 @@
 
         <AdbContentList />
 
+        <AdbValidatorEditor />
+
         <AdbVariantsPanel />
 
         <p class="text-caption text-grey">
@@ -65,6 +67,7 @@
 import { computed, ref } from 'vue'
 import AdbContentList from './components/AdbContentList.vue'
 import AdbVariantsPanel from './components/AdbVariantsPanel.vue'
+import AdbValidatorEditor from './components/AdbValidatorEditor.vue'
 import AdbDeleteDialog from './components/AdbDeleteDialog.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
 

@@ -8,7 +8,9 @@ import type {
   CreateContentPayload,
   CreateCollectionPayload,
   UpdateCollectionPayload,
-  OrderTogglePayload
+  OrderTogglePayload,
+  ValidatorDTO,
+  CreateValidatorPayload
 } from './api-adapter.types'
 
 export class AdbApiService implements ApiAdapter {
@@ -108,6 +110,49 @@ export class AdbApiService implements ApiAdapter {
   async getItemsByRootId(rootItemId: string): Promise<ItemDTO[]> {
     const { data } = await this.http.get<ItemDTO[]>('/items', { params: { rootItemId } })
     return data
+  }
+
+  async uploadBlob(contentId: string, file: File): Promise<void> {
+    const formData = new FormData()
+    formData.append('file', file)
+    await this.http.post(`/contents/${contentId}/blob`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  }
+
+  // ── Validators ───────────────────────────────────────────────────────
+
+  async getValidators(): Promise<ValidatorDTO[]> {
+    const { data } = await this.http.get<ValidatorDTO[]>('/validators')
+    return data
+  }
+
+  async createValidator(payload: CreateValidatorPayload): Promise<ValidatorDTO> {
+    const { data } = await this.http.post<ValidatorDTO>('/validators', payload)
+    return data
+  }
+
+  async updateValidator(id: string, payload: CreateValidatorPayload): Promise<ValidatorDTO> {
+    const { data } = await this.http.put<ValidatorDTO>(`/validators/${id}`, payload)
+    return data
+  }
+
+  async deleteValidator(id: string): Promise<void> {
+    await this.http.delete(`/validators/${id}`)
+  }
+
+  async getValidatorsForItem(itemId: string): Promise<ValidatorDTO[]> {
+    const { data } = await this.http.get<ValidatorDTO[]>(`/items/${itemId}/validators`)
+    return data
+  }
+
+  async addValidatorToItem(itemId: string, validatorId: string): Promise<ItemDTO> {
+    const { data } = await this.http.post<ItemDTO>(`/items/${itemId}/validators/${validatorId}`)
+    return data
+  }
+
+  async removeValidatorFromItem(itemId: string, validatorId: string): Promise<void> {
+    await this.http.delete(`/items/${itemId}/validators/${validatorId}`)
   }
 }
 

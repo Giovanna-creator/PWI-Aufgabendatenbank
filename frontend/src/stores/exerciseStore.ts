@@ -16,7 +16,8 @@ import type {
   ItemDTO,
   ContentDTO,
   ContentSummaryDTO,
-  CollectionItemDTO
+  CollectionItemDTO,
+  ValidatorDTO
 } from '@/feature/aufgabendatenbank/api-adapter.types'
 
 // ── Default-UUIDs (identisch mit database/init/init.sql) ───────────────────────
@@ -82,9 +83,9 @@ function toItem(dto: ItemDTO): Item {
     author: dto.authorDescriptor,
     representationTemplate: dto.itemTemplateId ?? null,
     license: dto.licenseName ?? null,
-    tags: [],
-    validators: [],
-    modifiers: [],
+    tags: dto.tagIds ?? [],
+    validators: dto.validatorIds ?? [],
+    modifiers: dto.modifierIds ?? [],
     rootItemId: dto.rootItemId ?? null,
     contents: (dto.contents ?? []).map(toContent),
     // Eine Kollektion hat IMMER ein items-Array (zunächst leer, bis die
@@ -115,6 +116,7 @@ interface ExerciseState {
   loadingContent: boolean
   error: string | null
   loadingChildrenIds: string[]
+  allValidators: ValidatorDTO[]
   selectedAuthorId: string | null
   selectedLicenseId: string | null
   selectedItemTypeId: string | null
@@ -132,6 +134,7 @@ export const useExerciseStore = defineStore('exercise', {
     loadingContent: false,
     error: null,
     loadingChildrenIds: [],
+    allValidators: []
     selectedAuthorId: null,
     selectedLicenseId: null,
     selectedItemTypeId: null,
@@ -189,7 +192,10 @@ export const useExerciseStore = defineStore('exercise', {
       this.loading = true
       this.error = null
       try {
-        const dtos = await _adapter!.getRootItems()
+        const [dtos] = await Promise.all([
+          _adapter!.getRootItems(),
+          this.loadValidators()
+        ])
         this.rootItems = dtos.map(toItem)
         // Fire background recursive loading — no await so UI shows roots now
         this._loadChildrenRecursively(this.rootItems)
@@ -302,6 +308,54 @@ export const useExerciseStore = defineStore('exercise', {
           .catch((e) => this._notifyError(e))
       }
       this._syncOrderedCollectionItems(collection)
+    },
+
+    // ── Validator Actions ────────────────────────────────────────────────────
+
+    async loadValidators() {
+      try {
+        this.allValidators = await _adapter!.getValidators()
+      } catch (e) {
+        this._notifyError(e)
+      }
+    },
+
+    async createValidator(description: string, rule: string): Promise<ValidatorDTO | null> {
+      try {
+        const dto = await _adapter!.createValidator({ description, validator: rule })
+        this.allValidators.push(dto)
+        return dto
+      } catch (e) {
+        this._notifyError(e)
+        return null
+      }
+    },
+
+    async linkValidatorToSelectedItem(validatorId: string) {
+      const inner = this.selectedInnerItem
+      if (!inner) return
+      if (inner.validators.includes(validatorId)) return
+      inner.validators.push(validatorId)
+      try {
+        await _adapter!.addValidatorToItem(inner.id, validatorId)
+      } catch (e) {
+        inner.validators = inner.validators.filter((v: string) => v !== validatorId)
+        this._notifyError(e)
+      }
+    },
+
+    async unlinkValidatorFromSelectedItem(validatorId: string) {
+      const inner = this.selectedInnerItem
+      if (!inner) return
+      inner.validators = inner.validators.filter((v: string) => v !== validatorId)
+      try {
+        await _adapter!.removeValidatorFromItem(inner.id, validatorId)
+      } catch (e) {
+        if (!inner.validators.includes(validatorId)) {
+          inner.validators.push(validatorId)
+        }
+        this._notifyError(e)
+      }
     },
 
     // ── Content Actions ───────────────────────────────────────────────────────
