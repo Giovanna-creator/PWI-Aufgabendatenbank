@@ -71,6 +71,27 @@
         />
       </div>
 
+      <div class="content-meta-row">
+        <AdbRefSelect
+          :model-value="content.contentTypeId"
+          :items="store.contentTypes"
+          item-title="name"
+          label="Inhaltstyp"
+          type="contentType"
+          class="content-meta-select"
+          @update:model-value="(v) => emit('update:meta', { contentTypeId: v })"
+        />
+        <AdbRefSelect
+          :model-value="content.licenseId"
+          :items="store.licenses"
+          item-title="name"
+          label="Lizenz"
+          type="license"
+          class="content-meta-select"
+          @update:model-value="(v) => emit('update:meta', { licenseId: v })"
+        />
+      </div>
+
       <!-- Blob section -->
       <div class="blob-section">
         <!-- Image preview -->
@@ -156,6 +177,7 @@
 import { ref, computed, nextTick } from 'vue'
 import type { Content } from '@/lib/types'
 import { useExerciseStore } from '@/stores/exerciseStore'
+import AdbRefSelect from '../../toolbar/AdbRefSelect.vue'
 
 const props = defineProps<{
   content: Content
@@ -165,6 +187,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:text': [value: string]
   'update:purpose': [value: string]
+  'update:meta': [meta: { contentTypeId?: string; licenseId?: string }]
   delete: []
 }>()
 
@@ -362,6 +385,18 @@ function onImgError() {
 
 .card-body {
   padding-left: 0;
+}
+
+.content-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.content-meta-select {
+  flex: 1 1 240px;
+  min-width: 220px;
 }
 
 .content-text {

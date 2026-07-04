@@ -7,6 +7,7 @@
       :index="index"
       @update:text="(val) => store.updateContentText(index, val)"
       @update:purpose="(val) => store.updateContentPurpose(index, val)"
+      @update:meta="(m) => store.updateContentMeta(index, m)"
       @delete="store.removeContentFromSelectedItem(index)"
     />
 

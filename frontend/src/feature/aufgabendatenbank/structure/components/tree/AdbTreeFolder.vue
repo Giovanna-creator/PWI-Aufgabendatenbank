@@ -52,7 +52,7 @@
               />
             </template>
             <v-list density="compact">
-              <v-list-item @click="store.addItemToCollection(element)">
+              <v-list-item @click="store.openCreateDialog(element)">
                 <template #prepend>
                   <v-icon size="small">
                     mdi-plus

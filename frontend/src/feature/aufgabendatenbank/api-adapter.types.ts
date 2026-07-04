@@ -51,6 +51,31 @@ export interface ContentSummaryDTO {
   hasBlobContent: boolean
 }
 
+// ── Referenzdaten (Lookup-Listen für Dropdowns) ──────────────────────────────
+
+export interface AuthorDTO {
+  id: string
+  descriptor: string
+  mail: string | null
+}
+
+export interface LicenseDTO {
+  id: string
+  name: string
+}
+
+export interface ItemTypeDTO {
+  id: string
+  name: string
+  description: string | null
+}
+
+export interface ContentTypeDTO {
+  id: string
+  name: string
+  description: string | null
+}
+
 export interface CreateItemPayload {
   authorId: string
   licenseId: string
@@ -103,6 +128,8 @@ export interface ApiAdapter {
 
   createItem(payload: CreateItemPayload): Promise<ItemDTO>
 
+  updateItem(itemId: string, payload: CreateItemPayload): Promise<ItemDTO>
+
   createCollection(payload: CreateCollectionPayload): Promise<ItemDTO>
 
   convertItemToCollection(itemId: string): Promise<ItemDTO>
@@ -132,6 +159,18 @@ export interface ApiAdapter {
   getBlobUrl(contentId: string): string
 
   loadFullTree(): Promise<ItemDTO[]>
+
+  // Referenzdaten für Dropdowns
+  getAuthors(): Promise<AuthorDTO[]>
+  getLicenses(): Promise<LicenseDTO[]>
+  getItemTypes(): Promise<ItemTypeDTO[]>
+  getContentTypes(): Promise<ContentTypeDTO[]>
+
+  // Neue Referenzdaten anlegen
+  createAuthor(payload: { descriptor: string; mail: string | null }): Promise<AuthorDTO>
+  createLicense(payload: { name: string }): Promise<LicenseDTO>
+  createItemType(payload: { name: string; description: string | null }): Promise<ItemTypeDTO>
+  createContentType(payload: { name: string; description: string | null }): Promise<ContentTypeDTO>
 
   getItemsByRootId(rootItemId: string): Promise<ItemDTO[]>
 

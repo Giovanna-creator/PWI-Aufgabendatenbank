@@ -9,6 +9,10 @@ import type {
   CreateCollectionPayload,
   UpdateCollectionPayload,
   OrderTogglePayload,
+  AuthorDTO,
+  LicenseDTO,
+  ItemTypeDTO,
+  ContentTypeDTO,
   ValidatorDTO,
   CreateValidatorPayload
 } from './api-adapter.types'
@@ -34,6 +38,11 @@ export class AdbApiService implements ApiAdapter {
 
   async createItem(payload: CreateItemPayload): Promise<ItemDTO> {
     const { data } = await this.http.post<ItemDTO>('/items', payload)
+    return data
+  }
+
+  async updateItem(itemId: string, payload: CreateItemPayload): Promise<ItemDTO> {
+    const { data } = await this.http.put<ItemDTO>(`/items/${itemId}`, payload)
     return data
   }
 
@@ -105,6 +114,46 @@ export class AdbApiService implements ApiAdapter {
 
   async loadFullTree(): Promise<ItemDTO[]> {
     return this.getRootItems()
+  }
+
+  async getAuthors(): Promise<AuthorDTO[]> {
+    const { data } = await this.http.get<AuthorDTO[]>('/authors')
+    return data
+  }
+
+  async getLicenses(): Promise<LicenseDTO[]> {
+    const { data } = await this.http.get<LicenseDTO[]>('/licenses')
+    return data
+  }
+
+  async getItemTypes(): Promise<ItemTypeDTO[]> {
+    const { data } = await this.http.get<ItemTypeDTO[]>('/item-types')
+    return data
+  }
+
+  async getContentTypes(): Promise<ContentTypeDTO[]> {
+    const { data } = await this.http.get<ContentTypeDTO[]>('/content-types')
+    return data
+  }
+
+  async createAuthor(payload: { descriptor: string; mail: string | null }): Promise<AuthorDTO> {
+    const { data } = await this.http.post<AuthorDTO>('/authors', payload)
+    return data
+  }
+
+  async createLicense(payload: { name: string }): Promise<LicenseDTO> {
+    const { data } = await this.http.post<LicenseDTO>('/licenses', payload)
+    return data
+  }
+
+  async createItemType(payload: { name: string; description: string | null }): Promise<ItemTypeDTO> {
+    const { data } = await this.http.post<ItemTypeDTO>('/item-types', payload)
+    return data
+  }
+
+  async createContentType(payload: { name: string; description: string | null }): Promise<ContentTypeDTO> {
+    const { data } = await this.http.post<ContentTypeDTO>('/content-types', payload)
+    return data
   }
 
   async getItemsByRootId(rootItemId: string): Promise<ItemDTO[]> {

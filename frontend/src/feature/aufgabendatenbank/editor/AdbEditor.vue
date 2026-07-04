@@ -46,6 +46,39 @@
           />
         </div>
 
+        <div
+          v-if="inner"
+          class="meta-row"
+        >
+          <AdbRefSelect
+            :model-value="inner.itemTypeId"
+            :items="store.itemTypes"
+            item-title="name"
+            label="Typ"
+            type="itemType"
+            class="meta-select"
+            @update:model-value="(v) => onMeta({ itemTypeId: v })"
+          />
+          <AdbRefSelect
+            :model-value="inner.authorId"
+            :items="store.authors"
+            item-title="descriptor"
+            label="Autor"
+            type="author"
+            class="meta-select"
+            @update:model-value="(v) => onMeta({ authorId: v })"
+          />
+          <AdbRefSelect
+            :model-value="inner.licenseId"
+            :items="store.licenses"
+            item-title="name"
+            label="Lizenz"
+            type="license"
+            class="meta-select"
+            @update:model-value="(v) => onMeta({ licenseId: v })"
+          />
+        </div>
+
         <AdbContentList />
 
         <AdbValidatorEditor />
@@ -69,10 +102,17 @@ import AdbContentList from './components/AdbContentList.vue'
 import AdbVariantsPanel from './components/AdbVariantsPanel.vue'
 import AdbValidatorEditor from './components/AdbValidatorEditor.vue'
 import AdbDeleteDialog from './components/AdbDeleteDialog.vue'
+import AdbRefSelect from '../toolbar/AdbRefSelect.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
 
 const store = useExerciseStore()
 const showDeleteDialog = ref(false)
+
+const inner = computed(() => store.selectedInnerItem)
+
+function onMeta(meta: { authorId?: string; licenseId?: string; itemTypeId?: string }) {
+  if (inner.value) store.updateItemMeta(inner.value, meta)
+}
 
 const itemTypeLabel = computed(() => {
   if (!store.selectedInnerItem) return ''
@@ -131,6 +171,18 @@ function deleteSelectedItem() {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
+}
+
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.meta-select {
+  flex: 1 1 240px;
+  min-width: 220px;
 }
 
 .order-toggle-area {
