@@ -104,6 +104,11 @@ export class AdbApiService implements ApiAdapter {
   async loadFullTree(): Promise<ItemDTO[]> {
     return this.getRootItems()
   }
+
+  async getItemsByRootId(rootItemId: string): Promise<ItemDTO[]> {
+    const { data } = await this.http.get<ItemDTO[]>('/items', { params: { rootItemId } })
+    return data
+  }
 }
 
 export default new AdbApiService()

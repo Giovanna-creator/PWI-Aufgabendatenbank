@@ -48,6 +48,8 @@
 
         <AdbContentList />
 
+        <AdbVariantsPanel />
+
         <p class="text-caption text-grey">
           ID: {{ store.selectedItem.id }}
         </p>
@@ -62,6 +64,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import AdbContentList from './components/AdbContentList.vue'
+import AdbVariantsPanel from './components/AdbVariantsPanel.vue'
 import AdbDeleteDialog from './components/AdbDeleteDialog.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
 
