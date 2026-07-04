@@ -71,27 +71,21 @@
       </div>
 
       <div class="content-meta-row">
-        <v-select
+        <AdbRefSelect
           :model-value="content.contentTypeId"
           :items="store.contentTypes"
           item-title="name"
-          item-value="id"
           label="Inhaltstyp"
-          density="compact"
-          variant="outlined"
-          hide-details
+          type="contentType"
           class="content-meta-select"
           @update:model-value="(v) => emit('update:meta', { contentTypeId: v })"
         />
-        <v-select
+        <AdbRefSelect
           :model-value="content.licenseId"
           :items="store.licenses"
           item-title="name"
-          item-value="id"
           label="Lizenz"
-          density="compact"
-          variant="outlined"
-          hide-details
+          type="license"
           class="content-meta-select"
           @update:model-value="(v) => emit('update:meta', { licenseId: v })"
         />
@@ -104,6 +98,7 @@
 import { ref, computed, nextTick } from 'vue'
 import type { Content } from '@/lib/types'
 import { useExerciseStore } from '@/stores/exerciseStore'
+import AdbRefSelect from '../../toolbar/AdbRefSelect.vue'
 
 const props = defineProps<{
   content: Content
@@ -280,8 +275,8 @@ function startEditText() {
 }
 
 .content-meta-select {
-  flex: 1 1 140px;
-  min-width: 120px;
+  flex: 1 1 240px;
+  min-width: 220px;
 }
 
 .content-text {

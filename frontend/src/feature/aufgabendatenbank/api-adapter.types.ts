@@ -150,4 +150,10 @@ export interface ApiAdapter {
   getLicenses(): Promise<LicenseDTO[]>
   getItemTypes(): Promise<ItemTypeDTO[]>
   getContentTypes(): Promise<ContentTypeDTO[]>
+
+  // Neue Referenzdaten anlegen
+  createAuthor(payload: { descriptor: string; mail: string | null }): Promise<AuthorDTO>
+  createLicense(payload: { name: string }): Promise<LicenseDTO>
+  createItemType(payload: { name: string; description: string | null }): Promise<ItemTypeDTO>
+  createContentType(payload: { name: string; description: string | null }): Promise<ContentTypeDTO>
 }
