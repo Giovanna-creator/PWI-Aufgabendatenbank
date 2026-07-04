@@ -13,7 +13,9 @@ import type {
   AuthorDTO,
   LicenseDTO,
   ItemTypeDTO,
-  ContentTypeDTO
+  ContentTypeDTO,
+  ValidatorDTO,
+  CreateValidatorPayload
 } from './api-adapter.types'
 import type { Item, Content, CollectionItem } from '@/lib/types'
 
@@ -105,6 +107,24 @@ function findItem(id: string, items: Item[]): Item | undefined {
   }
   return undefined
 }
+
+const seedValidators: ValidatorDTO[] = [
+  {
+    validatorId: 'val-must-inner-join',
+    description: 'muss INNER JOIN enthalten',
+    validator: 'CHECK(sql_query CONTAINS "INNER JOIN")'
+  },
+  {
+    validatorId: 'val-order-by',
+    description: 'muss ORDER BY enthalten',
+    validator: 'CHECK(sql_query CONTAINS "ORDER BY")'
+  },
+  {
+    validatorId: 'val-no-subqueries',
+    description: 'keine verschachtelten Subqueries',
+    validator: 'CHECK(NOT CONTAINS "SELECT ... FROM (SELECT ...)")'
+  }
+]
 
 export class DevAdbApiService implements ApiAdapter {
   async getRootItems(): Promise<ItemDTO[]> {
@@ -355,6 +375,18 @@ export class DevAdbApiService implements ApiAdapter {
     log('DELETE', `/api/contents/${contentId}`)
   }
 
+  async uploadBlob(contentId: string, file: File): Promise<void> {
+    log('POST', `/api/contents/${contentId}/blob`, {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type
+    })
+  }
+
+  getBlobUrl(contentId: string): string {
+    return `/api/contents/${contentId}/blob`
+  }
+
   async loadFullTree(): Promise<ItemDTO[]> {
     log('GET', '/api/items?root=true (loadFullTree)')
     return dummyData.rootItems.map(toDTO)
@@ -421,6 +453,76 @@ export class DevAdbApiService implements ApiAdapter {
   async createContentType(payload: { name: string; description: string | null }): Promise<ContentTypeDTO> {
     log('POST', '/api/content-types', payload)
     return { id: crypto.randomUUID(), name: payload.name, description: payload.description }
+  }
+
+  async getItemsByRootId(rootItemId: string): Promise<ItemDTO[]> {
+    log('GET', `/api/items?rootItemId=${rootItemId}`)
+    return dummyData.rootItems
+      .flatMap(item => item.items ?? [])
+      .filter(ci => ci.item.rootItemId === rootItemId)
+      .map(ci => toDTO(ci.item))
+  }
+
+  // ── Validators ───────────────────────────────────────────────────────
+
+  private _validators: ValidatorDTO[] = [...seedValidators]
+
+  async getValidators(): Promise<ValidatorDTO[]> {
+    log('GET', '/api/validators')
+    return [...this._validators]
+  }
+
+  async createValidator(payload: CreateValidatorPayload): Promise<ValidatorDTO> {
+    log('POST', '/api/validators', payload)
+    const v: ValidatorDTO = {
+      validatorId: uid('val'),
+      description: payload.description,
+      validator: payload.validator
+    }
+    this._validators.push(v)
+    return v
+  }
+
+  async updateValidator(id: string, payload: CreateValidatorPayload): Promise<ValidatorDTO> {
+    log('PUT', `/api/validators/${id}`, payload)
+    const idx = this._validators.findIndex(v => v.validatorId === id)
+    if (idx === -1) throw new Error('Validator nicht gefunden')
+    this._validators[idx] = { ...this._validators[idx], ...payload }
+    return this._validators[idx]
+  }
+
+  async deleteValidator(id: string): Promise<void> {
+    log('DELETE', `/api/validators/${id}`)
+    this._validators = this._validators.filter(v => v.validatorId !== id)
+  }
+
+  async getValidatorsForItem(itemId: string): Promise<ValidatorDTO[]> {
+    log('GET', `/api/items/${itemId}/validators`)
+    const item = findItem(itemId, dummyData.rootItems)
+    if (!item) return []
+    return (item.validators ?? [])
+      .map((vid: string) => this._validators.find(v => v.validatorId === vid))
+      .filter(Boolean) as ValidatorDTO[]
+  }
+
+  async addValidatorToItem(itemId: string, validatorId: string): Promise<ItemDTO> {
+    log('POST', `/api/items/${itemId}/validators/${validatorId}`)
+    const item = findItem(itemId, dummyData.rootItems)
+    if (!item) throw new Error('Item nicht gefunden')
+    if (!item.validators) item.validators = []
+    if (!item.validators.includes(validatorId)) {
+      item.validators.push(validatorId)
+    }
+    return toDTO(item)
+  }
+
+  async removeValidatorFromItem(itemId: string, validatorId: string): Promise<void> {
+    log('DELETE', `/api/items/${itemId}/validators/${validatorId}`)
+    const item = findItem(itemId, dummyData.rootItems)
+    if (!item) return
+    if (item.validators) {
+      item.validators = item.validators.filter((v: string) => v !== validatorId)
+    }
   }
 }
 

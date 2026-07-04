@@ -4,6 +4,7 @@
       v-for="(content, index) in contents"
       :key="content.id ?? index"
       :content="content"
+      :index="index"
       @update:text="(val) => store.updateContentText(index, val)"
       @update:purpose="(val) => store.updateContentPurpose(index, val)"
       @update:meta="(m) => store.updateContentMeta(index, m)"

@@ -18,6 +18,7 @@ export interface Content {
   authorId?: string | null
   licenseId?: string | null
   contentTypeId?: string | null
+  blobMimeType?: string
 }
 
 export interface Item {
@@ -27,8 +28,8 @@ export interface Item {
   representationTemplate: string | null
   license: string | null
   tags: string[]
-  validators: any[]
-  modifiers: any[]
+  validators: string[]
+  modifiers: string[]
   rootItemId?: string | null
   contents: Content[]
   items?: CollectionItem[]

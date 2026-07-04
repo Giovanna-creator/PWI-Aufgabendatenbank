@@ -42,6 +42,7 @@
     <div class="card-divider" />
 
     <div class="card-body">
+      <!-- Text content (jsonContent.text) -->
       <div
         v-if="!editingText"
         class="content-text"
@@ -90,6 +91,84 @@
           @update:model-value="(v) => emit('update:meta', { licenseId: v })"
         />
       </div>
+
+      <!-- Blob section -->
+      <div class="blob-section">
+        <!-- Image preview -->
+        <div
+          v-if="isImageDisplayable"
+          class="blob-preview"
+        >
+          <img
+            :src="blobSrc"
+            alt="Vorschau"
+            class="preview-img"
+            @error="onImgError"
+          >
+          <div class="blob-actions">
+            <a
+              :href="blobSrc"
+              download
+              class="blob-action-link"
+            >
+              <v-icon
+                icon="mdi-download"
+                size="16"
+              />
+              Herunterladen
+            </a>
+          </div>
+        </div>
+
+        <!-- PDF / unknown binary download link -->
+        <div
+          v-if="hasBlob && !isImageDisplayable"
+          class="blob-download"
+        >
+          <v-icon
+            icon="mdi-file-pdf-box"
+            size="32"
+            color="#f40"
+          />
+          <span class="blob-filename">PDF-Datei</span>
+          <a
+            :href="blobSrc"
+            target="_blank"
+            class="blob-action-link"
+          >
+            <v-icon
+              icon="mdi-download"
+              size="16"
+            />
+            Öffnen / Herunterladen
+          </a>
+        </div>
+
+        <!-- Upload button (when no blob) -->
+        <div
+          v-if="!hasBlob"
+          class="blob-upload"
+        >
+          <input
+            ref="fileInput"
+            type="file"
+            accept="image/png,image/jpeg,application/pdf"
+            class="file-input-hidden"
+            @change="onFileSelected"
+          >
+          <button
+            type="button"
+            class="upload-btn"
+            @click="triggerFilePicker"
+          >
+            <v-icon
+              icon="mdi-upload"
+              size="18"
+            />
+            <span>Datei hochladen (PNG, JPEG, PDF)</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -102,6 +181,7 @@ import AdbRefSelect from '../../toolbar/AdbRefSelect.vue'
 
 const props = defineProps<{
   content: Content
+  index: number
 }>()
 
 const emit = defineEmits<{
@@ -117,8 +197,32 @@ const editingText = ref(false)
 const editingPurpose = ref(false)
 const purposeInput = ref<HTMLInputElement | null>(null)
 const textInput = ref<HTMLTextAreaElement | null>(null)
+const fileInput = ref<HTMLInputElement | null>(null)
+const imageError = ref(false)
 
 const displayText = computed(() => props.content.jsonContent?.text ?? '')
+
+const hasBlob = computed(() => {
+  return !!(props.content.blobMimeType || props.content.blobContent)
+})
+
+const detectedMimeType = computed(() => {
+  return props.content.blobMimeType || props.content.contentType || ''
+})
+
+const isImage = computed(() => {
+  return detectedMimeType.value.startsWith('image/')
+})
+
+const isImageDisplayable = computed(() => {
+  return hasBlob.value && isImage.value && !imageError.value
+})
+
+const blobSrc = computed(() => {
+  if (!props.content.id) return ''
+  const base = window.location.origin
+  return `${base}/api/contents/${props.content.id}/blob`
+})
 
 function onPurposeInput(e: Event) {
   emit('update:purpose', (e.target as HTMLInputElement).value)
@@ -142,6 +246,22 @@ function startEditText() {
       el.setSelectionRange(el.value.length, el.value.length)
     }
   })
+}
+
+function triggerFilePicker() {
+  fileInput.value?.click()
+}
+
+function onFileSelected(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  store.uploadBlob(props.index, file)
+  input.value = ''
+}
+
+function onImgError() {
+  imageError.value = true
 }
 </script>
 
@@ -322,6 +442,93 @@ function startEditText() {
 
   &::placeholder {
     color: #666;
+  }
+}
+
+/* ── Blob section ── */
+
+.blob-section {
+  margin-top: 8px;
+}
+
+.blob-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #1e1e1e;
+  border-radius: 12px;
+}
+
+.preview-img {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+.blob-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.blob-action-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #007fd4;
+  text-decoration: none;
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  transition: background 0.15s;
+
+  &:hover {
+    background: rgba(0, 127, 212, 0.1);
+  }
+}
+
+.blob-download {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: #1e1e1e;
+  border-radius: 12px;
+}
+
+.blob-filename {
+  font-size: 13px;
+  color: #ccc;
+  flex: 1;
+}
+
+.blob-upload {
+  margin-top: 4px;
+}
+
+.file-input-hidden {
+  display: none;
+}
+
+.upload-btn {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #888;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 12px;
+  border: 1px dashed #555;
+  transition: all 0.15s;
+
+  &:hover {
+    color: #ccc;
+    border-color: #888;
+    background: rgba(255, 255, 255, 0.03);
   }
 }
 </style>

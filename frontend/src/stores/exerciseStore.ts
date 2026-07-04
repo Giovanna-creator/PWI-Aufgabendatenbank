@@ -20,15 +20,17 @@ import type {
   AuthorDTO,
   LicenseDTO,
   ItemTypeDTO,
-  ContentTypeDTO
+  ContentTypeDTO,
+  ValidatorDTO
 } from '@/feature/aufgabendatenbank/api-adapter.types'
 
-// ── Seed-UUIDs (müssen mit database/init/init.sql übereinstimmen) ─────────────
+// ── Default-UUIDs (identisch mit database/init/init.sql) ───────────────────────
+// Werden genutzt, solange der Benutzer im UI keine eigene Auswahl trifft.
 
-const SEED_AUTHOR_ID = 'd0000000-0000-0000-0000-000000000001'
-const SEED_LICENSE_ID = 'b0000000-0000-0000-0000-000000000001'
-const SEED_ITEM_TYPE_ID = 'e0000000-0000-0000-0000-000000000001'
-const SEED_CONTENT_TYPE_ID = 'a0000000-0000-0000-0000-000000000003'
+const DEFAULT_AUTHOR_ID = 'd0000000-0000-0000-0000-000000000001'
+const DEFAULT_LICENSE_ID = 'b0000000-0000-0000-0000-000000000001'
+const DEFAULT_ITEM_TYPE_ID = 'e0000000-0000-0000-0000-000000000001'
+const DEFAULT_CONTENT_TYPE_ID = 'a0000000-0000-0000-0000-000000000003'
 
 // ── Adapter injection ─────────────────────────────────────────────────────────
 
@@ -88,9 +90,9 @@ function toItem(dto: ItemDTO): Item {
     author: dto.authorDescriptor,
     representationTemplate: dto.itemTemplateId ?? null,
     license: dto.licenseName ?? null,
-    tags: [],
-    validators: [],
-    modifiers: [],
+    tags: dto.tagIds ?? [],
+    validators: dto.validatorIds ?? [],
+    modifiers: dto.modifierIds ?? [],
     rootItemId: dto.rootItemId ?? null,
     contents: (dto.contents ?? []).map(toContent),
     // Eine Kollektion hat IMMER ein items-Array (zunächst leer, bis die
@@ -120,6 +122,7 @@ function toCollectionItem(dto: CollectionItemDTO): CollectionItem {
 interface ExerciseState {
   rootItems: Item[]
   selectedItem: TreeItem | null
+  variants: Item[]
   loading: boolean
   loadingContent: boolean
   error: string | null
@@ -132,6 +135,11 @@ interface ExerciseState {
   // Erstellungs-Dialog (von Toolbar und Collection-Kontextmenü geteilt)
   createDialogOpen: boolean
   createDialogTarget: Collection | null
+  allValidators: ValidatorDTO[]
+  selectedAuthorId: string | null
+  selectedLicenseId: string | null
+  selectedItemTypeId: string | null
+  selectedContentTypeId: string | null
 }
 
 // ── Store ─────────────────────────────────────────────────────────────────────
@@ -140,6 +148,7 @@ export const useExerciseStore = defineStore('exercise', {
   state: (): ExerciseState => ({
     rootItems: [],
     selectedItem: null,
+    variants: [],
     loading: false,
     loadingContent: false,
     error: null,
@@ -149,10 +158,20 @@ export const useExerciseStore = defineStore('exercise', {
     itemTypes: [],
     contentTypes: [],
     createDialogOpen: false,
-    createDialogTarget: null
+    createDialogTarget: null,
+    allValidators: [],
+    selectedAuthorId: null,
+    selectedLicenseId: null,
+    selectedItemTypeId: null,
+    selectedContentTypeId: null
   }),
 
   getters: {
+    authorId: (state): string => state.selectedAuthorId ?? DEFAULT_AUTHOR_ID,
+    licenseId: (state): string => state.selectedLicenseId ?? DEFAULT_LICENSE_ID,
+    itemTypeId: (state): string => state.selectedItemTypeId ?? DEFAULT_ITEM_TYPE_ID,
+    contentTypeId: (state): string => state.selectedContentTypeId ?? DEFAULT_CONTENT_TYPE_ID,
+
     selectedInnerItem: (state): Item | null => {
       if (!state.selectedItem) return null
       return getInnerItem(state.selectedItem)
@@ -160,10 +179,10 @@ export const useExerciseStore = defineStore('exercise', {
 
     // Default-IDs für die Erstellung: erster Eintrag der jeweiligen
     // Referenzliste, Fallback auf die festen Seed-UUIDs (falls Liste leer).
-    defaultAuthorId: (state): string => state.authors[0]?.id ?? SEED_AUTHOR_ID,
-    defaultLicenseId: (state): string => state.licenses[0]?.id ?? SEED_LICENSE_ID,
-    defaultItemTypeId: (state): string => state.itemTypes[0]?.id ?? SEED_ITEM_TYPE_ID,
-    defaultContentTypeId: (state): string => state.contentTypes[0]?.id ?? SEED_CONTENT_TYPE_ID,
+    defaultAuthorId: (state): string => state.authors[0]?.id ?? DEFAULT_AUTHOR_ID,
+    defaultLicenseId: (state): string => state.licenses[0]?.id ?? DEFAULT_LICENSE_ID,
+    defaultItemTypeId: (state): string => state.itemTypes[0]?.id ?? DEFAULT_ITEM_TYPE_ID,
+    defaultContentTypeId: (state): string => state.contentTypes[0]?.id ?? DEFAULT_CONTENT_TYPE_ID,
 
     isCollectionSelected(): boolean {
       const inner = this.selectedInnerItem
@@ -284,7 +303,10 @@ export const useExerciseStore = defineStore('exercise', {
       this.loading = true
       this.error = null
       try {
-        const dtos = await _adapter!.getRootItems()
+        const [dtos] = await Promise.all([
+          _adapter!.getRootItems(),
+          this.loadValidators()
+        ])
         this.rootItems = dtos.map(toItem)
         // Fire background recursive loading — no await so UI shows roots now
         this._loadChildrenRecursively(this.rootItems)
@@ -332,8 +354,13 @@ export const useExerciseStore = defineStore('exercise', {
 
     selectItem(item: TreeItem) {
       this.selectedItem = item
+      this.variants = []
       const inner = getInnerItem(item)
       this.loadItemContent(inner.id)
+      if (!checkIsCollection(inner)) {
+        const baseId = inner.rootItemId ?? inner.id
+        this.loadVariants(baseId)
+      }
     },
 
     async loadItemContent(itemId: string) {
@@ -392,6 +419,54 @@ export const useExerciseStore = defineStore('exercise', {
           .catch((e) => this._notifyError(e))
       }
       this._syncOrderedCollectionItems(collection)
+    },
+
+    // ── Validator Actions ────────────────────────────────────────────────────
+
+    async loadValidators() {
+      try {
+        this.allValidators = await _adapter!.getValidators()
+      } catch (e) {
+        this._notifyError(e)
+      }
+    },
+
+    async createValidator(description: string, rule: string): Promise<ValidatorDTO | null> {
+      try {
+        const dto = await _adapter!.createValidator({ description, validator: rule })
+        this.allValidators.push(dto)
+        return dto
+      } catch (e) {
+        this._notifyError(e)
+        return null
+      }
+    },
+
+    async linkValidatorToSelectedItem(validatorId: string) {
+      const inner = this.selectedInnerItem
+      if (!inner) return
+      if (inner.validators.includes(validatorId)) return
+      inner.validators.push(validatorId)
+      try {
+        await _adapter!.addValidatorToItem(inner.id, validatorId)
+      } catch (e) {
+        inner.validators = inner.validators.filter((v: string) => v !== validatorId)
+        this._notifyError(e)
+      }
+    },
+
+    async unlinkValidatorFromSelectedItem(validatorId: string) {
+      const inner = this.selectedInnerItem
+      if (!inner) return
+      inner.validators = inner.validators.filter((v: string) => v !== validatorId)
+      try {
+        await _adapter!.removeValidatorFromItem(inner.id, validatorId)
+      } catch (e) {
+        if (!inner.validators.includes(validatorId)) {
+          inner.validators.push(validatorId)
+        }
+        this._notifyError(e)
+      }
     },
 
     // ── Content Actions ───────────────────────────────────────────────────────
@@ -492,6 +567,161 @@ export const useExerciseStore = defineStore('exercise', {
       }).catch((e) => this._notifyError(e))
     },
 
+    async uploadBlob(index: number, file: File) {
+      const inner = this.selectedInnerItem
+      if (!inner || !inner.contents[index]) return
+      const content = inner.contents[index]
+      const contentId = content.id
+      if (!contentId) return
+      try {
+        await _adapter!.uploadBlob(contentId, file)
+        content.blobMimeType = file.type
+        content.blobContent = file.type.startsWith('image/') ? '(image)' : '(binary)'
+      } catch (e) {
+        this._notifyError(e)
+      }
+    },
+
+    // ── Variants ────────────────────────────────────────────────────────────────
+
+    /**
+     * Zählt die Varianten eines Items (Items mit root_item_id === itemId),
+     * ohne den State zu verändern. Für die Warnung vor dem Umwandeln
+     * in eine Collection.
+     */
+    async getVariantCount(itemId: string): Promise<number> {
+      try {
+        const dtos = await _adapter!.getItemsByRootId(itemId)
+        return dtos.length
+      } catch (e) {
+        this._notifyError(e)
+        return 0
+      }
+    },
+
+    async loadVariants(baseItemId: string) {
+      this.variants = []
+      try {
+        const dtos = await _adapter!.getItemsByRootId(baseItemId)
+        this.variants = dtos.map(toItem)
+        await Promise.all(this.variants.map(async (v) => {
+          const contentDtos = await _adapter!.getContents(v.id)
+          if (contentDtos.length > 0) {
+            v.contents = contentDtos.map(toFullContent)
+          }
+        }))
+      } catch (e) {
+        this._notifyError(e)
+      }
+    },
+
+    async createVariant(baseItemId: string) {
+      const variant = this._createItemData(baseItemId)
+      this.variants.push(variant)
+      try {
+        const dto = await _adapter!.createItem({
+          authorId: this.authorId,
+          licenseId: this.licenseId,
+          itemTypeId: this.itemTypeId,
+          rootItemId: baseItemId
+        })
+        variant.id = dto.itemId
+        if (variant.contents.length > 0) {
+          const contentDto = await _adapter!.createContent(dto.itemId, {
+            licenseId: this.licenseId,
+            itemContentTypeId: this.contentTypeId,
+            authorId: this.authorId,
+            purpose: variant.contents[0].purpose,
+            jsonSerializedContent: JSON.stringify(variant.contents[0].jsonContent)
+          })
+          if (contentDto && variant.contents[0]) {
+            variant.contents[0].id = contentDto.itemContentId
+          }
+        }
+      } catch (e) {
+        this._notifyError(e)
+        this.variants = this.variants.filter((v) => v !== variant)
+      }
+    },
+
+    updateVariantText(variantIndex: number, contentIndex: number, text: string) {
+      const variant = this.variants[variantIndex]
+      if (!variant || !variant.contents[contentIndex]) return
+      const content = variant.contents[contentIndex]
+      content.jsonContent.text = text
+      _adapter?.updateContent(content.id ?? '', {
+        licenseId: this.licenseId,
+        itemContentTypeId: this.contentTypeId,
+        authorId: this.authorId,
+        purpose: content.purpose,
+        jsonSerializedContent: JSON.stringify(content.jsonContent)
+      }).catch((e) => this._notifyError(e))
+    },
+
+    updateVariantPurpose(variantIndex: number, contentIndex: number, purpose: string) {
+      const variant = this.variants[variantIndex]
+      if (!variant || !variant.contents[contentIndex]) return
+      const content = variant.contents[contentIndex]
+      content.purpose = purpose
+      _adapter?.updateContent(content.id ?? '', {
+        licenseId: this.licenseId,
+        itemContentTypeId: this.contentTypeId,
+        authorId: this.authorId,
+        purpose: content.purpose,
+        jsonSerializedContent: JSON.stringify(content.jsonContent)
+      }).catch((e) => this._notifyError(e))
+    },
+
+    addVariantContent(variantIndex: number) {
+      const variant = this.variants[variantIndex]
+      if (!variant) return
+      const now = Date.now().toString()
+      const content: Content = {
+        id: 'content-' + now,
+        license: null,
+        contentType: 'text',
+        author: variant.author ?? 'author',
+        tags: [],
+        purpose: 'Neuer Inhalt',
+        jsonContent: { text: '' },
+        blobContent: ''
+      }
+      variant.contents.push(content)
+      _adapter?.createContent(variant.id, {
+        licenseId: this.licenseId,
+        itemContentTypeId: this.contentTypeId,
+        authorId: this.authorId,
+        purpose: content.purpose,
+        jsonSerializedContent: JSON.stringify(content.jsonContent)
+      }).then((dto) => {
+        if (dto) content.id = dto.itemContentId
+      }).catch((e) => this._notifyError(e))
+    },
+
+    removeVariantContent(variantIndex: number, contentIndex: number) {
+      const variant = this.variants[variantIndex]
+      if (!variant || !variant.contents[contentIndex]) return
+      const removedId = variant.contents[contentIndex].id
+      variant.contents.splice(contentIndex, 1)
+      if (removedId) {
+        _adapter?.deleteContent(removedId).catch((e) => this._notifyError(e))
+      }
+    },
+
+    async uploadVariantBlob(variantIndex: number, contentIndex: number, file: File) {
+      const variant = this.variants[variantIndex]
+      if (!variant || !variant.contents[contentIndex]) return
+      const content = variant.contents[contentIndex]
+      const contentId = content.id
+      if (!contentId) return
+      try {
+        await _adapter!.uploadBlob(contentId, file)
+        content.blobMimeType = file.type
+        content.blobContent = file.type.startsWith('image/') ? '(image)' : '(binary)'
+      } catch (e) {
+        this._notifyError(e)
+      }
+    },
     // ── Tree helpers ──
 
     /**
@@ -811,12 +1041,12 @@ export const useExerciseStore = defineStore('exercise', {
       item.item_type = 'collection'
       item.items = []
       item.order = false
+      this.validate()
       _adapter?.convertItemToCollection(item.id)
         .then((dto) => {
           if (dto) item.collectionId = dto.collectionId ?? null
         })
         .catch((e) => this._notifyError(e))
-      this.validate()
       return item as Collection
     },
 

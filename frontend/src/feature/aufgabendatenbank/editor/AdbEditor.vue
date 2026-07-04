@@ -81,6 +81,10 @@
 
         <AdbContentList />
 
+        <AdbValidatorEditor />
+
+        <AdbVariantsPanel />
+
         <p class="text-caption text-grey">
           ID: {{ store.selectedItem.id }}
         </p>
@@ -95,6 +99,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import AdbContentList from './components/AdbContentList.vue'
+import AdbVariantsPanel from './components/AdbVariantsPanel.vue'
+import AdbValidatorEditor from './components/AdbValidatorEditor.vue'
 import AdbDeleteDialog from './components/AdbDeleteDialog.vue'
 import AdbRefSelect from '../toolbar/AdbRefSelect.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
@@ -156,6 +162,8 @@ function deleteSelectedItem() {
   padding: 28px 36px;
   font-size: 13px;
   color: #cccccc;
+  overflow-y: auto;
+  max-height: 100%;
 }
 
 .editor-header-row {

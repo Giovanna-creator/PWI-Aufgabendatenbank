@@ -110,6 +110,17 @@ export interface OrderTogglePayload {
   order: boolean
 }
 
+export interface ValidatorDTO {
+  validatorId: string
+  description: string
+  validator: string
+}
+
+export interface CreateValidatorPayload {
+  description: string
+  validator: string
+}
+
 export interface ApiAdapter {
   getRootItems(): Promise<ItemDTO[]>
 
@@ -143,6 +154,10 @@ export interface ApiAdapter {
 
   deleteContent(contentId: string): Promise<void>
 
+  uploadBlob(contentId: string, file: File): Promise<void>
+
+  getBlobUrl(contentId: string): string
+
   loadFullTree(): Promise<ItemDTO[]>
 
   // Referenzdaten für Dropdowns
@@ -156,4 +171,22 @@ export interface ApiAdapter {
   createLicense(payload: { name: string }): Promise<LicenseDTO>
   createItemType(payload: { name: string; description: string | null }): Promise<ItemTypeDTO>
   createContentType(payload: { name: string; description: string | null }): Promise<ContentTypeDTO>
+
+  getItemsByRootId(rootItemId: string): Promise<ItemDTO[]>
+
+  // ── Validators ───────────────────────────────────────────────────────
+
+  getValidators(): Promise<ValidatorDTO[]>
+
+  createValidator(payload: CreateValidatorPayload): Promise<ValidatorDTO>
+
+  updateValidator(id: string, payload: CreateValidatorPayload): Promise<ValidatorDTO>
+
+  deleteValidator(id: string): Promise<void>
+
+  getValidatorsForItem(itemId: string): Promise<ValidatorDTO[]>
+
+  addValidatorToItem(itemId: string, validatorId: string): Promise<ItemDTO>
+
+  removeValidatorFromItem(itemId: string, validatorId: string): Promise<void>
 }

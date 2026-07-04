@@ -125,7 +125,9 @@ describe('validateTreeData', () => {
     expect(issues[0].message).toContain('kein Collection-Item')
   })
 
-  it('does not flag an item that is both in rootItems and inside a collection (root_item_id bleibt null bei Collection-Sub-Items)', () => {
+  it('does not flag an item appearing in rootItems and inside a collection', () => {
+    // Sub-Items behalten root_item_id=null und tauchen daher regulär in beiden
+    // Listen auf — das ist kein Fehler und darf keine Meldung erzeugen.
     const dup = item({ id: 'dup', rootItemId: null })
     const data = [
       dup,
