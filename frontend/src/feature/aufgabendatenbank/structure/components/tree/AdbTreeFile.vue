@@ -81,11 +81,20 @@
     v-model:visible="showDeleteDialog"
     @confirm="onDeleteConfirmed"
   />
+
+  <AdbConfirmDialog
+    v-model:visible="showConvertDialog"
+    title="In Kollektion umwandeln"
+    :message="convertMessage"
+    confirm-label="Fortfahren"
+    @confirm="onConvertConfirmed"
+  />
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import AdbDeleteDialog from '@/feature/aufgabendatenbank/editor/components/AdbDeleteDialog.vue'
+import AdbConfirmDialog from './AdbConfirmDialog.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
 import { getInnerItem, type TreeItem } from '@/lib/types'
 
@@ -94,6 +103,16 @@ const store = useExerciseStore()
 /** Whether a drag is currently hovering this item. */
 const isDragOver = ref(false)
 const showDeleteDialog = ref(false)
+const showConvertDialog = ref(false)
+const variantCount = ref(0)
+
+/** Warnung vor dem Umwandeln: Varianten (horizontal) werden danach nicht mehr genutzt. */
+const convertMessage = computed(() => {
+  const n = variantCount.value
+  const hat = n === 1 ? 'besitzt 1 Variante' : `besitzt ${n} Varianten`
+  const werden = n === 1 ? 'wird diese Variante' : 'werden diese Varianten'
+  return `Diese Aufgabe ${hat}.\n\nNach der Umwandlung in eine Kollektion ${werden} nicht mehr verwendet.\n\nMöchten Sie fortfahren?`
+})
 
 const props = defineProps<{
   element: TreeItem
@@ -115,10 +134,24 @@ const onClick = () => {
   store.selectItem(props.element)
 }
 
-/** Convert the underlying item into a Collection via the store. */
-const onMakeCollection = () => {
+/**
+ * Convert the underlying item into a Collection.
+ * Hat die Aufgabe Varianten, erst warnen (die horizontale Varianten-Beziehung
+ * geht dabei verloren) und auf Bestätigung warten.
+ */
+const onMakeCollection = async () => {
   const item = getInnerItem(props.element)
-  store.makeItemACollection(item)
+  const count = await store.getVariantCount(item.id)
+  if (count > 0) {
+    variantCount.value = count
+    showConvertDialog.value = true
+  } else {
+    store.makeItemACollection(item)
+  }
+}
+
+const onConvertConfirmed = () => {
+  store.makeItemACollection(getInnerItem(props.element))
 }
 
 /** Show confirmation dialog before deleting. */
