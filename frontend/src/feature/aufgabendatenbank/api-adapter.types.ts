@@ -108,8 +108,6 @@ export interface ApiAdapter {
 
   updateCollectionItemPosition(collectionId: string, itemId: string, position: number): Promise<void>
 
-  uploadBlob(contentId: string, file: File): Promise<void>
-
   getContents(itemId: string): Promise<ContentDTO[]>
 
   createContent(itemId: string, payload: CreateContentPayload): Promise<ContentDTO>
