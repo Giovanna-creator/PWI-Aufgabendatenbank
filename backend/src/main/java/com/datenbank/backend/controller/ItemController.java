@@ -122,4 +122,21 @@ public class ItemController {
         itemService.removeValidatorFromItem(itemId, validatorId);
         return ResponseEntity.noContent().build();
     }
+
+    /**
+     * Tag an ein Item hängen bzw. wieder entfernen.
+     * POST   /api/items/{id}/tags         Body { "tagId": "..." }
+     * DELETE /api/items/{id}/tags/{tagId}
+     */
+    public record TagAssign(UUID tagId) {}
+
+    @PostMapping("/{id}/tags")
+    public ResponseEntity<ItemResponseDto> addTag(@PathVariable UUID id, @RequestBody TagAssign body) {
+        return ResponseEntity.ok(itemService.addTag(id, body.tagId()));
+    }
+
+    @DeleteMapping("/{id}/tags/{tagId}")
+    public ResponseEntity<ItemResponseDto> removeTag(@PathVariable UUID id, @PathVariable UUID tagId) {
+        return ResponseEntity.ok(itemService.removeTag(id, tagId));
+    }
 }

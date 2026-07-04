@@ -15,7 +15,8 @@ import type {
   ItemTypeDTO,
   ContentTypeDTO,
   ValidatorDTO,
-  CreateValidatorPayload
+  CreateValidatorPayload,
+  TagDTO
 } from './api-adapter.types'
 import type { Item, Content, CollectionItem } from '@/lib/types'
 
@@ -523,6 +524,30 @@ export class DevAdbApiService implements ApiAdapter {
     if (item.validators) {
       item.validators = item.validators.filter((v: string) => v !== validatorId)
     }
+  }
+
+  async getTags(): Promise<TagDTO[]> {
+    log('GET', '/api/tags')
+    return [
+      { id: 't0000000-0000-0000-0000-000000000001', tag: 'Mathematik', description: null, parentTagId: null },
+      { id: 't0000000-0000-0000-0000-000000000002', tag: 'Analysis', description: null, parentTagId: 't0000000-0000-0000-0000-000000000001' },
+      { id: 't0000000-0000-0000-0000-000000000003', tag: 'Ableitungen', description: null, parentTagId: 't0000000-0000-0000-0000-000000000002' },
+      { id: 't0000000-0000-0000-0000-000000000004', tag: 'Schwierigkeit', description: null, parentTagId: null },
+      { id: 't0000000-0000-0000-0000-000000000005', tag: 'Schwer', description: null, parentTagId: 't0000000-0000-0000-0000-000000000004' }
+    ]
+  }
+
+  async createTag(payload: { tag: string; description: string | null; parentTagId: string | null }): Promise<TagDTO> {
+    log('POST', '/api/tags', payload)
+    return { id: crypto.randomUUID(), tag: payload.tag, description: payload.description, parentTagId: payload.parentTagId }
+  }
+
+  async addTagToItem(itemId: string, tagId: string): Promise<void> {
+    log('POST', `/api/items/${itemId}/tags`, { tagId })
+  }
+
+  async removeTagFromItem(itemId: string, tagId: string): Promise<void> {
+    log('DELETE', `/api/items/${itemId}/tags/${tagId}`)
   }
 }
 

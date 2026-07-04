@@ -126,6 +126,28 @@ public class ItemService {
     }
 
     /**
+     * Hängt ein vorhandenes Tag an ein Item (item_tags). Idempotent, da Set.
+     */
+    @Transactional
+    public ItemResponseDto addTag(UUID itemId, UUID tagId) {
+        Item item = findItemOrThrow(itemId);
+        Tag tag = tagRepository.findById(tagId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tag nicht gefunden"));
+        item.getTags().add(tag);
+        return convertToResponseDto(itemRepository.save(item));
+    }
+
+    /**
+     * Entfernt ein Tag von einem Item (nur die Verknüpfung, das Tag bleibt).
+     */
+    @Transactional
+    public ItemResponseDto removeTag(UUID itemId, UUID tagId) {
+        Item item = findItemOrThrow(itemId);
+        item.getTags().removeIf(t -> t.getTagId().equals(tagId));
+        return convertToResponseDto(itemRepository.save(item));
+    }
+
+    /**
     * Liefert nur Root-Items (root_item_id IS NULL)
     */
     @Transactional(readOnly = true)

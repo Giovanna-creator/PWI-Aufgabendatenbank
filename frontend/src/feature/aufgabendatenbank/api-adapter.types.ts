@@ -76,6 +76,13 @@ export interface ContentTypeDTO {
   description: string | null
 }
 
+export interface TagDTO {
+  id: string
+  tag: string
+  description: string | null
+  parentTagId: string | null
+}
+
 export interface CreateItemPayload {
   authorId: string
   licenseId: string
@@ -189,4 +196,10 @@ export interface ApiAdapter {
   addValidatorToItem(itemId: string, validatorId: string): Promise<ItemDTO>
 
   removeValidatorFromItem(itemId: string, validatorId: string): Promise<void>
+
+  // Tags (hierarchisch)
+  getTags(): Promise<TagDTO[]>
+  createTag(payload: { tag: string; description: string | null; parentTagId: string | null }): Promise<TagDTO>
+  addTagToItem(itemId: string, tagId: string): Promise<void>
+  removeTagFromItem(itemId: string, tagId: string): Promise<void>
 }

@@ -79,6 +79,11 @@
           />
         </div>
 
+        <AdbTagsSection
+          v-if="inner"
+          :item="inner"
+        />
+
         <AdbContentList />
 
         <AdbValidatorEditor />
@@ -102,6 +107,7 @@ import AdbContentList from './components/AdbContentList.vue'
 import AdbVariantsPanel from './components/AdbVariantsPanel.vue'
 import AdbValidatorEditor from './components/AdbValidatorEditor.vue'
 import AdbDeleteDialog from './components/AdbDeleteDialog.vue'
+import AdbTagsSection from './components/AdbTagsSection.vue'
 import AdbRefSelect from '../toolbar/AdbRefSelect.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
 

@@ -21,7 +21,8 @@ import type {
   LicenseDTO,
   ItemTypeDTO,
   ContentTypeDTO,
-  ValidatorDTO
+  ValidatorDTO,
+  TagDTO
 } from '@/feature/aufgabendatenbank/api-adapter.types'
 
 // ── Default-UUIDs (identisch mit database/init/init.sql) ───────────────────────
@@ -132,6 +133,9 @@ interface ExerciseState {
   licenses: LicenseDTO[]
   itemTypes: ItemTypeDTO[]
   contentTypes: ContentTypeDTO[]
+  // Hierarchische Tags + aktiver Tag-Filter (null = kein Filter)
+  tags: TagDTO[]
+  tagFilter: string | null
   // Erstellungs-Dialog (von Toolbar und Collection-Kontextmenü geteilt)
   createDialogOpen: boolean
   createDialogTarget: Collection | null
@@ -157,6 +161,8 @@ export const useExerciseStore = defineStore('exercise', {
     licenses: [],
     itemTypes: [],
     contentTypes: [],
+    tags: [],
+    tagFilter: null,
     createDialogOpen: false,
     createDialogTarget: null,
     allValidators: [],
@@ -197,6 +203,59 @@ export const useExerciseStore = defineStore('exercise', {
     isOrdered(): boolean {
       const coll = this.selectedCollection
       return coll ? coll.order === true : false
+    },
+
+    // ── Tags ──────────────────────────────────────────────────────────────────
+
+    /** Lesbarer Pfad eines Tags, z. B. "Mathematik / Analysis / Ableitungen". */
+    tagPath() {
+      return (id: string): string => {
+        const parts: string[] = []
+        let cur = this.tags.find((t) => t.id === id)
+        let guard = 0
+        while (cur && guard++ < 20) {
+          parts.unshift(cur.tag)
+          const parentId = cur.parentTagId
+          cur = parentId ? this.tags.find((t) => t.id === parentId) : undefined
+        }
+        return parts.join(' / ')
+      }
+    },
+
+    /** Alle Tags als { id, path } für Dropdowns, nach Pfad sortiert. */
+    tagOptions(): { id: string; path: string }[] {
+      return this.tags
+        .map((t) => ({ id: t.id, path: this.tagPath(t.id) }))
+        .sort((a, b) => a.path.localeCompare(b.path))
+    },
+
+    /** Ein Tag plus alle seine Nachfahren (für den vererbenden Filter). */
+    descendantTagIds() {
+      return (id: string): Set<string> => {
+        const ids = new Set<string>([id])
+        let added = true
+        while (added) {
+          added = false
+          for (const t of this.tags) {
+            if (t.parentTagId && ids.has(t.parentTagId) && !ids.has(t.id)) {
+              ids.add(t.id)
+              added = true
+            }
+          }
+        }
+        return ids
+      }
+    },
+
+    /**
+     * Root-Items unter Berücksichtigung des Tag-Filters. Ohne Filter alle;
+     * mit Filter nur Items, deren Tags den gewählten Tag oder einen seiner
+     * Nachfahren enthalten (Vererbung).
+     */
+    visibleRootItems(): Item[] {
+      if (!this.tagFilter) return this.rootItems
+      const wanted = this.descendantTagIds(this.tagFilter)
+      return this.rootItems.filter((it) => it.tags.some((tg) => wanted.has(tg)))
     }
   },
 
@@ -220,16 +279,18 @@ export const useExerciseStore = defineStore('exercise', {
     async loadReferenceData() {
       if (!_adapter) return
       try {
-        const [authors, licenses, itemTypes, contentTypes] = await Promise.all([
+        const [authors, licenses, itemTypes, contentTypes, tags] = await Promise.all([
           _adapter.getAuthors(),
           _adapter.getLicenses(),
           _adapter.getItemTypes(),
-          _adapter.getContentTypes()
+          _adapter.getContentTypes(),
+          _adapter.getTags()
         ])
         this.authors = authors
         this.licenses = licenses
         this.itemTypes = itemTypes
         this.contentTypes = contentTypes
+        this.tags = tags
       } catch (e) {
         this._notifyError(e)
       }
@@ -288,6 +349,54 @@ export const useExerciseStore = defineStore('exercise', {
         this._notifyError(e)
         return null
       }
+    },
+
+    // ── Tags ────────────────────────────────────────────────────────────────
+
+    /** Neues Tag anlegen (optional mit Eltern-Tag) und in die Liste aufnehmen. */
+    async createTag(
+      name: string,
+      parentTagId: string | null = null,
+      description = ''
+    ): Promise<TagDTO | null> {
+      if (!_adapter || !name.trim()) return null
+      try {
+        const dto = await _adapter.createTag({
+          tag: name.trim(),
+          description: description.trim() || null,
+          parentTagId: parentTagId || null
+        })
+        this.tags.push(dto)
+        return dto
+      } catch (e) {
+        this._notifyError(e)
+        return null
+      }
+    },
+
+    /** Tag einem Item zuordnen (optimistisch, Sync im Hintergrund). */
+    assignTagToItem(item: Item, tagId: string) {
+      if (!tagId || item.tags.includes(tagId)) return
+      item.tags.push(tagId)
+      _adapter?.addTagToItem(item.id, tagId).catch((e) => {
+        item.tags = item.tags.filter((t) => t !== tagId)
+        this._notifyError(e)
+      })
+    },
+
+    /** Tag-Zuordnung von einem Item entfernen (optimistisch). */
+    removeTagFromItem(item: Item, tagId: string) {
+      const before = item.tags
+      item.tags = item.tags.filter((t) => t !== tagId)
+      _adapter?.removeTagFromItem(item.id, tagId).catch((e) => {
+        item.tags = before
+        this._notifyError(e)
+      })
+    },
+
+    /** Aktiven Tag-Filter setzen (null = aus). */
+    setTagFilter(tagId: string | null) {
+      this.tagFilter = tagId
     },
 
     // ── Initialisation (progressive loading) ──────────────────────────────────
