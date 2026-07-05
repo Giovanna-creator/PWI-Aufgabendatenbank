@@ -95,12 +95,36 @@
               v-else
               class="template-validation valid"
             >✓ Alle Inhalte im Template</span>
+            <v-btn
+              :icon="editMode ? 'mdi-format-list-bulleted' : 'mdi-pencil'"
+              variant="text"
+              size="x-small"
+              class="template-edit-btn"
+              :class="{ active: editMode }"
+              @click="toggleEditMode"
+            />
           </div>
-          <textarea
-            :value="currentTemplateXml"
-            class="template-textarea"
-            spellcheck="false"
-            @input="onTemplateInput"
+          <div v-if="!editMode">
+            <Draggable
+              v-model="purposeOrder"
+              item-key="p"
+              class="purpose-draggable"
+              :animation="200"
+              ghost-class="purpose-ghost"
+              handle=".drag-handle"
+            >
+              <template #item="{ element }">
+                <div class="purpose-drag-item">
+                  <v-icon icon="mdi-drag" class="drag-handle" size="x-small" />
+                  <span class="purpose-name">{{ element }}</span>
+                </div>
+              </template>
+            </Draggable>
+          </div>
+          <AdbXmlEditor
+            v-else
+            :model-value="editedXml"
+            @update:model-value="onXmlEditorInput"
           />
         </div>
 
@@ -123,18 +147,32 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import draggable from 'vuedraggable'
+import AdbXmlEditor from './components/AdbXmlEditor.vue'
 import AdbContentList from './components/AdbContentList.vue'
 import AdbVariantsPanel from './components/AdbVariantsPanel.vue'
 import AdbValidatorEditor from './components/AdbValidatorEditor.vue'
 import AdbDeleteDialog from './components/AdbDeleteDialog.vue'
 import AdbRefSelect from '../toolbar/AdbRefSelect.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
-import { getPurposesFromXml } from '../representation/templateXml'
+import { getPurposesFromXml, buildXmlFromPurposes } from '../representation/templateXml'
+
+const Draggable = draggable
 
 const store = useExerciseStore()
 const showDeleteDialog = ref(false)
 const editedXml = ref('')
 const saveTimer = ref<ReturnType<typeof setTimeout> | null>(null)
+const editMode = ref(false)
+
+const purposeOrder = computed({
+  get: () => getPurposesFromXml(editedXml.value),
+  set: (val) => {
+    const xml = buildXmlFromPurposes(val)
+    editedXml.value = xml
+    debounceSave(xml)
+  }
+})
 
 const inner = computed(() => store.selectedInnerItem)
 
@@ -154,7 +192,22 @@ watch(currentTemplateXml, (xml) => {
   if (xml !== null) editedXml.value = xml
 }, { immediate: true })
 
+const hasDuplicatePurposes = computed(() => {
+  if (!editedXml.value) return ''
+  const purposes = getPurposesFromXml(editedXml.value)
+  const seen = new Set<string>()
+  const dupes = new Set<string>()
+  for (const p of purposes) {
+    if (seen.has(p)) dupes.add(p)
+    seen.add(p)
+  }
+  return dupes.size > 0
+    ? `Doppelte Purposes: ${[...dupes].join(', ')}`
+    : ''
+})
+
 const validationMsg = computed(() => {
+  if (hasDuplicatePurposes.value) return hasDuplicatePurposes.value
   const item = inner.value
   if (!item || !editedXml.value) return ''
   const templatePurposes = getPurposesFromXml(editedXml.value)
@@ -165,13 +218,21 @@ const validationMsg = computed(() => {
     : ''
 })
 
-function onTemplateInput(e: Event) {
-  const val = (e.target as HTMLTextAreaElement).value
-  editedXml.value = val
+function debounceSave(xml: string) {
+  if (hasDuplicatePurposes.value) return
   if (saveTimer.value) clearTimeout(saveTimer.value)
   saveTimer.value = setTimeout(() => {
-    store.saveEditedTemplateXml(val)
+    store.saveEditedTemplateXml(xml)
   }, 800)
+}
+
+function onXmlEditorInput(val: string) {
+  editedXml.value = val
+  debounceSave(val)
+}
+
+function toggleEditMode() {
+  editMode.value = !editMode.value
 }
 
 function onMeta(meta: { authorId?: string; licenseId?: string; itemTypeId?: string }) {
@@ -304,6 +365,67 @@ function deleteSelectedItem() {
 
 .template-textarea::placeholder {
   color: #555;
+}
+
+.purpose-draggable {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.purpose-drag-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #2a2a2a;
+  border: 1px solid #3c3c3c;
+  border-radius: 6px;
+  cursor: default;
+  transition: border-color 0.15s, background 0.15s;
+  user-select: none;
+}
+
+.purpose-drag-item:hover {
+  background: #303030;
+  border-color: #555;
+}
+
+.purpose-ghost {
+  opacity: 0.4;
+  border-style: dashed;
+  border-color: #007fd4;
+  background: rgba(0, 127, 212, 0.08);
+}
+
+.drag-handle {
+  color: #666;
+  cursor: grab;
+  flex-shrink: 0;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.purpose-name {
+  font-size: 13px;
+  color: #d4d4d4;
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+}
+
+.template-edit-btn {
+  color: #666 !important;
+  transition: color 0.15s;
+  margin-left: auto !important;
+}
+
+.template-edit-btn:hover {
+  color: #999 !important;
+}
+
+.template-edit-btn.active {
+  color: #007fd4 !important;
 }
 
 .meta-select {
