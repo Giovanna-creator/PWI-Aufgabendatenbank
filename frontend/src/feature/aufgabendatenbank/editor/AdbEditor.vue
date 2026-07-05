@@ -77,6 +77,31 @@
             class="meta-select"
             @update:model-value="(v) => onMeta({ licenseId: v })"
           />
+
+        </div>
+
+        <div
+          v-if="currentTemplateXml !== null"
+          class="template-editor"
+        >
+          <div class="template-editor-header">
+            <span class="template-editor-label">Darstellung</span>
+            <span
+              v-if="validationMsg"
+              class="template-validation"
+              :class="{ valid: !validationMsg, invalid: validationMsg }"
+            >{{ validationMsg }}</span>
+            <span
+              v-else
+              class="template-validation valid"
+            >✓ Alle Inhalte im Template</span>
+          </div>
+          <textarea
+            :value="currentTemplateXml"
+            class="template-textarea"
+            spellcheck="false"
+            @input="onTemplateInput"
+          />
         </div>
 
         <AdbContentList />
@@ -97,18 +122,57 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import AdbContentList from './components/AdbContentList.vue'
 import AdbVariantsPanel from './components/AdbVariantsPanel.vue'
 import AdbValidatorEditor from './components/AdbValidatorEditor.vue'
 import AdbDeleteDialog from './components/AdbDeleteDialog.vue'
 import AdbRefSelect from '../toolbar/AdbRefSelect.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
+import { getPurposesFromXml } from '../representation/templateXml'
 
 const store = useExerciseStore()
 const showDeleteDialog = ref(false)
+const editedXml = ref('')
+const saveTimer = ref<ReturnType<typeof setTimeout> | null>(null)
 
 const inner = computed(() => store.selectedInnerItem)
+
+function buildDefaultXml(item: { contents: { purpose: string }[] }): string {
+  if (item.contents.length === 0) return '<layout>\n</layout>'
+  const purposes = item.contents.map(c => `  <purpose>${c.purpose}</purpose>`).join('\n')
+  return `<layout>\n${purposes}\n</layout>`
+}
+
+const currentTemplateXml = computed(() => {
+  const item = inner.value
+  if (!item) return null
+  return store.templateById(item.representationTemplate) ?? buildDefaultXml(item)
+})
+
+watch(currentTemplateXml, (xml) => {
+  if (xml !== null) editedXml.value = xml
+}, { immediate: true })
+
+const validationMsg = computed(() => {
+  const item = inner.value
+  if (!item || !editedXml.value) return ''
+  const templatePurposes = getPurposesFromXml(editedXml.value)
+  const contentPurposes = item.contents.map(c => c.purpose)
+  const missing = contentPurposes.filter(p => !templatePurposes.includes(p))
+  return missing.length > 0
+    ? `${missing.length} Inhalt${missing.length > 1 ? 'e' : ''} fehlen im Template: ${missing.join(', ')}`
+    : ''
+})
+
+function onTemplateInput(e: Event) {
+  const val = (e.target as HTMLTextAreaElement).value
+  editedXml.value = val
+  if (saveTimer.value) clearTimeout(saveTimer.value)
+  saveTimer.value = setTimeout(() => {
+    store.saveEditedTemplateXml(val)
+  }, 800)
+}
 
 function onMeta(meta: { authorId?: string; licenseId?: string; itemTypeId?: string }) {
   if (inner.value) store.updateItemMeta(inner.value, meta)
@@ -178,6 +242,68 @@ function deleteSelectedItem() {
   flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 20px;
+}
+
+.template-editor {
+  margin-bottom: 20px;
+}
+
+.template-editor-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.template-editor-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #969696;
+  letter-spacing: 0.08em;
+  user-select: none;
+}
+
+.template-validation {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  user-select: none;
+}
+
+.template-validation.valid {
+  color: #4caf50;
+  background: rgba(76, 175, 80, 0.1);
+}
+
+.template-validation.invalid {
+  color: #ff7a84;
+  background: rgba(255, 122, 132, 0.1);
+}
+
+.template-textarea {
+  width: 100%;
+  min-height: 120px;
+  box-sizing: border-box;
+  background: #1e1e1e;
+  border: 1px solid #3c3c3c;
+  border-radius: 8px;
+  color: #d4d4d4;
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  padding: 12px 14px;
+  resize: vertical;
+  tab-size: 2;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.template-textarea:focus {
+  border-color: #007fd4;
+}
+
+.template-textarea::placeholder {
+  color: #555;
 }
 
 .meta-select {

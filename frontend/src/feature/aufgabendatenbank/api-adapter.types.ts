@@ -76,6 +76,11 @@ export interface ContentTypeDTO {
   description: string | null
 }
 
+export interface ReprTemplateDTO {
+  id: string
+  template: string
+}
+
 export interface CreateItemPayload {
   authorId: string
   licenseId: string
@@ -173,6 +178,10 @@ export interface ApiAdapter {
   createContentType(payload: { name: string; description: string | null }): Promise<ContentTypeDTO>
 
   getItemsByRootId(rootItemId: string): Promise<ItemDTO[]>
+
+  // ── Representation Templates ───────────────────────────────────────────
+
+  getRepresentationTemplates(): Promise<ReprTemplateDTO[]>
 
   // ── Validators ───────────────────────────────────────────────────────
 

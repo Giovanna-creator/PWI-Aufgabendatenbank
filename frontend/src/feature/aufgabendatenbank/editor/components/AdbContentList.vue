@@ -1,14 +1,14 @@
 <template>
   <div class="content-list">
     <AdbContentEditor
-      v-for="(content, index) in contents"
+      v-for="(content, index) in orderedContents"
       :key="content.id ?? index"
       :content="content"
       :index="index"
-      @update:text="(val) => store.updateContentText(index, val)"
-      @update:purpose="(val) => store.updateContentPurpose(index, val)"
-      @update:meta="(m) => store.updateContentMeta(index, m)"
-      @delete="store.removeContentFromSelectedItem(index)"
+      @update:text="(val) => store.updateContentText(realIndex(index), val)"
+      @update:purpose="(val) => store.updateContentPurpose(realIndex(index), val)"
+      @update:meta="(m) => store.updateContentMeta(realIndex(index), m)"
+      @delete="store.removeContentFromSelectedItem(realIndex(index))"
     />
 
     <button
@@ -31,10 +31,24 @@
 import { computed } from 'vue'
 import AdbContentEditor from './AdbContentEditor.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
+import { applyTemplateOrder } from '../../representation/applyTemplateOrder'
 
 const store = useExerciseStore()
 
-const contents = computed(() => store.selectedInnerItem?.contents ?? [])
+const rawContents = computed(() => store.selectedInnerItem?.contents ?? [])
+
+const orderedContents = computed(() => {
+  const item = store.selectedInnerItem
+  if (!item) return []
+  const template = store.templateById(item.representationTemplate)
+  return applyTemplateOrder(rawContents.value, template)
+})
+
+function realIndex(sortedIndex: number): number {
+  const item = store.selectedInnerItem
+  if (!item) return sortedIndex
+  return item.contents.indexOf(orderedContents.value[sortedIndex])
+}
 </script>
 
 <style scoped lang="scss">

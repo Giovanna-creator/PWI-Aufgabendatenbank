@@ -15,7 +15,8 @@ import type {
   ItemTypeDTO,
   ContentTypeDTO,
   ValidatorDTO,
-  CreateValidatorPayload
+  CreateValidatorPayload,
+  ReprTemplateDTO
 } from './api-adapter.types'
 import type { Item, Content, CollectionItem } from '@/lib/types'
 
@@ -107,6 +108,17 @@ function findItem(id: string, items: Item[]): Item | undefined {
   }
   return undefined
 }
+
+const seedTemplates: ReprTemplateDTO[] = [
+  {
+    id: 'tmpl-vertical',
+    template: '<layout><purpose>Aufgabenstellung</purpose><purpose>Hinweis</purpose><purpose>L\u00f6sung</purpose></layout>'
+  },
+  {
+    id: 'tmpl-task-solution',
+    template: '<layout><purpose>Aufgabenstellung</purpose><purpose>L\u00f6sung</purpose></layout>'
+  }
+]
 
 const seedValidators: ValidatorDTO[] = [
   {
@@ -461,6 +473,15 @@ export class DevAdbApiService implements ApiAdapter {
       .flatMap(item => item.items ?? [])
       .filter(ci => ci.item.rootItemId === rootItemId)
       .map(ci => toDTO(ci.item))
+  }
+
+  // ── Representation Templates ─────────────────────────────────────────
+
+  private _templates: ReprTemplateDTO[] = [...seedTemplates]
+
+  async getRepresentationTemplates(): Promise<ReprTemplateDTO[]> {
+    log('GET', '/api/representation-templates')
+    return [...this._templates]
   }
 
   // ── Validators ───────────────────────────────────────────────────────

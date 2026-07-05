@@ -35,6 +35,7 @@ const { sidebarWidth, containerRef, startResizing } = useSidebarResizer()
 
 onMounted(() => {
   store.loadReferenceData()
+  store.loadRepresentationTemplates()
   store.loadTree()
 })
 </script>
