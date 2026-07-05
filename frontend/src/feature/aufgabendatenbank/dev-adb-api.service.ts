@@ -484,6 +484,21 @@ export class DevAdbApiService implements ApiAdapter {
     return [...this._templates]
   }
 
+  async createRepresentationTemplate(payload: { template: string }): Promise<ReprTemplateDTO> {
+    log('POST', '/api/representation-templates', payload)
+    const t: ReprTemplateDTO = { id: uid('tmpl'), template: payload.template }
+    this._templates.push(t)
+    return { ...t }
+  }
+
+  async updateRepresentationTemplate(id: string, payload: { template: string }): Promise<ReprTemplateDTO> {
+    log('PUT', `/api/representation-templates/${id}`, payload)
+    const idx = this._templates.findIndex(t => t.id === id)
+    if (idx < 0) throw new Error('Template nicht gefunden')
+    this._templates[idx] = { ...this._templates[idx], template: payload.template }
+    return { ...this._templates[idx] }
+  }
+
   // ── Validators ───────────────────────────────────────────────────────
 
   private _validators: ValidatorDTO[] = [...seedValidators]

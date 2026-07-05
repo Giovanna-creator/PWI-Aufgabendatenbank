@@ -162,6 +162,16 @@ export class AdbApiService implements ApiAdapter {
     return data
   }
 
+  async createRepresentationTemplate(payload: { template: string }): Promise<ReprTemplateDTO> {
+    const { data } = await this.http.post<ReprTemplateDTO>('/representation-templates', payload)
+    return data
+  }
+
+  async updateRepresentationTemplate(id: string, payload: { template: string }): Promise<ReprTemplateDTO> {
+    const { data } = await this.http.put<ReprTemplateDTO>(`/representation-templates/${id}`, payload)
+    return data
+  }
+
   async getItemsByRootId(rootItemId: string): Promise<ItemDTO[]> {
     const { data } = await this.http.get<ItemDTO[]>('/items', { params: { rootItemId } })
     return data

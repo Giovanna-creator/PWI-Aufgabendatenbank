@@ -182,6 +182,8 @@ export interface ApiAdapter {
   // ── Representation Templates ───────────────────────────────────────────
 
   getRepresentationTemplates(): Promise<ReprTemplateDTO[]>
+  createRepresentationTemplate(payload: { template: string }): Promise<ReprTemplateDTO>
+  updateRepresentationTemplate(id: string, payload: { template: string }): Promise<ReprTemplateDTO>
 
   // ── Validators ───────────────────────────────────────────────────────
 
