@@ -38,8 +38,25 @@
               />
               <div
                 v-else-if="hasBlob(c)"
-                class="preview-filename"
-              >{{ c.blobContent }}</div>
+                class="preview-blob"
+              >
+                <v-icon
+                  icon="mdi-file-pdf-box"
+                  size="32"
+                  color="#f40"
+                />
+                <a
+                  :href="blobSrc(c)"
+                  target="_blank"
+                  class="preview-blob-link"
+                >
+                  <v-icon
+                    icon="mdi-download"
+                    size="16"
+                  />
+                  Öffnen / Herunterladen
+                </a>
+              </div>
               <div
                 v-else
                 class="preview-block-text"
@@ -60,8 +77,25 @@
             />
             <div
               v-else-if="hasBlob(group.contents[0])"
-              class="preview-filename"
-            >{{ group.contents[0]?.blobContent }}</div>
+              class="preview-blob"
+            >
+              <v-icon
+                icon="mdi-file-pdf-box"
+                size="32"
+                color="#f40"
+              />
+              <a
+                :href="blobSrc(group.contents[0])"
+                target="_blank"
+                class="preview-blob-link"
+              >
+                <v-icon
+                  icon="mdi-download"
+                  size="16"
+                />
+                Öffnen / Herunterladen
+              </a>
+            </div>
             <div
               v-else
               class="preview-block-text"
@@ -196,10 +230,29 @@ const previewGroups = computed(() => {
   border-radius: 4px;
 }
 
-.preview-filename {
+.preview-blob {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #1e1e1e;
+  border-radius: 12px;
+}
+
+.preview-blob-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #007fd4;
+  text-decoration: none;
   font-size: 13px;
-  color: #888;
-  font-style: italic;
+  padding: 4px 10px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.preview-blob-link:hover {
+  background: rgba(0, 127, 212, 0.1);
 }
 
 .preview-empty {
