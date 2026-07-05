@@ -106,50 +106,114 @@
           </div>
           <div v-if="!editMode">
             <Draggable
-              v-model="purposeOrder"
+              :list="dndList"
               item-key="id"
-              class="purpose-draggable"
+              class="purpose-list"
               :animation="200"
               ghost-class="purpose-ghost"
-              handle=".drag-handle"
+              @start="isDragging = true"
+              @end="isDragging = false"
+              @change="onDndReorder"
             >
               <template #item="{ element }">
-                <div class="purpose-row">
-                  <div class="purpose-drag-item">
-                    <v-icon icon="mdi-drag" class="drag-handle" size="x-small" />
-                    <span class="purpose-name">{{ element.purpose }}</span>
-                    <v-menu>
+                <div
+                  class="purpose-card"
+                  :class="{
+                    split: element.kind === 'split',
+                    'drag-active': isDragging,
+                    highlighted: isHighlighted(element)
+                  }"
+                >
+                  <div v-if="element.kind === 'standalone'" class="card-inner">
+                    <span class="card-name">{{ element.purposes[0] }}</span>
+                    <v-menu @update:model-value="(v: boolean) => v ? highlightStandalone(element.purposes[0]) : clearHighlight()">
                       <template #activator="{ props }">
                         <v-btn
                           v-bind="props"
-                          icon="mdi-dots-vertical"
+                          icon="mdi-table-column-plus-before"
                           variant="text"
                           size="x-small"
-                          class="context-btn"
-                          @click.stop
+                          class="card-menu"
+                          @mousedown.stop
                         />
                       </template>
                       <v-list density="compact">
-                        <v-list-item
-                          v-if="!element.splitGroup"
-                          @click="splitPurpose(element.purpose)"
-                        >
-                          <v-list-item-title>Split selection</v-list-item-title>
-                        </v-list-item>
-                        <v-list-item
-                          v-else
-                          @click="unsplitPurpose(element.purpose)"
-                        >
-                          <v-list-item-title>Aus Split entfernen</v-list-item-title>
+                        <v-list-item @click="splitPurpose(element.purposes[0])">
+                          <v-list-item-title>Mit Nächstem teilen</v-list-item-title>
                         </v-list-item>
                       </v-list>
                     </v-menu>
                   </div>
-                  <div
-                    v-if="isSplitLeft(element)"
-                    class="drop-zone"
-                  >
-                    <span class="drop-zone-text">Purpose hier loslassen</span>
+                  <div v-else class="card-inner split-inner">
+                    <div class="split-cell">
+                      <span class="card-name">{{ element.purposes[0] }}</span>
+                      <v-menu @update:model-value="(v: boolean) => v ? highlightSingle(element.purposes[0]) : clearHighlight()">
+                        <template #activator="{ props }">
+                          <v-btn
+                            v-bind="props"
+                            icon="mdi-table-column-remove"
+                            variant="text"
+                            size="x-small"
+                            class="card-menu"
+                            @mousedown.stop
+                          />
+                        </template>
+                        <v-list density="compact">
+                          <v-list-item @click="unsplitPurpose(element.purposes[0])">
+                            <v-list-item-title>Aus Split entfernen</v-list-item-title>
+                          </v-list-item>
+                        </v-list>
+                      </v-menu>
+                    </div>
+                    <div class="split-gap" />
+                    <div
+                      v-if="element.purposes.length >= 2"
+                      class="split-cell"
+                    >
+                      <span class="card-name">{{ element.purposes[1] }}</span>
+                      <v-menu @update:model-value="(v: boolean) => v ? highlightSingle(element.purposes[1]) : clearHighlight()">
+                        <template #activator="{ props }">
+                          <v-btn
+                            v-bind="props"
+                            icon="mdi-table-column-remove"
+                            variant="text"
+                            size="x-small"
+                            class="card-menu"
+                            @mousedown.stop
+                          />
+                        </template>
+                        <v-list density="compact">
+                          <v-list-item @click="unsplitPurpose(element.purposes[1])">
+                            <v-list-item-title>Aus Split entfernen</v-list-item-title>
+                          </v-list-item>
+                        </v-list>
+                      </v-menu>
+                    </div>
+                    <div v-else class="split-cell drop-zone">
+                      <v-menu>
+                        <template #activator="{ props }">
+                          <span
+                            v-bind="props"
+                            class="drop-label"
+                          >+ ablegen</span>
+                        </template>
+                        <v-list density="compact">
+                          <v-list-item
+                            v-for="a in availablePurposes"
+                            :key="a"
+                            @click="fillSplitSlot(element, a)"
+                          >
+                            <v-list-item-title>{{ a }}</v-list-item-title>
+                          </v-list-item>
+                          <v-list-item
+                            v-if="availablePurposes.length === 0"
+                            disabled
+                          >
+                            <v-list-item-title>Keine verfügbar</v-list-item-title>
+                          </v-list-item>
+                        </v-list>
+                      </v-menu>
+                    </div>
                   </div>
                 </div>
               </template>
@@ -189,7 +253,7 @@ import AdbValidatorEditor from './components/AdbValidatorEditor.vue'
 import AdbDeleteDialog from './components/AdbDeleteDialog.vue'
 import AdbRefSelect from '../toolbar/AdbRefSelect.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
-import { getPurposesFromXml, getSplitsFromXml, buildXmlFromPurposes, buildXmlFromSplits } from '../representation/templateXml'
+import { getPurposesFromXml, getSplitsFromXml, buildXmlFromSplits, splitPurposeInXml, unsplitPurposeFromXml, type SplitGroup } from '../representation/templateXml'
 
 const Draggable = draggable
 
@@ -199,90 +263,46 @@ const editedXml = ref('')
 const saveTimer = ref<ReturnType<typeof setTimeout> | null>(null)
 const editMode = ref(false)
 
-interface DndSlot {
+interface DndItem {
   id: string
-  purpose: string
-  splitGroup: string | null
+  kind: 'standalone' | 'split'
+  purposes: string[]
 }
 
-function mergeAdjacentSlots(slots: DndSlot[]): DndSlot[] {
-  const result: DndSlot[] = []
-  let i = 0
-  while (i < slots.length) {
-    const curr = slots[i]
-    // If current item is in a split, scan forward for standalone items that
-    // should be absorbed into this split (max 2 per split)
-    if (curr.splitGroup) {
-      const groupName = curr.splitGroup
-      const group: DndSlot[] = [curr]
-      let j = i + 1
-      while (j < slots.length && group.length < 2) {
-        const next = slots[j]
-        if (next.splitGroup === groupName) {
-          group.push(next)
-          j++
-        } else if (!next.splitGroup) {
-          // Absorb standalone into split
-          group.push({ ...next, splitGroup: groupName })
-          j++
-        } else {
-          break
-        }
-      }
-      result.push(...group)
-      i = j
-    } else {
-      // Check next items: if next has splitGroup, they form their own group
-      result.push(curr)
-      i++
+const isDragging = ref(false)
+const dndList = ref<DndItem[]>([])
+const highlighted = ref<Set<string>>(new Set())
+
+function buildList(xml: string): DndItem[] {
+  const groups = getSplitsFromXml(xml)
+  return groups.filter(g => g.purposes.length > 0).map(g => {
+    const dnd: DndItem = {
+      id: g.kind === 'standalone' ? 'p-' + g.purposes[0] : 'splt-' + g.purposes.join('-'),
+      kind: g.kind,
+      purposes: g.purposes.slice(0, 2)
     }
-  }
-  return result
+    return dnd
+  })
 }
 
-function rebuildSplitsFromSlots(slots: DndSlot[]): string[][] {
-  const splits: string[][] = []
-  let i = 0
-  while (i < slots.length) {
-    const curr = slots[i]
-    if (curr.splitGroup) {
-      const group: string[] = [curr.purpose]
-      let j = i + 1
-      while (j < slots.length && slots[j].splitGroup === curr.splitGroup && group.length < 2) {
-        group.push(slots[j].purpose)
-        j++
-      }
-      splits.push(group)
-      i = j
-    } else {
-      splits.push([curr.purpose])
-      i++
-    }
-  }
-  return splits
-}
+let syncing = false
 
-const purposeOrder = computed({
-  get: (): DndSlot[] => {
-    const splits = getSplitsFromXml(editedXml.value)
-    const slots: DndSlot[] = []
-    let id = 0
-    for (const group of splits) {
-      const groupId = group.length > 1 ? 'sg-' + id : null
-      for (const p of group) {
-        slots.push({ id: 's-' + id++, purpose: p, splitGroup: groupId })
-      }
-    }
-    return slots
-  },
-  set: (val: DndSlot[]) => {
-    const merged = mergeAdjacentSlots(val)
-    const splits = rebuildSplitsFromSlots(merged)
-    const xml = buildXmlFromSplits(splits.map(g => g.slice(0, 2)))
-    editedXml.value = xml
-    debounceSave(xml)
-  }
-})
+watch(editedXml, (xml) => {
+  if (!xml) return
+  if (syncing) { syncing = false; return }
+  dndList.value = buildList(xml)
+}, { immediate: true })
+
+function onDndReorder() {
+  const out: SplitGroup[] = dndList.value.map(item => ({
+    purposes: item.purposes.slice(0, 2),
+    kind: item.kind
+  }))
+  const xml = buildXmlFromSplits(out)
+  syncing = true
+  editedXml.value = xml
+  debounceSave(xml)
+}
 
 const inner = computed(() => store.selectedInnerItem)
 
@@ -370,21 +390,73 @@ function deleteSelectedItem() {
   }
 }
 
-function isSplitLeft(slot: DndSlot): boolean {
-  if (!slot.splitGroup) return false
-  const splits = getSplitsFromXml(editedXml.value)
-  for (const group of splits) {
-    if (group.length >= 2 && group[0] === slot.purpose) return true
+const currentPurposes = computed(() => {
+  const item = inner.value
+  if (!item) return []
+  return item.contents.map(c => c.purpose)
+})
+
+const availablePurposes = computed(() => {
+  const used = new Set<string>()
+  for (const item of dndList.value) {
+    for (const p of item.purposes) {
+      used.add(p)
+    }
   }
-  return false
-}
+  return currentPurposes.value.filter(p => !used.has(p))
+})
 
 function splitPurpose(purpose: string) {
-  store._splitPurposeInTemplateXml(purpose)
+  clearHighlight()
+  const purposes = getPurposesFromXml(editedXml.value)
+  const idx = purposes.indexOf(purpose)
+  const next = idx >= 0 && idx < purposes.length - 1 ? purposes[idx + 1] : undefined
+  const xml = splitPurposeInXml(editedXml.value, purpose, next)
+  editedXml.value = xml
+  debounceSave(xml)
 }
 
 function unsplitPurpose(purpose: string) {
-  store._unsplitPurposeFromTemplateXml(purpose)
+  clearHighlight()
+  const xml = unsplitPurposeFromXml(editedXml.value, purpose)
+  editedXml.value = xml
+  debounceSave(xml)
+}
+
+function fillSplitSlot(item: DndItem, purpose: string) {
+  clearHighlight()
+  const splits = getSplitsFromXml(editedXml.value)
+  const merged: SplitGroup[] = splits.map(g => {
+    if (g.kind === 'split' && g.purposes.length === 1 && g.purposes[0] === item.purposes[0]) {
+      return { purposes: [g.purposes[0], purpose], kind: 'split' }
+    }
+    return g
+  })
+  const xml = buildXmlFromSplits(merged)
+  editedXml.value = xml
+  debounceSave(xml)
+}
+
+function highlightStandalone(purpose: string) {
+  const purposes = getPurposesFromXml(editedXml.value)
+  const idx = purposes.indexOf(purpose)
+  const set = new Set([purpose])
+  if (idx >= 0 && idx < purposes.length - 1) {
+    set.add(purposes[idx + 1])
+  }
+  highlighted.value = set
+}
+
+function highlightSingle(purpose: string) {
+  highlighted.value = new Set([purpose])
+}
+
+function clearHighlight() {
+  highlighted.value = new Set()
+}
+
+function isHighlighted(element: DndItem): boolean {
+  return element.purposes.some(p => highlighted.value.has(p))
 }
 </script>
 
@@ -468,95 +540,136 @@ function unsplitPurpose(purpose: string) {
   background: rgba(255, 122, 132, 0.1);
 }
 
-.purpose-draggable {
+.purpose-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
-.purpose-row {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.purpose-drag-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
+.purpose-card {
+  cursor: grab;
+  user-select: none;
   background: #2a2a2a;
   border: 1px solid #3c3c3c;
   border-radius: 6px;
-  cursor: default;
   transition: border-color 0.15s, background 0.15s;
-  user-select: none;
 }
 
-.purpose-drag-item:hover {
+.purpose-card:active {
+  cursor: grabbing;
+}
+
+.purpose-card:hover {
   background: #303030;
   border-color: #555;
 }
 
-.purpose-ghost {
-  opacity: 0.4;
-  border-style: dashed;
-  border-color: #007fd4;
-  background: rgba(0, 127, 212, 0.08);
+.purpose-card.split {
+  border-left: 3px solid #0d6efd;
+  background: #262a30;
 }
 
-.drag-handle {
-  color: #666;
-  cursor: grab;
+.purpose-card.split:hover {
+  background: #2b3038;
+}
+
+.purpose-card.highlighted {
+  border-color: #ffc107;
+  box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.35);
+}
+
+.purpose-card.highlighted.split {
+  border-left-color: #ffc107;
+}
+
+.purpose-card.drag-active .drop-zone {
+  border-color: #0d6efd;
+  background: rgba(13, 110, 253, 0.08);
+}
+
+.card-inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+}
+
+.split-inner {
+  padding: 0;
+}
+
+.split-cell {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  min-width: 0;
+}
+
+.split-gap {
+  width: 1px;
+  align-self: stretch;
+  background: #3c3c3c;
   flex-shrink: 0;
 }
 
-.drag-handle:active {
-  cursor: grabbing;
-}
-
-.purpose-name {
-  font-size: 13px;
-  color: #d4d4d4;
-  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-}
-
 .drop-zone {
-  border: 2px dashed #555;
-  border-radius: 6px;
-  min-height: 36px;
-  display: flex;
-  align-items: center;
+  border: 2px dashed #495057;
+  border-radius: 4px;
   justify-content: center;
+  margin: 4px;
   transition: border-color 0.15s, background 0.15s;
 }
 
 .drop-zone:hover {
-  border-color: #007fd4;
-  background: rgba(0, 127, 212, 0.06);
+  border-color: #0d6efd;
+  background: rgba(13, 110, 253, 0.06);
 }
 
-.drop-zone-text {
+.drop-label {
   font-size: 11px;
-  color: #666;
+  color: #888;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
-.context-btn {
+.card-name {
+  flex: 1;
+  font-size: 13px;
+  color: #d4d4d4;
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-menu {
   color: #555 !important;
   opacity: 0;
   transition: opacity 0.15s, color 0.15s;
-  margin-left: auto;
+  flex-shrink: 0;
 }
 
-.purpose-drag-item:hover .context-btn {
+.purpose-card:hover .card-menu {
   opacity: 1;
 }
 
-.context-btn:hover {
+.card-menu:hover {
   color: #999 !important;
 }
+
+.purpose-ghost {
+  opacity: 0.3;
+  border: 2px dashed #007fd4;
+  background: rgba(0, 127, 212, 0.08);
+  border-radius: 6px;
+}
+
+
 
 .template-edit-btn {
   color: #666 !important;
