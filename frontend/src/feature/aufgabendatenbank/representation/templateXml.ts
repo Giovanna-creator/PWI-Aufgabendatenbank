@@ -15,10 +15,16 @@ export function removePurposeFromXml(xml: string, purpose: string): string {
   return result
 }
 
-function escapeXml(s: string): string {
+export function escapeXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 
 export function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+export function buildXmlFromPurposes(purposes: string[]): string {
+  if (purposes.length === 0) return '<layout>\n</layout>'
+  const lines = purposes.map(p => `  <purpose>${escapeXml(p)}</purpose>`)
+  return `<layout>\n${lines.join('\n')}\n</layout>`
 }
