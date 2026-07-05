@@ -341,32 +341,6 @@ function deleteSelectedItem() {
   background: rgba(255, 122, 132, 0.1);
 }
 
-.template-textarea {
-  width: 100%;
-  min-height: 120px;
-  box-sizing: border-box;
-  background: #1e1e1e;
-  border: 1px solid #3c3c3c;
-  border-radius: 8px;
-  color: #d4d4d4;
-  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-  font-size: 12px;
-  line-height: 1.6;
-  padding: 12px 14px;
-  resize: vertical;
-  tab-size: 2;
-  outline: none;
-  transition: border-color 0.15s;
-}
-
-.template-textarea:focus {
-  border-color: #007fd4;
-}
-
-.template-textarea::placeholder {
-  color: #555;
-}
-
 .purpose-draggable {
   display: flex;
   flex-direction: column;
