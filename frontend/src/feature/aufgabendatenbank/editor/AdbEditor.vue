@@ -107,16 +107,57 @@
           <div v-if="!editMode">
             <Draggable
               v-model="purposeOrder"
-              item-key="p"
+              item-key="id"
               class="purpose-draggable"
               :animation="200"
               ghost-class="purpose-ghost"
               handle=".drag-handle"
             >
-              <template #item="{ element }">
-                <div class="purpose-drag-item">
-                  <v-icon icon="mdi-drag" class="drag-handle" size="x-small" />
-                  <span class="purpose-name">{{ element }}</span>
+              <template #item="{ element, index }">
+                <div
+                  class="purpose-row"
+                  :class="rowClasses(element, index)"
+                >
+                  <div class="split-gutter">
+                    <div
+                      v-if="splitType(element.purpose) === 'left'"
+                      class="split-line split-line-top"
+                    />
+                    <div
+                      v-if="splitType(element.purpose) === 'right'"
+                      class="split-line split-line-bottom"
+                    />
+                  </div>
+                  <div class="purpose-drag-item">
+                    <v-icon icon="mdi-drag" class="drag-handle" size="x-small" />
+                    <span class="purpose-name">{{ element.purpose }}</span>
+                    <v-menu>
+                      <template #activator="{ props }">
+                        <v-btn
+                          v-bind="props"
+                          icon="mdi-dots-vertical"
+                          variant="text"
+                          size="x-small"
+                          class="context-btn"
+                          @click.stop
+                        />
+                      </template>
+                      <v-list density="compact">
+                        <v-list-item
+                          v-if="!splitType(element.purpose)"
+                          @click="splitPurpose(element.purpose)"
+                        >
+                          <v-list-item-title>Split selection</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item
+                          v-else
+                          @click="unsplitPurpose(element.purpose)"
+                        >
+                          <v-list-item-title>Aus Split entfernen</v-list-item-title>
+                        </v-list-item>
+                      </v-list>
+                    </v-menu>
+                  </div>
                 </div>
               </template>
             </Draggable>
@@ -155,7 +196,7 @@ import AdbValidatorEditor from './components/AdbValidatorEditor.vue'
 import AdbDeleteDialog from './components/AdbDeleteDialog.vue'
 import AdbRefSelect from '../toolbar/AdbRefSelect.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
-import { getPurposesFromXml, buildXmlFromPurposes } from '../representation/templateXml'
+import { getPurposesFromXml, getSplitsFromXml, buildXmlFromPurposes, buildXmlFromSplits } from '../representation/templateXml'
 
 const Draggable = draggable
 
@@ -165,13 +206,55 @@ const editedXml = ref('')
 const saveTimer = ref<ReturnType<typeof setTimeout> | null>(null)
 const editMode = ref(false)
 
+interface DndSlot {
+  id: string
+  purpose: string
+  splitGroup: string | null
+}
+
 const purposeOrder = computed({
-  get: () => getPurposesFromXml(editedXml.value),
-  set: (val) => {
-    const xml = buildXmlFromPurposes(val)
+  get: (): DndSlot[] => {
+    const splits = getSplitsFromXml(editedXml.value)
+    const slots: DndSlot[] = []
+    let id = 0
+    for (const group of splits) {
+      const groupId = group.length > 1 ? 'sg-' + id : null
+      for (const p of group) {
+        slots.push({ id: 's-' + id++, purpose: p, splitGroup: groupId })
+      }
+    }
+    return slots
+  },
+  set: (val: DndSlot[]) => {
+    const splits: string[][] = []
+    let currentGroup: string | null = null
+    let currentSplit: string[] = []
+    for (const slot of val) {
+      if (slot.splitGroup !== null && slot.splitGroup === currentGroup) {
+        currentSplit.push(slot.purpose)
+      } else {
+        if (currentSplit.length > 0) splits.push(currentSplit)
+        currentSplit = [slot.purpose]
+        currentGroup = slot.splitGroup
+      }
+    }
+    if (currentSplit.length > 0) splits.push(currentSplit)
+    const xml = buildXmlFromSplits(splits.map(g => g.slice(0, 2)))
     editedXml.value = xml
     debounceSave(xml)
   }
+})
+
+const splitLookup = computed(() => {
+  const splits = getSplitsFromXml(editedXml.value)
+  const lookup = new Map<string, 'left' | 'right'>()
+  for (const group of splits) {
+    if (group.length >= 2) {
+      lookup.set(group[0], 'left')
+      lookup.set(group[1], 'right')
+    }
+  }
+  return lookup
 })
 
 const inner = computed(() => store.selectedInnerItem)
@@ -258,6 +341,26 @@ function deleteSelectedItem() {
   if (store.selectedInnerItem) {
     store.deleteItem(store.selectedInnerItem)
   }
+}
+
+function splitType(purpose: string): 'left' | 'right' | null {
+  return splitLookup.value.get(purpose) ?? null
+}
+
+function rowClasses(slot: DndSlot, _index: number): Record<string, boolean> {
+  return {
+    'in-split': slot.splitGroup !== null,
+    'split-left': slot.splitGroup !== null && splitLookup.value.get(slot.purpose) === 'left',
+    'split-right': slot.splitGroup !== null && splitLookup.value.get(slot.purpose) === 'right',
+  }
+}
+
+function splitPurpose(purpose: string) {
+  store._splitPurposeInTemplateXml(purpose)
+}
+
+function unsplitPurpose(purpose: string) {
+  store._unsplitPurposeFromTemplateXml(purpose)
 }
 </script>
 
@@ -386,6 +489,65 @@ function deleteSelectedItem() {
   font-size: 13px;
   color: #d4d4d4;
   font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+}
+
+.purpose-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+
+.purpose-row.in-split .purpose-drag-item {
+  border-radius: 0;
+  border-color: #555;
+}
+
+.purpose-row.split-left .purpose-drag-item {
+  border-radius: 6px 0 0 6px;
+}
+
+.purpose-row.split-right .purpose-drag-item {
+  border-radius: 0 6px 6px 0;
+}
+
+.split-gutter {
+  width: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  position: relative;
+}
+
+.split-line {
+  width: 2px;
+  background: #555;
+  position: absolute;
+}
+
+.split-line-top {
+  top: 0;
+  height: 50%;
+}
+
+.split-line-bottom {
+  top: 50%;
+  height: 50%;
+}
+
+.context-btn {
+  color: #555 !important;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+  margin-left: auto;
+}
+
+.purpose-drag-item:hover .context-btn {
+  opacity: 1;
+}
+
+.context-btn:hover {
+  color: #999 !important;
 }
 
 .template-edit-btn {
