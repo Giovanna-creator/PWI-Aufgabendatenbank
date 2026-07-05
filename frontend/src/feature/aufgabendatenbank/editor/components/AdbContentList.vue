@@ -53,6 +53,7 @@ function realIndex(sortedIndex: number): number {
 
 <style scoped lang="scss">
 .content-list {
+  /* split: max 2 items per row */
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
