@@ -271,7 +271,6 @@ function onImgError() {
   border: 1px solid #3c3c3c;
   border-radius: 24px;
   padding: 12px 16px;
-  margin-bottom: 10px;
 }
 
 .card-header {
