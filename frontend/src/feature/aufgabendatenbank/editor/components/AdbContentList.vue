@@ -53,9 +53,6 @@ function realIndex(sortedIndex: number): number {
 
 <style scoped lang="scss">
 .content-list {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
   margin-bottom: 8px;
 }
 
@@ -64,7 +61,7 @@ function realIndex(sortedIndex: number): number {
   position: relative;
   display: flex;
   align-items: center;
-  grid-column: 1 / -1;
+  width: 100%;
   box-sizing: border-box;
   min-height: 48px;
   padding: 0 16px;
