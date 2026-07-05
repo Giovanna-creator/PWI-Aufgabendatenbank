@@ -523,7 +523,7 @@ function markImgError(c: { id?: string }) {
 const previewGroups = computed(() => {
   const item = store.selectedInnerItem
   if (!item) return []
-  const template = store.templateById(item.representationTemplate)
+  const template = editedXml.value || store.templateById(item.representationTemplate)
   return applyTemplateOrder(item.contents ?? [], template)
 })
 

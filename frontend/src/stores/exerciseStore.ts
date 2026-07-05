@@ -636,19 +636,28 @@ export const useExerciseStore = defineStore('exercise', {
       const item = this.selectedInnerItem
       if (!item) return
 
-      // Local save — immediate feedback
-      this.templates = this.templates.filter(t => t.id !== item.representationTemplate)
+      // Local save — update in-place to keep templateById lookup consistent
       const localId = item.representationTemplate ?? '_' + Date.now()
-      this.templates.push({ id: localId, template: xml })
+      const existing = this.templates.find(t => t.id === item.representationTemplate)
+      if (existing) {
+        existing.template = xml
+      } else {
+        this.templates.push({ id: localId, template: xml })
+      }
       item.representationTemplate = localId
 
       // Backend persist
       try {
         if (localId.startsWith('_')) {
           const created = await _adapter!.createRepresentationTemplate({ template: xml })
-          this.templates = this.templates.filter(t => t.id !== localId)
-          this.templates.push({ id: created.id, template: created.template })
-          // Link the item to the new template so it survives page reload
+          // Update in-place so templateById never sees a gap
+          const temp = this.templates.find(t => t.id === localId)
+          if (temp) {
+            temp.id = created.id
+            temp.template = created.template
+          } else {
+            this.templates.push({ id: created.id, template: created.template })
+          }
           this.updateItemMeta(item, { itemTemplateId: created.id })
         } else {
           await _adapter!.updateRepresentationTemplate(localId, { template: xml })
