@@ -113,21 +113,8 @@
               ghost-class="purpose-ghost"
               handle=".drag-handle"
             >
-              <template #item="{ element, index }">
-                <div
-                  class="purpose-row"
-                  :class="rowClasses(element, index)"
-                >
-                  <div class="split-gutter">
-                    <div
-                      v-if="splitType(element.purpose) === 'left'"
-                      class="split-line split-line-top"
-                    />
-                    <div
-                      v-if="splitType(element.purpose) === 'right'"
-                      class="split-line split-line-bottom"
-                    />
-                  </div>
+              <template #item="{ element }">
+                <div class="purpose-row">
                   <div class="purpose-drag-item">
                     <v-icon icon="mdi-drag" class="drag-handle" size="x-small" />
                     <span class="purpose-name">{{ element.purpose }}</span>
@@ -144,7 +131,7 @@
                       </template>
                       <v-list density="compact">
                         <v-list-item
-                          v-if="!splitType(element.purpose)"
+                          v-if="!element.splitGroup"
                           @click="splitPurpose(element.purpose)"
                         >
                           <v-list-item-title>Split selection</v-list-item-title>
@@ -157,6 +144,12 @@
                         </v-list-item>
                       </v-list>
                     </v-menu>
+                  </div>
+                  <div
+                    v-if="isSplitLeft(element)"
+                    class="drop-zone"
+                  >
+                    <span class="drop-zone-text">Purpose hier loslassen</span>
                   </div>
                 </div>
               </template>
@@ -212,6 +205,63 @@ interface DndSlot {
   splitGroup: string | null
 }
 
+function mergeAdjacentSlots(slots: DndSlot[]): DndSlot[] {
+  const result: DndSlot[] = []
+  let i = 0
+  while (i < slots.length) {
+    const curr = slots[i]
+    // If current item is in a split, scan forward for standalone items that
+    // should be absorbed into this split (max 2 per split)
+    if (curr.splitGroup) {
+      const groupName = curr.splitGroup
+      const group: DndSlot[] = [curr]
+      let j = i + 1
+      while (j < slots.length && group.length < 2) {
+        const next = slots[j]
+        if (next.splitGroup === groupName) {
+          group.push(next)
+          j++
+        } else if (!next.splitGroup) {
+          // Absorb standalone into split
+          group.push({ ...next, splitGroup: groupName })
+          j++
+        } else {
+          break
+        }
+      }
+      result.push(...group)
+      i = j
+    } else {
+      // Check next items: if next has splitGroup, they form their own group
+      result.push(curr)
+      i++
+    }
+  }
+  return result
+}
+
+function rebuildSplitsFromSlots(slots: DndSlot[]): string[][] {
+  const splits: string[][] = []
+  let i = 0
+  while (i < slots.length) {
+    const curr = slots[i]
+    if (curr.splitGroup) {
+      const group: string[] = [curr.purpose]
+      let j = i + 1
+      while (j < slots.length && slots[j].splitGroup === curr.splitGroup && group.length < 2) {
+        group.push(slots[j].purpose)
+        j++
+      }
+      splits.push(group)
+      i = j
+    } else {
+      splits.push([curr.purpose])
+      i++
+    }
+  }
+  return splits
+}
+
 const purposeOrder = computed({
   get: (): DndSlot[] => {
     const splits = getSplitsFromXml(editedXml.value)
@@ -226,35 +276,12 @@ const purposeOrder = computed({
     return slots
   },
   set: (val: DndSlot[]) => {
-    const splits: string[][] = []
-    let currentGroup: string | null = null
-    let currentSplit: string[] = []
-    for (const slot of val) {
-      if (slot.splitGroup !== null && slot.splitGroup === currentGroup) {
-        currentSplit.push(slot.purpose)
-      } else {
-        if (currentSplit.length > 0) splits.push(currentSplit)
-        currentSplit = [slot.purpose]
-        currentGroup = slot.splitGroup
-      }
-    }
-    if (currentSplit.length > 0) splits.push(currentSplit)
+    const merged = mergeAdjacentSlots(val)
+    const splits = rebuildSplitsFromSlots(merged)
     const xml = buildXmlFromSplits(splits.map(g => g.slice(0, 2)))
     editedXml.value = xml
     debounceSave(xml)
   }
-})
-
-const splitLookup = computed(() => {
-  const splits = getSplitsFromXml(editedXml.value)
-  const lookup = new Map<string, 'left' | 'right'>()
-  for (const group of splits) {
-    if (group.length >= 2) {
-      lookup.set(group[0], 'left')
-      lookup.set(group[1], 'right')
-    }
-  }
-  return lookup
 })
 
 const inner = computed(() => store.selectedInnerItem)
@@ -343,16 +370,13 @@ function deleteSelectedItem() {
   }
 }
 
-function splitType(purpose: string): 'left' | 'right' | null {
-  return splitLookup.value.get(purpose) ?? null
-}
-
-function rowClasses(slot: DndSlot, _index: number): Record<string, boolean> {
-  return {
-    'in-split': slot.splitGroup !== null,
-    'split-left': slot.splitGroup !== null && splitLookup.value.get(slot.purpose) === 'left',
-    'split-right': slot.splitGroup !== null && splitLookup.value.get(slot.purpose) === 'right',
+function isSplitLeft(slot: DndSlot): boolean {
+  if (!slot.splitGroup) return false
+  const splits = getSplitsFromXml(editedXml.value)
+  for (const group of splits) {
+    if (group.length >= 2 && group[0] === slot.purpose) return true
   }
+  return false
 }
 
 function splitPurpose(purpose: string) {
@@ -450,6 +474,12 @@ function unsplitPurpose(purpose: string) {
   gap: 4px;
 }
 
+.purpose-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
 .purpose-drag-item {
   display: flex;
   align-items: center;
@@ -491,48 +521,26 @@ function unsplitPurpose(purpose: string) {
   font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
 }
 
-.purpose-row {
+.drop-zone {
+  border: 2px dashed #555;
+  border-radius: 6px;
+  min-height: 36px;
   display: flex;
-  align-items: stretch;
-  gap: 0;
-}
-
-.purpose-row.in-split .purpose-drag-item {
-  border-radius: 0;
-  border-color: #555;
-}
-
-.purpose-row.split-left .purpose-drag-item {
-  border-radius: 6px 0 0 6px;
-}
-
-.purpose-row.split-right .purpose-drag-item {
-  border-radius: 0 6px 6px 0;
-}
-
-.split-gutter {
-  width: 20px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: stretch;
+  align-items: center;
   justify-content: center;
-  position: relative;
+  transition: border-color 0.15s, background 0.15s;
 }
 
-.split-line {
-  width: 2px;
-  background: #555;
-  position: absolute;
+.drop-zone:hover {
+  border-color: #007fd4;
+  background: rgba(0, 127, 212, 0.06);
 }
 
-.split-line-top {
-  top: 0;
-  height: 50%;
-}
-
-.split-line-bottom {
-  top: 50%;
-  height: 50%;
+.drop-zone-text {
+  font-size: 11px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .context-btn {
