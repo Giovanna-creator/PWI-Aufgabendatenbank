@@ -327,7 +327,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onUnmounted } from 'vue'
 import draggable from 'vuedraggable'
 import AdbXmlEditor from './components/AdbXmlEditor.vue'
 import AdbContentList from './components/AdbContentList.vue'
@@ -403,8 +403,16 @@ const currentTemplateXml = computed(() => {
 })
 
 watch(currentTemplateXml, (xml) => {
-  if (xml !== null) editedXml.value = xml
+  if (xml !== null && xml !== editedXml.value) editedXml.value = xml
 }, { immediate: true })
+
+watch(editedXml, (xml) => {
+  store.setLiveTemplateXml(xml)
+}, { immediate: true })
+
+onUnmounted(() => {
+  store.setLiveTemplateXml(null)
+})
 
 const hasDuplicatePurposes = computed(() => {
   if (!editedXml.value) return ''
@@ -427,9 +435,15 @@ const validationMsg = computed(() => {
   const templatePurposes = getPurposesFromXml(editedXml.value)
   const contentPurposes = item.contents.map(c => c.purpose)
   const missing = contentPurposes.filter(p => !templatePurposes.includes(p))
-  return missing.length > 0
-    ? `${missing.length} Inhalt${missing.length > 1 ? 'e' : ''} fehlen im Template: ${missing.join(', ')}`
-    : ''
+  const orphaned = templatePurposes.filter(p => !contentPurposes.includes(p))
+  const parts: string[] = []
+  if (missing.length > 0) {
+    parts.push(`${missing.length} Inhalt${missing.length > 1 ? 'e' : ''} fehlen im Template: ${missing.join(', ')}`)
+  }
+  if (orphaned.length > 0) {
+    parts.push(`${orphaned.length} Purpose${orphaned.length > 1 ? 's' : ''} im Template ohne passenden Inhalt: ${orphaned.join(', ')}`)
+  }
+  return parts.join(' | ')
 })
 
 function debounceSave(xml: string) {

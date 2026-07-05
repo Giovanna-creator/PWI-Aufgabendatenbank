@@ -9,14 +9,16 @@ export interface SplitGroup {
 
 export function getSplitsFromXml(xml: string): SplitGroup[] {
   const result: SplitGroup[] = []
-  const splitMatches = xml.matchAll(/<split>([\s\S]*?)<\/split>/g)
-  for (const m of splitMatches) {
-    const purposes = [...m[1].matchAll(/<purpose>(.*?)<\/purpose>/g)].map(m2 => m2[1])
-    result.push({ purposes, kind: 'split' })
+  const re = /<split>([\s\S]*?)<\/split>|<purpose>(.*?)<\/purpose>/g
+  let match
+  while ((match = re.exec(xml)) !== null) {
+    if (match[1] !== undefined) {
+      const purposes = [...match[1].matchAll(/<purpose>(.*?)<\/purpose>/g)].map(m2 => m2[1])
+      result.push({ purposes, kind: 'split' })
+    } else {
+      result.push({ purposes: [match[2]], kind: 'standalone' })
+    }
   }
-  const without = xml.replace(/<split>[\s\S]*?<\/split>/g, '')
-  const standalone = [...without.matchAll(/<purpose>(.*?)<\/purpose>/g)].map(m => m[1])
-  for (const p of standalone) result.push({ purposes: [p], kind: 'standalone' })
   return result
 }
 

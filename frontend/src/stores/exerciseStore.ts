@@ -146,6 +146,9 @@ interface ExerciseState {
   selectedLicenseId: string | null
   selectedItemTypeId: string | null
   selectedContentTypeId: string | null
+  // Aktuelle Live-XML aus dem Editor, damit _getTemplateXml / _ensurePurpose / _removePurpose
+  // gegen die aktuellste Version mergen und nicht gegen eine veraltete persisted template.
+  liveTemplateXml: string | null
 }
 
 // ── Store ─────────────────────────────────────────────────────────────────────
@@ -170,7 +173,8 @@ export const useExerciseStore = defineStore('exercise', {
     selectedAuthorId: null,
     selectedLicenseId: null,
     selectedItemTypeId: null,
-    selectedContentTypeId: null
+    selectedContentTypeId: null,
+    liveTemplateXml: null
   }),
 
   getters: {
@@ -375,6 +379,7 @@ export const useExerciseStore = defineStore('exercise', {
     // ── Selection ─────────────────────────────────────────────────────────────
 
     selectItem(item: TreeItem) {
+      this.liveTemplateXml = null
       this.selectedItem = item
       this.variants = []
       const inner = getInnerItem(item)
@@ -383,6 +388,10 @@ export const useExerciseStore = defineStore('exercise', {
         const baseId = inner.rootItemId ?? inner.id
         this.loadVariants(baseId)
       }
+    },
+
+    setLiveTemplateXml(xml: string | null) {
+      this.liveTemplateXml = xml
     },
 
     async loadItemContent(itemId: string) {
@@ -623,6 +632,7 @@ export const useExerciseStore = defineStore('exercise', {
     // ── Template XML Actions ─────────────────────────────────────────────────
 
     _getTemplateXml(): string | null {
+      if (this.liveTemplateXml) return this.liveTemplateXml
       const item = this.selectedInnerItem
       if (!item) return null
       const stored = this.templateById(item.representationTemplate)
