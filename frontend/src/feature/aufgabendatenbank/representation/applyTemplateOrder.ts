@@ -14,12 +14,12 @@ export function applyTemplateOrder(
   const groups: ContentGroup[] = []
   const splits = getSplitsFromXml(template)
   for (const group of splits) {
-    const matched = group
+    const matched = group.purposes
       .map(p => contents.find(c => c.purpose === p))
       .filter((c): c is Content => c != null)
     if (matched.length === 0) continue
     groups.push({
-      type: matched.length > 1 ? 'split' : 'standalone',
+      type: group.kind,
       contents: matched
     })
   }

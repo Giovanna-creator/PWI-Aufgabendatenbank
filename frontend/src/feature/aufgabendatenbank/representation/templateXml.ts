@@ -2,17 +2,22 @@ export function getPurposesFromXml(xml: string): string[] {
   return [...xml.matchAll(/<purpose>(.*?)<\/purpose>/g)].map(m => m[1])
 }
 
-export function getSplitsFromXml(xml: string): string[][] {
-  const splits: string[][] = []
+export interface SplitGroup {
+  purposes: string[]
+  kind: 'standalone' | 'split'
+}
+
+export function getSplitsFromXml(xml: string): SplitGroup[] {
+  const result: SplitGroup[] = []
   const splitMatches = xml.matchAll(/<split>([\s\S]*?)<\/split>/g)
   for (const m of splitMatches) {
     const purposes = [...m[1].matchAll(/<purpose>(.*?)<\/purpose>/g)].map(m2 => m2[1])
-    splits.push(purposes)
+    result.push({ purposes, kind: 'split' })
   }
   const without = xml.replace(/<split>[\s\S]*?<\/split>/g, '')
   const standalone = [...without.matchAll(/<purpose>(.*?)<\/purpose>/g)].map(m => m[1])
-  for (const p of standalone) splits.push([p])
-  return splits
+  for (const p of standalone) result.push({ purposes: [p], kind: 'standalone' })
+  return result
 }
 
 export function ensurePurposeInXml(xml: string, purpose: string): string {
@@ -30,31 +35,31 @@ export function removePurposeFromXml(xml: string, purpose: string): string {
   return result
 }
 
-export function splitPurposeInXml(xml: string, purpose: string): string {
-  const escaped = escapeRegex(purpose)
-  if (xml.includes(`<split>`)) {
-    const replaced = xml.replace(
-      new RegExp(`<purpose>${escaped}</purpose>`),
-      `<split>\n    <purpose>${escapeXml(purpose)}</purpose>\n  </split>`
+export function splitPurposeInXml(xml: string, purpose: string, nextPurpose?: string): string {
+  if (nextPurpose) {
+    const result = xml.replace(
+      new RegExp(`([ \\t]*)<purpose>${escapeRegex(purpose)}</purpose>\\s*<purpose>${escapeRegex(nextPurpose)}</purpose>`),
+      (_, indent) =>
+        `${indent}<split>\n${indent}  <purpose>${escapeXml(purpose)}</purpose>\n${indent}  <purpose>${escapeXml(nextPurpose)}</purpose>\n${indent}</split>`
     )
-    return replaced
+    if (result !== xml) return result
   }
   return xml.replace(
-    new RegExp(`<purpose>${escaped}</purpose>`),
-    `<split>\n    <purpose>${escapeXml(purpose)}</purpose>\n  </split>`
+    new RegExp(`([ \\t]*)<purpose>${escapeRegex(purpose)}</purpose>`),
+    (_, indent) =>
+      `${indent}<split>\n${indent}  <purpose>${escapeXml(purpose)}</purpose>\n${indent}</split>`
   )
 }
 
 export function unsplitPurposeFromXml(xml: string, purpose: string): string {
   const escaped = escapeRegex(purpose)
   const result = xml.replace(
-    new RegExp(`<split>([\\s\\S]*?)<purpose>${escaped}<\\/purpose>([\\s\\S]*?)<\\/split>`, 'g'),
-    (_, before, after) => {
+    new RegExp(`([ \\t]*)<split>([\\s\\S]*?)<purpose>${escaped}<\\/purpose>([\\s\\S]*?)<\\/split>`, 'g'),
+    (_, indent, before, after) => {
       const leftPurposes = [...before.matchAll(/<purpose>(.*?)<\/purpose>/g)].map(m => m[1])
       const rightPurposes = [...after.matchAll(/<purpose>(.*?)<\/purpose>/g)].map(m => m[1])
-      const remaining = [...leftPurposes, ...rightPurposes]
-      if (remaining.length === 0) return ''
-      return remaining.map(p => `  <purpose>${escapeXml(p)}</purpose>`).join('\n')
+      const all = [purpose, ...leftPurposes, ...rightPurposes]
+      return all.map(p => `${indent}<purpose>${escapeXml(p)}</purpose>`).join('\n')
     }
   )
   return result.replace(/<split>\s*<\/split>/g, '')
@@ -74,13 +79,16 @@ export function buildXmlFromPurposes(purposes: string[]): string {
   return `<layout>\n${lines.join('\n')}\n</layout>`
 }
 
-export function buildXmlFromSplits(splits: string[][]): string {
+export function buildXmlFromSplits(splits: SplitGroup[]): string {
   if (splits.length === 0) return '<layout>\n</layout>'
   const parts = splits.map(group => {
-    if (group.length <= 1) {
-      return `  <purpose>${escapeXml(group[0])}</purpose>`
+    if (group.kind === 'standalone') {
+      return `  <purpose>${escapeXml(group.purposes[0])}</purpose>`
     }
-    return `  <split>\n    <purpose>${escapeXml(group[0])}</purpose>\n    <purpose>${escapeXml(group[1])}</purpose>\n  </split>`
+    if (group.purposes.length >= 2) {
+      return `  <split>\n    <purpose>${escapeXml(group.purposes[0])}</purpose>\n    <purpose>${escapeXml(group.purposes[1])}</purpose>\n  </split>`
+    }
+    return `  <split>\n    <purpose>${escapeXml(group.purposes[0])}</purpose>\n  </split>`
   })
   return `<layout>\n${parts.join('\n')}\n</layout>`
 }
