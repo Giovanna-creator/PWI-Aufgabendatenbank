@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { validateTreeData } from '@/feature/aufgabendatenbank/validation'
 import { useNotificationStore } from '@/stores/useNotificationStore'
-import { ensurePurposeInXml, removePurposeFromXml, splitPurposeInXml, unsplitPurposeFromXml, escapeRegex } from '@/feature/aufgabendatenbank/representation/templateXml'
+import { ensurePurposeInXml, removePurposeFromXml, splitPurposeInXml, unsplitPurposeFromXml, escapeRegex, escapeXml } from '@/feature/aufgabendatenbank/representation/templateXml'
 import {
   type Item,
   type Collection,
@@ -618,7 +618,11 @@ export const useExerciseStore = defineStore('exercise', {
     _getTemplateXml(): string | null {
       const item = this.selectedInnerItem
       if (!item) return null
-      return this.templateById(item.representationTemplate)
+      const stored = this.templateById(item.representationTemplate)
+      if (stored) return stored
+      if (item.contents.length === 0) return '<layout>\n</layout>'
+      const purposes = item.contents.map(c => `  <purpose>${escapeXml(c.purpose)}</purpose>`).join('\n')
+      return `<layout>\n${purposes}\n</layout>`
     },
 
     _saveTemplateXml(xml: string) {
