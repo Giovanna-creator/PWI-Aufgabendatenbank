@@ -70,6 +70,7 @@ function toFullContent(dto: ContentDTO): Content {
       jsonContent = { text: dto.jsonSerializedContent }
     }
   }
+  const mime = dto.blobMimeType ?? ''
   return {
     id: dto.itemContentId,
     license: dto.licenseName ?? null,
@@ -78,7 +79,8 @@ function toFullContent(dto: ContentDTO): Content {
     tags: dto.tagIds,
     purpose: dto.purpose ?? '',
     jsonContent,
-    blobContent: dto.hasBlobContent ? '(binary)' : '',
+    blobContent: dto.hasBlobContent ? (mime.startsWith('image/') ? '(image)' : '(binary)') : '',
+    blobMimeType: dto.blobMimeType ?? '',
     authorId: dto.authorId ?? null,
     licenseId: dto.licenseId ?? null,
     contentTypeId: dto.itemContentTypeId ?? null
@@ -611,6 +613,11 @@ export const useExerciseStore = defineStore('exercise', {
       } catch (e) {
         this._notifyError(e)
       }
+    },
+
+    getBlobUrl(contentId: string): string {
+      if (!_adapter) return ''
+      return _adapter.getBlobUrl(contentId)
     },
 
     // ── Template XML Actions ─────────────────────────────────────────────────

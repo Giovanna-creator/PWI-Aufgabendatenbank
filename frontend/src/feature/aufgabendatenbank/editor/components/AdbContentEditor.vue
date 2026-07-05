@@ -220,8 +220,7 @@ const isImageDisplayable = computed(() => {
 
 const blobSrc = computed(() => {
   if (!props.content.id) return ''
-  const base = window.location.origin
-  return `${base}/api/contents/${props.content.id}/blob`
+  return store.getBlobUrl(props.content.id)
 })
 
 function onPurposeInput(e: Event) {

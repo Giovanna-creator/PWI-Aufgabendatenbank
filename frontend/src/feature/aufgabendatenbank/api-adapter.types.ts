@@ -9,6 +9,7 @@ export interface ContentDTO {
   purpose: string | null
   jsonSerializedContent: string | null
   hasBlobContent: boolean
+  blobMimeType: string | null
   tagIds: string[]
   createdAt: string
   updatedAt: string

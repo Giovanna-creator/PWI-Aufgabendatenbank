@@ -59,6 +59,7 @@ function toContentDTO(c: Content): ContentDTO {
     purpose: c.purpose ?? null,
     jsonSerializedContent: c.jsonContent ? JSON.stringify(c.jsonContent) : null,
     hasBlobContent: !!c.blobContent,
+    blobMimeType: c.blobMimeType ?? null,
     tagIds: [],
     createdAt: nowISO(),
     updatedAt: nowISO()
@@ -139,6 +140,8 @@ const seedValidators: ValidatorDTO[] = [
 ]
 
 export class DevAdbApiService implements ApiAdapter {
+  private _blobs = new Map<string, Blob>()
+
   async getRootItems(): Promise<ItemDTO[]> {
     log('GET', '/api/items?root=true')
     return dummyData.rootItems.map(toDTO)
@@ -358,6 +361,7 @@ export class DevAdbApiService implements ApiAdapter {
       purpose: payload.purpose ?? null,
       jsonSerializedContent: payload.jsonSerializedContent ?? null,
       hasBlobContent: false,
+      blobMimeType: null,
       tagIds: payload.tagIds ?? [],
       createdAt: nowISO(),
       updatedAt: nowISO()
@@ -377,6 +381,7 @@ export class DevAdbApiService implements ApiAdapter {
       purpose: payload.purpose ?? null,
       jsonSerializedContent: payload.jsonSerializedContent ?? null,
       hasBlobContent: false,
+      blobMimeType: null,
       tagIds: payload.tagIds ?? [],
       createdAt: nowISO(),
       updatedAt: nowISO()
@@ -393,9 +398,14 @@ export class DevAdbApiService implements ApiAdapter {
       fileSize: file.size,
       fileType: file.type
     })
+    this._blobs.set(contentId, file)
   }
 
   getBlobUrl(contentId: string): string {
+    const blob = this._blobs.get(contentId)
+    if (blob) {
+      return URL.createObjectURL(blob)
+    }
     return `/api/contents/${contentId}/blob`
   }
 
