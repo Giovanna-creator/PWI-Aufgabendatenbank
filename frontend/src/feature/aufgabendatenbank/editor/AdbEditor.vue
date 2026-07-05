@@ -96,6 +96,13 @@
               class="template-validation valid"
             >✓ Alle Inhalte im Template</span>
             <v-btn
+              icon="mdi-eye"
+              variant="text"
+              size="x-small"
+              class="template-preview-btn"
+              @click="showPreview = true"
+            />
+            <v-btn
               :icon="editMode ? 'mdi-format-list-bulleted' : 'mdi-pencil'"
               variant="text"
               size="x-small"
@@ -232,6 +239,57 @@
 
         <AdbVariantsPanel />
 
+        <v-dialog
+          v-model="showPreview"
+          max-width="700"
+          scrollable
+        >
+          <v-card class="preview-dialog">
+            <v-card-title class="preview-title">
+              <v-icon icon="mdi-eye" size="20" class="preview-title-icon" />
+              Vorschau – Inhalte nach Template
+            </v-card-title>
+            <v-divider />
+            <v-card-text class="preview-body">
+              <template v-for="(group, gIdx) in previewGroups" :key="gIdx">
+                <div
+                  v-if="group.type === 'split'"
+                  class="preview-split-row"
+                >
+                  <div
+                    v-for="c in group.contents"
+                    :key="c.id ?? gIdx + '-' + group.contents.indexOf(c)"
+                    class="preview-card"
+                  >
+                    <div class="preview-card-purpose">{{ c.purpose }}</div>
+                    <div class="preview-card-text">{{ previewText(c) }}</div>
+                  </div>
+                </div>
+                <div
+                  v-else
+                  :key="group.contents[0]?.id ?? 'g-' + gIdx"
+                  class="preview-card"
+                >
+                  <div class="preview-card-purpose">{{ group.contents[0]?.purpose }}</div>
+                  <div class="preview-card-text">{{ previewText(group.contents[0]) }}</div>
+                </div>
+              </template>
+              <p
+                v-if="previewGroups.length === 0"
+                class="preview-empty"
+              >Keine Inhalte vorhanden</p>
+            </v-card-text>
+            <v-divider />
+            <v-card-actions class="preview-actions">
+              <v-spacer />
+              <v-btn
+                variant="text"
+                @click="showPreview = false"
+              >Schliessen</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+
         <p class="text-caption text-grey">
           ID: {{ store.selectedItem.id }}
         </p>
@@ -254,6 +312,7 @@ import AdbDeleteDialog from './components/AdbDeleteDialog.vue'
 import AdbRefSelect from '../toolbar/AdbRefSelect.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
 import { getPurposesFromXml, getSplitsFromXml, buildXmlFromSplits, splitPurposeInXml, unsplitPurposeFromXml, type SplitGroup } from '../representation/templateXml'
+import { applyTemplateOrder } from '../representation/applyTemplateOrder'
 
 const Draggable = draggable
 
@@ -404,6 +463,21 @@ const availablePurposes = computed(() => {
     }
   }
   return currentPurposes.value.filter(p => !used.has(p))
+})
+
+const showPreview = ref(false)
+
+function previewText(c: { jsonContent?: { text?: string } } | undefined): string {
+  if (!c) return ''
+  const text = c.jsonContent?.text ?? ''
+  return text.length > 120 ? text.slice(0, 120) + '…' : text
+}
+
+const previewGroups = computed(() => {
+  const item = store.selectedInnerItem
+  if (!item) return []
+  const template = store.templateById(item.representationTemplate)
+  return applyTemplateOrder(item.contents ?? [], template)
 })
 
 function splitPurpose(purpose: string) {
@@ -798,5 +872,82 @@ function isHighlighted(element: DndItem): boolean {
   .v-label {
     color: #969696 !important;
   }
+}
+
+.template-preview-btn {
+  color: #666 !important;
+  transition: color 0.15s;
+}
+
+.template-preview-btn:hover {
+  color: #999 !important;
+}
+
+.preview-dialog {
+  background-color: #1e1e1e !important;
+  color: #cccccc;
+}
+
+.preview-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 16px 24px !important;
+}
+
+.preview-title-icon {
+  color: #007fd4;
+}
+
+.preview-body {
+  padding: 20px 24px !important;
+}
+
+.preview-split-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.preview-card {
+  background: #2a2a2a;
+  border: 1px solid #3c3c3c;
+  border-radius: 6px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+
+.preview-split-row .preview-card {
+  margin-bottom: 0;
+}
+
+.preview-card-purpose {
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  font-size: 11px;
+  color: #007fd4;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+.preview-card-text {
+  font-size: 13px;
+  color: #b0b0b0;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.preview-empty {
+  color: #666;
+  text-align: center;
+  padding: 40px 0;
+}
+
+.preview-actions {
+  padding: 12px 24px !important;
 }
 </style>
