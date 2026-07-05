@@ -241,52 +241,80 @@
 
         <v-dialog
           v-model="showPreview"
-          max-width="700"
+          fullscreen
           scrollable
+          transition="dialog-bottom-transition"
         >
           <v-card class="preview-dialog">
             <v-card-title class="preview-title">
-              <v-icon icon="mdi-eye" size="20" class="preview-title-icon" />
+              <v-icon icon="mdi-eye" size="22" class="preview-title-icon" />
               Vorschau – Inhalte nach Template
+              <v-spacer />
+              <v-btn
+                icon="mdi-close"
+                variant="text"
+                size="small"
+                @click="showPreview = false"
+              />
             </v-card-title>
             <v-divider />
             <v-card-text class="preview-body">
-              <template v-for="(group, gIdx) in previewGroups" :key="gIdx">
-                <div
-                  v-if="group.type === 'split'"
-                  class="preview-split-row"
-                >
+              <div class="preview-page">
+                <template v-for="(group, gIdx) in previewGroups" :key="gIdx">
                   <div
-                    v-for="c in group.contents"
-                    :key="c.id ?? gIdx + '-' + group.contents.indexOf(c)"
-                    class="preview-card"
+                    v-if="group.type === 'split'"
+                    class="preview-split-row"
                   >
-                    <div class="preview-card-purpose">{{ c.purpose }}</div>
-                    <div class="preview-card-text">{{ previewText(c) }}</div>
+                    <div
+                      v-for="c in group.contents"
+                      :key="c.id ?? gIdx + '-' + group.contents.indexOf(c)"
+                      class="preview-block"
+                    >
+                      <div class="preview-block-purpose">{{ c.purpose }}</div>
+                      <img
+                        v-if="isImage(c)"
+                        :src="blobSrc(c)"
+                        class="preview-img"
+                        @error.once="() => markImgError(c)"
+                      />
+                      <div
+                        v-else-if="hasBlob(c)"
+                        class="preview-filename"
+                      >{{ c.blobContent }}</div>
+                      <div
+                        v-else
+                        class="preview-block-text"
+                      >{{ previewText(c) }}</div>
+                    </div>
                   </div>
-                </div>
-                <div
-                  v-else
-                  :key="group.contents[0]?.id ?? 'g-' + gIdx"
-                  class="preview-card"
-                >
-                  <div class="preview-card-purpose">{{ group.contents[0]?.purpose }}</div>
-                  <div class="preview-card-text">{{ previewText(group.contents[0]) }}</div>
-                </div>
-              </template>
-              <p
-                v-if="previewGroups.length === 0"
-                class="preview-empty"
-              >Keine Inhalte vorhanden</p>
+                  <div
+                    v-else
+                    :key="group.contents[0]?.id ?? 'g-' + gIdx"
+                    class="preview-block"
+                  >
+                    <div class="preview-block-purpose">{{ group.contents[0]?.purpose }}</div>
+                    <img
+                      v-if="isImage(group.contents[0])"
+                      :src="blobSrc(group.contents[0])"
+                      class="preview-img"
+                      @error.once="() => markImgError(group.contents[0])"
+                    />
+                    <div
+                      v-else-if="hasBlob(group.contents[0])"
+                      class="preview-filename"
+                    >{{ group.contents[0]?.blobContent }}</div>
+                    <div
+                      v-else
+                      class="preview-block-text"
+                    >{{ previewText(group.contents[0]) }}</div>
+                  </div>
+                </template>
+                <p
+                  v-if="previewGroups.length === 0"
+                  class="preview-empty"
+                >Keine Inhalte vorhanden</p>
+              </div>
             </v-card-text>
-            <v-divider />
-            <v-card-actions class="preview-actions">
-              <v-spacer />
-              <v-btn
-                variant="text"
-                @click="showPreview = false"
-              >Schliessen</v-btn>
-            </v-card-actions>
           </v-card>
         </v-dialog>
 
@@ -466,11 +494,33 @@ const availablePurposes = computed(() => {
 })
 
 const showPreview = ref(false)
+const imgErrors = ref(new Set<string>())
 
 function previewText(c: { jsonContent?: { text?: string } } | undefined): string {
   if (!c) return ''
   const text = c.jsonContent?.text ?? ''
   return text.length > 120 ? text.slice(0, 120) + '…' : text
+}
+
+function hasBlob(c: { id?: string; blobContent?: string; blobMimeType?: string }): boolean {
+  return !!(c.blobMimeType || c.blobContent)
+}
+
+function isImage(c: { id?: string; blobContent?: string; blobMimeType?: string }): boolean {
+  if (!hasBlob(c)) return false
+  const mime = c.blobMimeType || ''
+  return mime.startsWith('image/') && !imgErrors.value.has(c.id ?? '')
+}
+
+function blobSrc(c: { id?: string }): string {
+  if (!c.id) return ''
+  return `${window.location.origin}/api/contents/${c.id}/blob`
+}
+
+function markImgError(c: { id?: string }) {
+  if (c.id) {
+    imgErrors.value = new Set([...imgErrors.value, c.id])
+  }
 }
 
 const previewGroups = computed(() => {
@@ -884,17 +934,20 @@ function isHighlighted(element: DndItem): boolean {
 }
 
 .preview-dialog {
-  background-color: #1e1e1e !important;
-  color: #cccccc;
+  background-color: #2d2d2d !important;
+  color: #d4d4d4;
 }
 
 .preview-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-size: 15px;
   font-weight: 500;
-  padding: 16px 24px !important;
+  padding: 14px 20px !important;
+  background: #252526;
+  border-bottom: 1px solid #3c3c3c;
+  flex-shrink: 0;
 }
 
 .preview-title-icon {
@@ -902,52 +955,71 @@ function isHighlighted(element: DndItem): boolean {
 }
 
 .preview-body {
-  padding: 20px 24px !important;
+  padding: 0 !important;
+  display: flex;
+  justify-content: center;
+  background: #3c3c3c;
+  min-height: 100%;
+}
+
+.preview-page {
+  width: 100%;
+  max-width: 900px;
+  background: #ffffff;
+  color: #1e1e1e;
+  padding: 60px 72px;
+  min-height: 100%;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
 }
 
 .preview-split-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 32px;
+  margin-bottom: 28px;
 }
 
-.preview-card {
-  background: #2a2a2a;
-  border: 1px solid #3c3c3c;
-  border-radius: 6px;
-  padding: 14px 16px;
-  margin-bottom: 10px;
+.preview-block {
+  margin-bottom: 24px;
 }
 
-.preview-split-row .preview-card {
+.preview-split-row .preview-block {
   margin-bottom: 0;
 }
 
-.preview-card-purpose {
-  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-  font-size: 11px;
-  color: #007fd4;
+.preview-block-purpose {
+  font-size: 10px;
+  font-weight: 600;
+  color: #888;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 8px;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
 }
 
-.preview-card-text {
-  font-size: 13px;
-  color: #b0b0b0;
-  line-height: 1.5;
+.preview-block-text {
+  font-size: 14px;
+  line-height: 1.7;
   white-space: pre-wrap;
   word-break: break-word;
+  color: #1e1e1e;
+}
+
+.preview-img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 2px;
+}
+
+.preview-filename {
+  font-size: 13px;
+  color: #555;
+  font-style: italic;
 }
 
 .preview-empty {
-  color: #666;
+  color: #999;
   text-align: center;
-  padding: 40px 0;
-}
-
-.preview-actions {
-  padding: 12px 24px !important;
+  padding: 60px 0;
 }
 </style>
