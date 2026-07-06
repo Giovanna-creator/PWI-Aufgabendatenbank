@@ -14,7 +14,8 @@ import type {
   ItemTypeDTO,
   ContentTypeDTO,
   ValidatorDTO,
-  CreateValidatorPayload
+  CreateValidatorPayload,
+  SearchParams
 } from './api-adapter.types'
 
 export class AdbApiService implements ApiAdapter {
@@ -28,6 +29,11 @@ export class AdbApiService implements ApiAdapter {
 
   async getRootItems(): Promise<ItemDTO[]> {
     const { data } = await this.http.get<ItemDTO[]>('/items', { params: { root: true } })
+    return data
+  }
+
+  async searchItems(params: SearchParams): Promise<ItemDTO[]> {
+    const { data } = await this.http.get<ItemDTO[]>('/items', { params })
     return data
   }
 

@@ -15,7 +15,8 @@ import type {
   ItemTypeDTO,
   ContentTypeDTO,
   ValidatorDTO,
-  CreateValidatorPayload
+  CreateValidatorPayload,
+  SearchParams
 } from './api-adapter.types'
 import type { Item, Content, CollectionItem } from '@/lib/types'
 
@@ -130,6 +131,56 @@ export class DevAdbApiService implements ApiAdapter {
   async getRootItems(): Promise<ItemDTO[]> {
     log('GET', '/api/items?root=true')
     return dummyData.rootItems.map(toDTO)
+  }
+
+  async searchItems(params: SearchParams): Promise<ItemDTO[]> {
+    log('GET', '/api/items', params)
+
+    const allItems: Item[] = []
+    const collect = (items: Item[]) => {
+      for (const item of items) {
+        allItems.push(item)
+        if (item.items) {
+          for (const ci of item.items) {
+            allItems.push(ci.item)
+          }
+        }
+      }
+    }
+    collect(dummyData.rootItems)
+
+    const q = (s: string | undefined) => s?.toLowerCase() ?? ''
+
+    const result = allItems.filter((item) => {
+      if (params.search) {
+        const text = q(params.search)
+        const match = item.contents.some((c) => {
+          const jsonStr = JSON.stringify(c.jsonContent ?? {})
+          return q(jsonStr).includes(text)
+        })
+        if (!match) return false
+      }
+      if (params.authorId) {
+        const author = q(params.authorId)
+        if (!q(item.author).includes(author) && !q(item.authorId ?? '').includes(author)) {
+          return false
+        }
+      }
+      if (params.itemTypeId) {
+        if (q(item.itemTypeId ?? '') !== q(params.itemTypeId) &&
+            q(item.item_type) !== q(params.itemTypeId)) {
+          return false
+        }
+      }
+      if (params.tag) {
+        const tagText = q(params.tag)
+        const found = item.tags.some((t) => q(t).includes(tagText))
+        if (!found) return false
+      }
+      return true
+    })
+
+    return result.map(toDTO)
   }
 
   async getCollectionItems(collectionId: string): Promise<CollectionItemDTO[]> {

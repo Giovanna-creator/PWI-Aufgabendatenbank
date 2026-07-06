@@ -21,7 +21,8 @@ import type {
   LicenseDTO,
   ItemTypeDTO,
   ContentTypeDTO,
-  ValidatorDTO
+  ValidatorDTO,
+  SearchParams
 } from '@/feature/aufgabendatenbank/api-adapter.types'
 
 // ── Default-UUIDs (identisch mit database/init/init.sql) ───────────────────────
@@ -140,7 +141,18 @@ interface ExerciseState {
   selectedLicenseId: string | null
   selectedItemTypeId: string | null
   selectedContentTypeId: string | null
+  // Such-/Filterzustand
+  searchQuery: string
+  filterAuthorId: string | null
+  filterItemTypeId: string | null
+  filterTag: string
+  filteredItems: ItemDTO[] | null
+  filtering: boolean
 }
+
+// ── Debounce timer (module-level, nicht im Store-State) ──────────────────────
+
+let _filterTimer: ReturnType<typeof setTimeout> | null = null
 
 // ── Store ─────────────────────────────────────────────────────────────────────
 
@@ -163,7 +175,13 @@ export const useExerciseStore = defineStore('exercise', {
     selectedAuthorId: null,
     selectedLicenseId: null,
     selectedItemTypeId: null,
-    selectedContentTypeId: null
+    selectedContentTypeId: null,
+    searchQuery: '',
+    filterAuthorId: null,
+    filterItemTypeId: null,
+    filterTag: '',
+    filteredItems: null,
+    filtering: false
   }),
 
   getters: {
@@ -197,6 +215,15 @@ export const useExerciseStore = defineStore('exercise', {
     isOrdered(): boolean {
       const coll = this.selectedCollection
       return coll ? coll.order === true : false
+    },
+
+    hasActiveFilters(): boolean {
+      return !!(
+        this.searchQuery?.trim() ||
+        this.filterAuthorId ||
+        this.filterItemTypeId ||
+        this.filterTag?.trim()
+      )
     }
   },
 
@@ -348,6 +375,68 @@ export const useExerciseStore = defineStore('exercise', {
           }
         })
       await Promise.all(promises)
+    },
+
+    // ── Search / Filters ──────────────────────────────────────────────────────
+
+    setSearchQuery(query: string) {
+      this.searchQuery = query
+      this._debouncedApplyFilters()
+    },
+
+    setFilterAuthorId(id: string | null) {
+      this.filterAuthorId = id
+      this._debouncedApplyFilters()
+    },
+
+    setFilterItemTypeId(id: string | null) {
+      this.filterItemTypeId = id
+      this._debouncedApplyFilters()
+    },
+
+    setFilterTag(tag: string) {
+      this.filterTag = tag
+      this._debouncedApplyFilters()
+    },
+
+    clearFilters() {
+      this.searchQuery = ''
+      this.filterAuthorId = null
+      this.filterItemTypeId = null
+      this.filterTag = ''
+      this.filteredItems = null
+      this._debouncedApplyFilters()
+    },
+
+    _debouncedApplyFilters() {
+      if (_filterTimer) clearTimeout(_filterTimer)
+      _filterTimer = setTimeout(() => this.applyFilters(), 250)
+    },
+
+    async applyFilters() {
+      if (!this.hasActiveFilters) {
+        this.filteredItems = null
+        if (this.rootItems.length === 0) {
+          await this.loadTree()
+        }
+        return
+      }
+
+      this.filtering = true
+      try {
+        const params: SearchParams = {}
+        if (this.searchQuery?.trim()) params.search = this.searchQuery.trim()
+        if (this.filterAuthorId) params.authorId = this.filterAuthorId
+        if (this.filterItemTypeId) params.itemTypeId = this.filterItemTypeId
+        if (this.filterTag?.trim()) params.tag = this.filterTag.trim()
+
+        this.filteredItems = await _adapter!.searchItems(params)
+      } catch (e) {
+        this._notifyError(e)
+        this.filteredItems = null
+      } finally {
+        this.filtering = false
+      }
     },
 
     // ── Selection ─────────────────────────────────────────────────────────────
