@@ -168,7 +168,7 @@ public class ItemService {
                 subquery.select(cb.literal(1L));
                 subquery.where(
                     cb.equal(icRoot.get("item"), root),
-                    cb.like(cb.lower(cntJoin.get("jsonSerializedContent")),
+                    cb.like(cb.lower(cb.toString(cntJoin.get("jsonSerializedContent"))),
                             "%" + search.toLowerCase() + "%")
                 );
 
