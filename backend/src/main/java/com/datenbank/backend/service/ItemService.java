@@ -6,6 +6,7 @@ import com.datenbank.backend.dto.ItemResponseDto;
 import com.datenbank.backend.dto.ValidatorResponseDto;
 import com.datenbank.backend.entity.*;
 import com.datenbank.backend.repository.*;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Root;
@@ -168,7 +169,8 @@ public class ItemService {
                 subquery.select(cb.literal(1L));
                 subquery.where(
                     cb.equal(icRoot.get("item"), root),
-                    cb.like(cb.lower(cb.toString(cntJoin.get("jsonSerializedContent"))),
+                    cb.like(cb.lower(cb.function("text", String.class,
+                            cntJoin.get("jsonSerializedContent"))),
                             "%" + search.toLowerCase() + "%")
                 );
 

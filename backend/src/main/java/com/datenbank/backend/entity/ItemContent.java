@@ -1,5 +1,7 @@
 package com.datenbank.backend.entity;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -45,6 +47,7 @@ public class ItemContent {
      */
     
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "json_serialized_content", columnDefinition = "jsonb")
     private String jsonSerializedContent;
 
