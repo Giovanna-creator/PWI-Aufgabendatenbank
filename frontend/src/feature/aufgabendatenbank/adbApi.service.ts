@@ -14,7 +14,8 @@ import type {
   ItemTypeDTO,
   ContentTypeDTO,
   ValidatorDTO,
-  CreateValidatorPayload
+  CreateValidatorPayload,
+  ReprTemplateDTO
 } from './api-adapter.types'
 
 export class AdbApiService implements ApiAdapter {
@@ -153,6 +154,21 @@ export class AdbApiService implements ApiAdapter {
 
   async createContentType(payload: { name: string; description: string | null }): Promise<ContentTypeDTO> {
     const { data } = await this.http.post<ContentTypeDTO>('/content-types', payload)
+    return data
+  }
+
+  async getRepresentationTemplates(): Promise<ReprTemplateDTO[]> {
+    const { data } = await this.http.get<ReprTemplateDTO[]>('/representation-templates')
+    return data
+  }
+
+  async createRepresentationTemplate(payload: { template: string }): Promise<ReprTemplateDTO> {
+    const { data } = await this.http.post<ReprTemplateDTO>('/representation-templates', payload)
+    return data
+  }
+
+  async updateRepresentationTemplate(id: string, payload: { template: string }): Promise<ReprTemplateDTO> {
+    const { data } = await this.http.put<ReprTemplateDTO>(`/representation-templates/${id}`, payload)
     return data
   }
 

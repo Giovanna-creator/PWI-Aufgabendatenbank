@@ -15,7 +15,8 @@ import type {
   ItemTypeDTO,
   ContentTypeDTO,
   ValidatorDTO,
-  CreateValidatorPayload
+  CreateValidatorPayload,
+  ReprTemplateDTO
 } from './api-adapter.types'
 import type { Item, Content, CollectionItem } from '@/lib/types'
 
@@ -58,6 +59,7 @@ function toContentDTO(c: Content): ContentDTO {
     purpose: c.purpose ?? null,
     jsonSerializedContent: c.jsonContent ? JSON.stringify(c.jsonContent) : null,
     hasBlobContent: !!c.blobContent,
+    blobMimeType: c.blobMimeType ?? null,
     tagIds: [],
     createdAt: nowISO(),
     updatedAt: nowISO()
@@ -108,6 +110,17 @@ function findItem(id: string, items: Item[]): Item | undefined {
   return undefined
 }
 
+const seedTemplates: ReprTemplateDTO[] = [
+  {
+    id: 'tmpl-vertical',
+    template: '<layout><purpose>Aufgabenstellung</purpose><purpose>Hinweis</purpose><purpose>L\u00f6sung</purpose></layout>'
+  },
+  {
+    id: 'tmpl-task-solution',
+    template: '<layout><purpose>Aufgabenstellung</purpose><purpose>L\u00f6sung</purpose></layout>'
+  }
+]
+
 const seedValidators: ValidatorDTO[] = [
   {
     validatorId: 'val-must-inner-join',
@@ -127,6 +140,8 @@ const seedValidators: ValidatorDTO[] = [
 ]
 
 export class DevAdbApiService implements ApiAdapter {
+  private _blobs = new Map<string, Blob>()
+
   async getRootItems(): Promise<ItemDTO[]> {
     log('GET', '/api/items?root=true')
     return dummyData.rootItems.map(toDTO)
@@ -346,6 +361,7 @@ export class DevAdbApiService implements ApiAdapter {
       purpose: payload.purpose ?? null,
       jsonSerializedContent: payload.jsonSerializedContent ?? null,
       hasBlobContent: false,
+      blobMimeType: null,
       tagIds: payload.tagIds ?? [],
       createdAt: nowISO(),
       updatedAt: nowISO()
@@ -365,6 +381,7 @@ export class DevAdbApiService implements ApiAdapter {
       purpose: payload.purpose ?? null,
       jsonSerializedContent: payload.jsonSerializedContent ?? null,
       hasBlobContent: false,
+      blobMimeType: null,
       tagIds: payload.tagIds ?? [],
       createdAt: nowISO(),
       updatedAt: nowISO()
@@ -381,9 +398,14 @@ export class DevAdbApiService implements ApiAdapter {
       fileSize: file.size,
       fileType: file.type
     })
+    this._blobs.set(contentId, file)
   }
 
   getBlobUrl(contentId: string): string {
+    const blob = this._blobs.get(contentId)
+    if (blob) {
+      return URL.createObjectURL(blob)
+    }
     return `/api/contents/${contentId}/blob`
   }
 
@@ -461,6 +483,30 @@ export class DevAdbApiService implements ApiAdapter {
       .flatMap(item => item.items ?? [])
       .filter(ci => ci.item.rootItemId === rootItemId)
       .map(ci => toDTO(ci.item))
+  }
+
+  // ── Representation Templates ─────────────────────────────────────────
+
+  private _templates: ReprTemplateDTO[] = [...seedTemplates]
+
+  async getRepresentationTemplates(): Promise<ReprTemplateDTO[]> {
+    log('GET', '/api/representation-templates')
+    return [...this._templates]
+  }
+
+  async createRepresentationTemplate(payload: { template: string }): Promise<ReprTemplateDTO> {
+    log('POST', '/api/representation-templates', payload)
+    const t: ReprTemplateDTO = { id: uid('tmpl'), template: payload.template }
+    this._templates.push(t)
+    return { ...t }
+  }
+
+  async updateRepresentationTemplate(id: string, payload: { template: string }): Promise<ReprTemplateDTO> {
+    log('PUT', `/api/representation-templates/${id}`, payload)
+    const idx = this._templates.findIndex(t => t.id === id)
+    if (idx < 0) throw new Error('Template nicht gefunden')
+    this._templates[idx] = { ...this._templates[idx], template: payload.template }
+    return { ...this._templates[idx] }
   }
 
   // ── Validators ───────────────────────────────────────────────────────

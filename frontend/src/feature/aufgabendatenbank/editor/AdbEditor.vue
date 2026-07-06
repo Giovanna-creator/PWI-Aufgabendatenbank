@@ -5,85 +5,27 @@
     </v-card-title>
     <v-card-text class="adb-editor-text">
       <div v-if="store.selectedItem">
-        <div class="editor-header-row">
-          <h3 class="text-h6 mb-2">
-            {{ itemTypeLabel }}
-          </h3>
-          <div
-            v-if="store.isCollectionSelected"
-            class="order-toggle-area"
-          >
-            <span class="order-hint">Geordnete Liste</span>
-            <div
-              class="order-card"
-              :class="{ visible: store.isOrdered }"
-            >
-              <v-btn
-                icon="mdi-format-list-numbered"
-                variant="text"
-                size="small"
-                :ripple="false"
-                class="order-btn"
-                :class="{ active: store.isOrdered }"
-                @click="toggleOrder"
-              />
-            </div>
-            <div class="delete-card">
-              <v-btn
-                variant="text"
-                :ripple="false"
-                class="delete-btn"
-                @click="showDeleteDialog = true"
-              >
-                Löschen
-              </v-btn>
-            </div>
-          </div>
-
-          <AdbDeleteDialog
-            v-model:visible="showDeleteDialog"
-            @confirm="deleteSelectedItem"
-          />
-        </div>
+        <EditorMetadataBar />
 
         <div
-          v-if="inner"
-          class="meta-row"
+          v-if="currentTemplateXml !== null"
+          class="template-editor-slot"
         >
-          <AdbRefSelect
-            :model-value="inner.itemTypeId"
-            :items="store.itemTypes"
-            item-title="name"
-            label="Typ"
-            type="itemType"
-            class="meta-select"
-            @update:model-value="(v) => onMeta({ itemTypeId: v })"
-          />
-          <AdbRefSelect
-            :model-value="inner.authorId"
-            :items="store.authors"
-            item-title="descriptor"
-            label="Autor"
-            type="author"
-            class="meta-select"
-            @update:model-value="(v) => onMeta({ authorId: v })"
-          />
-          <AdbRefSelect
-            :model-value="inner.licenseId"
-            :items="store.licenses"
-            item-title="name"
-            label="Lizenz"
-            type="license"
-            class="meta-select"
-            @update:model-value="(v) => onMeta({ licenseId: v })"
+          <TemplateEditorPanel
+            v-model="editedXml"
+            :validation-msg="validationMsg"
+            @preview="showPreview = true"
           />
         </div>
 
         <AdbContentList />
-
         <AdbValidatorEditor />
-
         <AdbVariantsPanel />
+
+        <PreviewDialog
+          v-model="showPreview"
+          :template-xml="editedXml"
+        />
 
         <p class="text-caption text-grey">
           ID: {{ store.selectedItem.id }}
@@ -97,43 +39,90 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch, onUnmounted } from 'vue'
+import EditorMetadataBar from './components/EditorMetadataBar.vue'
+import TemplateEditorPanel from './components/TemplateEditorPanel.vue'
+import PreviewDialog from './components/PreviewDialog.vue'
 import AdbContentList from './components/AdbContentList.vue'
-import AdbVariantsPanel from './components/AdbVariantsPanel.vue'
 import AdbValidatorEditor from './components/AdbValidatorEditor.vue'
-import AdbDeleteDialog from './components/AdbDeleteDialog.vue'
-import AdbRefSelect from '../toolbar/AdbRefSelect.vue'
+import AdbVariantsPanel from './components/AdbVariantsPanel.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
+import { getPurposesFromXml } from '../representation/templateXml'
 
 const store = useExerciseStore()
-const showDeleteDialog = ref(false)
+const editedXml = ref('')
+const saveTimer = ref<ReturnType<typeof setTimeout> | null>(null)
+const showPreview = ref(false)
 
 const inner = computed(() => store.selectedInnerItem)
 
-function onMeta(meta: { authorId?: string; licenseId?: string; itemTypeId?: string }) {
-  if (inner.value) store.updateItemMeta(inner.value, meta)
+function buildDefaultXml(item: { contents: { purpose: string }[] }): string {
+  if (item.contents.length === 0) return '<layout>\n</layout>'
+  const purposes = item.contents.map(c => `  <purpose>${c.purpose}</purpose>`).join('\n')
+  return `<layout>\n${purposes}\n</layout>`
 }
 
-const itemTypeLabel = computed(() => {
-  if (!store.selectedInnerItem) return ''
-  const type = store.selectedInnerItem.item_type
-  const label = type === 'collection' ? 'Kollektion' : 'Aufgabe'
-  const firstText = store.selectedInnerItem?.contents?.[0]?.jsonContent?.text
-  return firstText ? `${label}: ${firstText}` : label
+const currentTemplateXml = computed(() => {
+  const item = inner.value
+  if (!item) return null
+  return store.templateById(item.representationTemplate) ?? buildDefaultXml(item)
 })
 
-function toggleOrder() {
-  const coll = store.selectedCollection
-  if (coll) {
-    store.toggleCollectionOrder(coll)
+watch(currentTemplateXml, (xml) => {
+  if (xml !== null && xml !== editedXml.value) editedXml.value = xml
+}, { immediate: true })
+
+watch(editedXml, (xml) => {
+  store.setLiveTemplateXml(xml)
+}, { immediate: true })
+
+onUnmounted(() => {
+  store.setLiveTemplateXml(null)
+})
+
+const hasDuplicatePurposes = computed(() => {
+  if (!editedXml.value) return ''
+  const purposes = getPurposesFromXml(editedXml.value)
+  const seen = new Set<string>()
+  const dupes = new Set<string>()
+  for (const p of purposes) {
+    if (seen.has(p)) dupes.add(p)
+    seen.add(p)
   }
+  return dupes.size > 0
+    ? `Doppelte Purposes: ${[...dupes].join(', ')}`
+    : ''
+})
+
+const validationMsg = computed(() => {
+  if (hasDuplicatePurposes.value) return hasDuplicatePurposes.value
+  const item = inner.value
+  if (!item || !editedXml.value) return ''
+  const templatePurposes = getPurposesFromXml(editedXml.value)
+  const contentPurposes = item.contents.map(c => c.purpose)
+  const missing = contentPurposes.filter(p => !templatePurposes.includes(p))
+  const orphaned = templatePurposes.filter(p => !contentPurposes.includes(p))
+  const parts: string[] = []
+  if (missing.length > 0) {
+    parts.push(`${missing.length} Inhalt${missing.length > 1 ? 'e' : ''} fehlen im Template: ${missing.join(', ')}`)
+  }
+  if (orphaned.length > 0) {
+    parts.push(`${orphaned.length} Purpose${orphaned.length > 1 ? 's' : ''} im Template ohne passenden Inhalt: ${orphaned.join(', ')}`)
+  }
+  return parts.join(' | ')
+})
+
+function debounceSave(xml: string) {
+  if (hasDuplicatePurposes.value) return
+  if (saveTimer.value) clearTimeout(saveTimer.value)
+  saveTimer.value = setTimeout(() => {
+    store.saveEditedTemplateXml(xml)
+  }, 800)
 }
 
-function deleteSelectedItem() {
-  if (store.selectedInnerItem) {
-    store.deleteItem(store.selectedInnerItem)
-  }
-}
+watch(editedXml, (xml) => {
+  if (xml) debounceSave(xml)
+})
 </script>
 
 <style lang="scss" scoped>
@@ -166,122 +155,8 @@ function deleteSelectedItem() {
   max-height: 100%;
 }
 
-.editor-header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.meta-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+.template-editor-slot {
   margin-bottom: 20px;
-}
-
-.meta-select {
-  flex: 1 1 240px;
-  min-width: 220px;
-}
-
-.order-toggle-area {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.order-hint {
-  font-size: 11px;
-  color: #777;
-  user-select: none;
-  white-space: nowrap;
-}
-
-.order-card {
-  transition: all 0.15s;
-  border-radius: 4px;
-  padding: 0;
-  line-height: 0;
-
-  &.visible {
-    background-color: #0d2b45;
-    box-shadow: 0 0 0 1px #007fd4;
-  }
-}
-
-.delete-card {
-  border-radius: 4px;
-  padding: 0 14px;
-  line-height: 0;
-  background-color: #4a1a1a;
-  box-shadow: 0 0 0 1px #c04040;
-  display: flex;
-  align-items: center;
-  height: 32px;
-  margin-left: 12px;
-}
-
-.delete-btn {
-  color: #c04040 !important;
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: none;
-  letter-spacing: 0;
-  transition: color 0.15s;
-  margin: 0 !important;
-  padding: 0 !important;
-  min-width: 0 !important;
-  height: 32px !important;
-  --v-btn-height: 32px;
-  background: transparent !important;
-
-  :deep(.v-btn__overlay) {
-    display: none;
-  }
-
-  :deep(.v-btn__content) {
-    padding: 0;
-  }
-
-  &:hover {
-    color: #e06060 !important;
-  }
-}
-
-.order-btn {
-  color: #666 !important;
-  transition: color 0.15s;
-  margin: 0 !important;
-  padding: 1rem !important;
-  min-width: 0 !important;
-  width: 22px;
-  height: 22px;
-  background: transparent !important;
-
-  :deep(.v-btn__overlay) {
-    display: none;
-  }
-
-  :deep(.v-btn__content) {
-    padding: 0;
-  }
-
-  :deep(.v-icon) {
-    font-size: 22px;
-  }
-
-  &:hover {
-    color: #999 !important;
-  }
-
-  &.active {
-    color: #007fd4 !important;
-
-    &:hover {
-      color: #1a9aff !important;
-    }
-  }
 }
 
 :deep(.v-text-field) {

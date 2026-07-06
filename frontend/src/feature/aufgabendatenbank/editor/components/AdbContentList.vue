@@ -1,15 +1,33 @@
 <template>
   <div class="content-list">
-    <AdbContentEditor
-      v-for="(content, index) in contents"
-      :key="content.id ?? index"
-      :content="content"
-      :index="index"
-      @update:text="(val) => store.updateContentText(index, val)"
-      @update:purpose="(val) => store.updateContentPurpose(index, val)"
-      @update:meta="(m) => store.updateContentMeta(index, m)"
-      @delete="store.removeContentFromSelectedItem(index)"
-    />
+    <template v-for="(group, gIdx) in orderedGroups" :key="gIdx">
+      <div
+        v-if="group.type === 'split'"
+        class="split-row"
+      >
+        <AdbContentEditor
+          v-for="(content, cIdx) in group.contents"
+          :key="content.id ?? gIdx + '-' + cIdx"
+          :content="content"
+          :index="realIndex(content)"
+          class="split-cell"
+          @update:text="(val) => store.updateContentText(realIndex(content), val)"
+          @update:purpose="(val) => store.updateContentPurpose(realIndex(content), val)"
+          @update:meta="(m) => store.updateContentMeta(realIndex(content), m)"
+          @delete="store.removeContentFromSelectedItem(realIndex(content))"
+        />
+      </div>
+      <AdbContentEditor
+        v-else
+        :key="contentIdKey(group.contents[0], gIdx)"
+        :content="group.contents[0]"
+        :index="realIndex(group.contents[0])"
+        @update:text="(val) => store.updateContentText(realIndex(group.contents[0]), val)"
+        @update:purpose="(val) => store.updateContentPurpose(realIndex(group.contents[0]), val)"
+        @update:meta="(m) => store.updateContentMeta(realIndex(group.contents[0]), m)"
+        @delete="store.removeContentFromSelectedItem(realIndex(group.contents[0]))"
+      />
+    </template>
 
     <button
       type="button"
@@ -29,17 +47,47 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { Content } from '@/lib/types'
 import AdbContentEditor from './AdbContentEditor.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
+import { applyTemplateOrder, flattenContentGroups } from '../../representation/applyTemplateOrder'
 
 const store = useExerciseStore()
 
-const contents = computed(() => store.selectedInnerItem?.contents ?? [])
+const rawContents = computed(() => store.selectedInnerItem?.contents ?? [])
+
+const orderedGroups = computed(() => {
+  const item = store.selectedInnerItem
+  if (!item) return []
+  const template = store.templateById(item.representationTemplate)
+  return applyTemplateOrder(rawContents.value, template)
+})
+
+function contentIdKey(content: Content, fallback: number): string {
+  return content.id ?? 'c-' + fallback
+}
+
+function realIndex(content: Content): number {
+  const item = store.selectedInnerItem
+  if (!item) return -1
+  return item.contents.indexOf(content)
+}
 </script>
 
 <style scoped lang="scss">
 .content-list {
   margin-bottom: 8px;
+}
+
+.split-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.split-cell {
+  min-width: 0;
 }
 
 .add-content-btn {
