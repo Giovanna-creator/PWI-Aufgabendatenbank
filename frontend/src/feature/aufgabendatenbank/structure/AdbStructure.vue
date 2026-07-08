@@ -158,4 +158,40 @@ const updateRootItems = (newItems: typeof store.rootItems) => {
 :deep(.v-list) {
   background: transparent !important;
 }
+
+/* Suchergebnis-Liste (flache Ansicht bei aktiven Filtern) */
+.adb-filter-status {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: #969696;
+}
+
+.adb-filter-result-item {
+  color: #cccccc !important;
+
+  &:hover {
+    background-color: #2a2d2e !important;
+  }
+
+  &.v-list-item--active {
+    background-color: #37373d !important;
+  }
+}
+
+.adb-filter-result-item :deep(.v-list-item-title) {
+  color: #cccccc !important;
+  font-size: 13px;
+}
+
+.adb-filter-result-item :deep(.v-list-item-subtitle) {
+  color: #8a8a8a !important;
+  font-size: 11px;
+  opacity: 1;
+}
+
+.adb-filter-result-item :deep(.v-icon) {
+  color: #b0b0b0 !important;
+}
 </style>

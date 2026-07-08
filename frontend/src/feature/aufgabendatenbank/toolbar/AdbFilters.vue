@@ -139,11 +139,23 @@ function clearAll() {
 :deep(.v-field) {
   background-color: #2d2d2d !important;
   color: #cccccc !important;
+  border-radius: 4px;
+}
+
+/* Vuetify legt bei leeren/gehoverten Feldern eine helle Overlay-Schicht darüber,
+   wodurch das Suche-Feld blasser wirkte. Overlay neutralisieren -> alle Felder gleich. */
+:deep(.v-field__overlay) {
+  opacity: 0 !important;
 }
 
 :deep(.v-field__input) {
   color: #cccccc !important;
   font-size: 0.8125rem;
+}
+
+:deep(.v-field__input::placeholder) {
+  color: #9a9a9a !important;
+  opacity: 1 !important;
 }
 
 :deep(.v-field--variant-outlined .v-field__outline) {
