@@ -48,13 +48,20 @@ public class TagController {
         if (body.tag() == null || body.tag().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tag-Name fehlt");
         }
+        String name = body.tag().trim();
+        if (name.matches(".*\\s.*")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tag darf keine Leerzeichen enthalten");
+        }
+        if (tagRepository.existsByTagIgnoreCase(name)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Tag existiert bereits");
+        }
         Tag parent = null;
         if (body.parentTagId() != null && !body.parentTagId().isBlank()) {
             parent = tagRepository.findById(UUID.fromString(body.parentTagId()))
                     .orElseThrow(() -> new ResponseStatusException(
                             HttpStatus.BAD_REQUEST, "Eltern-Tag nicht gefunden"));
         }
-        Tag saved = tagRepository.save(new Tag(body.tag().trim(), body.description(), parent));
+        Tag saved = tagRepository.save(new Tag(name, body.description(), parent));
         return toDto(saved);
     }
 

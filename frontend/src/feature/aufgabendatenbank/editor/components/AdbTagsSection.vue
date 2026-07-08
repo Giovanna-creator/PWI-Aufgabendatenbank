@@ -1,6 +1,18 @@
 <template>
   <div class="tags-section">
-    <div class="tags-label">Tags</div>
+    <div class="tags-header">
+      <span class="tags-label">Tags</span>
+      <v-btn
+        variant="tonal"
+        color="primary"
+        prepend-icon="mdi-plus"
+        size="small"
+        class="tags-new-btn"
+        @click="dialog = true"
+      >
+        Neuer Tag
+      </v-btn>
+    </div>
 
     <div class="tags-chips">
       <v-chip
@@ -33,19 +45,6 @@
       />
     </div>
 
-    <div class="tags-actions">
-      <v-btn
-        variant="tonal"
-        color="primary"
-        prepend-icon="mdi-plus"
-        size="small"
-        class="tags-new-btn"
-        @click="dialog = true"
-      >
-        Neuer Tag
-      </v-btn>
-    </div>
-
     <v-dialog
       v-model="dialog"
       max-width="440"
@@ -60,9 +59,10 @@
             label="Name"
             variant="outlined"
             density="compact"
-            hide-details
+            persistent-hint
+            hint="Mit / Unterebenen anlegen (z. B. DBS/Normalisierung). Keine Leerzeichen."
             autofocus
-            class="mb-3"
+            class="mb-4"
             @keyup.enter="confirm"
           />
           <v-select
@@ -136,8 +136,9 @@ function close() {
 }
 
 async function confirm() {
-  if (!name.value.trim()) return
-  const created = await store.createTag(name.value, parentId.value, description.value)
+  const raw = name.value.trim()
+  if (!raw) return
+  const created = await store.createTagPath(raw, parentId.value, description.value)
   if (created) {
     store.assignTagToItem(props.item, created.id)
     close()
@@ -150,10 +151,16 @@ async function confirm() {
   margin-bottom: 20px;
 }
 
+.tags-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
 .tags-label {
   font-size: 0.75rem;
   color: #969696;
-  margin-bottom: 6px;
 }
 
 .tags-chips {

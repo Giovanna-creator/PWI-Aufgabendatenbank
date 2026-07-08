@@ -427,6 +427,40 @@ export const useExerciseStore = defineStore('exercise', {
     },
 
     /**
+     * Erstellt einen Tag aus einem Pfad "A/B/C": bestehende Segmente werden
+     * per Name wiederverwendet, fehlende neu angelegt. Leerzeichen sind
+     * verboten (auch zwischen Wörtern). Gibt den Blatt-Tag zurück.
+     */
+    async createTagPath(
+      rawName: string,
+      parentId: string | null = null,
+      description = ''
+    ): Promise<TagDTO | null> {
+      const segments = rawName.split('/').map((s) => s.trim()).filter((s) => s.length > 0)
+      if (segments.length === 0) return null
+      if (segments.some((s) => /\s/.test(s))) {
+        useNotificationStore().push('Tags dürfen keine Leerzeichen enthalten.', 'error', 6000)
+        return null
+      }
+      let parent = parentId
+      let leaf: TagDTO | null = null
+      for (let i = 0; i < segments.length; i++) {
+        const seg = segments[i]
+        const existing = this.tags.find((t) => t.tag.toLowerCase() === seg.toLowerCase())
+        if (existing) {
+          parent = existing.id
+          leaf = existing
+          continue
+        }
+        const created = await this.createTag(seg, parent, i === segments.length - 1 ? description : '')
+        if (!created) return null
+        parent = created.id
+        leaf = created
+      }
+      return leaf
+    },
+
+    /**
      * Tag einem Item zuordnen (optimistisch). Exklusivität: bereits
      * zugewiesene Vorfahren oder Nachfahren desselben Astes werden entfernt,
      * da der spezifischste Tag die übrigen Ebenen bereits impliziert.
