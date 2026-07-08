@@ -2,9 +2,8 @@
   <div class="adb-structure-container">
     <div class="adb-structure-header">
       <span class="text-uppercase text-caption font-weight-bold">Struktur</span>
-      <AdbTagFilter />
       <span
-        v-if="store.hasActiveFilters"
+        v-if="store.hasActiveFilters || store.tagFilter"
         class="text-caption text-disabled"
       >
         (gefiltert)
@@ -75,7 +74,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import AdbTreeItem from './components/AdbTreeItem.vue'
-import AdbTagFilter from './components/AdbTagFilter.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
 import { getInnerItem } from '@/lib/types'
 import type { ItemDTO } from '@/feature/aufgabendatenbank/api-adapter.types'

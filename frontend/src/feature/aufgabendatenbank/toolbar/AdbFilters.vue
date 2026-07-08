@@ -40,20 +40,12 @@
       @update:model-value="store.setFilterItemTypeId($event ?? null)"
     />
 
-    <v-text-field
-      v-model="localTag"
-      density="compact"
-      variant="outlined"
-      placeholder="Tag"
-      prepend-inner-icon="mdi-tag"
-      hide-details
-      clearable
-      class="adb-filter-tag"
-      @update:model-value="store.setFilterTag($event ?? '')"
-    />
+    <div class="adb-filter-tag-tree">
+      <AdbTagFilter />
+    </div>
 
     <v-btn
-      v-if="store.hasActiveFilters"
+      v-if="store.hasActiveFilters || store.tagFilter"
       icon="mdi-close"
       variant="text"
       density="compact"
@@ -67,6 +59,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import AdbTagFilter from '../structure/components/AdbTagFilter.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
 
 const store = useExerciseStore()
@@ -74,7 +67,6 @@ const store = useExerciseStore()
 const localSearch = ref(store.searchQuery)
 const localAuthorId = ref<string | null>(store.filterAuthorId)
 const localItemTypeId = ref<string | null>(store.filterItemTypeId)
-const localTag = ref(store.filterTag)
 
 const authorItems = computed(() =>
   store.authors.map((a) => ({
@@ -104,9 +96,9 @@ function clearAll() {
   localSearch.value = ''
   localAuthorId.value = null
   localItemTypeId.value = null
-  localTag.value = ''
   lastSearch = ''
   store.clearFilters()
+  store.setTagFilter(null)
 }
 </script>
 
@@ -131,9 +123,13 @@ function clearAll() {
   min-width: 120px;
 }
 
-.adb-filter-tag {
-  max-width: 140px;
-  min-width: 100px;
+.adb-filter-tag-tree {
+  min-width: 180px;
+  max-width: 260px;
+}
+
+.adb-filter-tag-tree :deep(.tag-filter-field) {
+  margin-top: 0;
 }
 
 .adb-filter-clear {
