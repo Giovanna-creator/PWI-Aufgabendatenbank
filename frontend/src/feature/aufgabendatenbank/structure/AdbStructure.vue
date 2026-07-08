@@ -2,19 +2,7 @@
   <div class="adb-structure-container">
     <div class="adb-structure-header">
       <span class="text-uppercase text-caption font-weight-bold">Struktur</span>
-      <v-select
-        :model-value="store.tagFilter"
-        :items="store.tagOptions"
-        item-title="path"
-        item-value="id"
-        label="Filtern nach Tag"
-        variant="outlined"
-        density="compact"
-        hide-details
-        clearable
-        class="tag-filter"
-        @update:model-value="(v) => store.setTagFilter(v ?? null)"
-      />
+      <AdbTagFilter />
     </div>
     <div class="adb-structure-content">
       <v-list
@@ -34,6 +22,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import AdbTreeItem from './components/AdbTreeItem.vue'
+import AdbTagFilter from './components/AdbTagFilter.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
 
 const store = useExerciseStore()

@@ -207,6 +207,10 @@ export class AdbApiService implements ApiAdapter {
     return data
   }
 
+  async deleteTag(tagId: string): Promise<void> {
+    await this.http.delete(`/tags/${tagId}`)
+  }
+
   async addTagToItem(itemId: string, tagId: string): Promise<void> {
     await this.http.post(`/items/${itemId}/tags`, { tagId })
   }

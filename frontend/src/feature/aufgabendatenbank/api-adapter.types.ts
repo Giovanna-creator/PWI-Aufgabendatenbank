@@ -200,6 +200,7 @@ export interface ApiAdapter {
   // Tags (hierarchisch)
   getTags(): Promise<TagDTO[]>
   createTag(payload: { tag: string; description: string | null; parentTagId: string | null }): Promise<TagDTO>
+  deleteTag(tagId: string): Promise<void>
   addTagToItem(itemId: string, tagId: string): Promise<void>
   removeTagFromItem(itemId: string, tagId: string): Promise<void>
 }

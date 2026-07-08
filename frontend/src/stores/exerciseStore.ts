@@ -25,6 +25,13 @@ import type {
   TagDTO
 } from '@/feature/aufgabendatenbank/api-adapter.types'
 
+/** Ein Knoten im hierarchischen Tag-Baum (für die Filter-Auswahl). */
+export interface TagNode {
+  id: string
+  tag: string
+  children: TagNode[]
+}
+
 // ── Default-UUIDs (identisch mit database/init/init.sql) ───────────────────────
 // Werden genutzt, solange der Benutzer im UI keine eigene Auswahl trifft.
 
@@ -218,7 +225,7 @@ export const useExerciseStore = defineStore('exercise', {
           const parentId = cur.parentTagId
           cur = parentId ? this.tags.find((t) => t.id === parentId) : undefined
         }
-        return parts.join(' / ')
+        return parts.join('/')
       }
     },
 
@@ -227,6 +234,25 @@ export const useExerciseStore = defineStore('exercise', {
       return this.tags
         .map((t) => ({ id: t.id, path: this.tagPath(t.id) }))
         .sort((a, b) => a.path.localeCompare(b.path))
+    },
+
+    /** Hierarchischer Tag-Baum (nur Wurzeln, mit verschachtelten Kindern). */
+    tagTree(): TagNode[] {
+      const byId = new Map<string, TagNode>()
+      for (const t of this.tags) byId.set(t.id, { id: t.id, tag: t.tag, children: [] })
+      const roots: TagNode[] = []
+      for (const t of this.tags) {
+        const node = byId.get(t.id)!
+        const parent = t.parentTagId ? byId.get(t.parentTagId) : undefined
+        if (parent) parent.children.push(node)
+        else roots.push(node)
+      }
+      const sortRec = (nodes: TagNode[]) => {
+        nodes.sort((a, b) => a.tag.localeCompare(b.tag))
+        for (const n of nodes) sortRec(n.children)
+      }
+      sortRec(roots)
+      return roots
     },
 
     /** Ein Tag plus alle seine Nachfahren (für den vererbenden Filter). */
@@ -374,14 +400,38 @@ export const useExerciseStore = defineStore('exercise', {
       }
     },
 
-    /** Tag einem Item zuordnen (optimistisch, Sync im Hintergrund). */
+    /**
+     * Tag einem Item zuordnen (optimistisch). Exklusivität: bereits
+     * zugewiesene Vorfahren oder Nachfahren desselben Astes werden entfernt,
+     * da der spezifischste Tag die übrigen Ebenen bereits impliziert.
+     */
     assignTagToItem(item: Item, tagId: string) {
       if (!tagId || item.tags.includes(tagId)) return
+      const related = this._relatedTagIds(tagId)
+      for (const existing of [...item.tags]) {
+        if (related.has(existing)) this.removeTagFromItem(item, existing)
+      }
       item.tags.push(tagId)
       _adapter?.addTagToItem(item.id, tagId).catch((e) => {
         item.tags = item.tags.filter((t) => t !== tagId)
         this._notifyError(e)
       })
+    },
+
+    /** Vorfahren + Nachfahren eines Tags (ohne den Tag selbst). */
+    _relatedTagIds(tagId: string): Set<string> {
+      const related = new Set<string>()
+      let cur = this.tags.find((t) => t.id === tagId)
+      let guard = 0
+      while (cur?.parentTagId && guard++ < 50) {
+        const pid: string = cur.parentTagId
+        related.add(pid)
+        cur = this.tags.find((t) => t.id === pid)
+      }
+      for (const id of this.descendantTagIds(tagId)) {
+        if (id !== tagId) related.add(id)
+      }
+      return related
     },
 
     /** Tag-Zuordnung von einem Item entfernen (optimistisch). */
@@ -397,6 +447,38 @@ export const useExerciseStore = defineStore('exercise', {
     /** Aktiven Tag-Filter setzen (null = aus). */
     setTagFilter(tagId: string | null) {
       this.tagFilter = tagId
+    },
+
+    /**
+     * Einen Tag vollständig löschen. Backend + Datenbank räumen die Folgen auf
+     * (Unter-Tags werden zu Wurzel-Tags, Zuordnungen verschwinden). Der lokale
+     * Zustand wird passend nachgezogen.
+     */
+    async deleteTag(tagId: string) {
+      if (!_adapter) return
+      try {
+        await _adapter.deleteTag(tagId)
+        // Kinder zu Wurzeln machen (parentTagId === tagId -> null)
+        this.tags.forEach((t) => {
+          if (t.parentTagId === tagId) t.parentTagId = null
+        })
+        this.tags = this.tags.filter((t) => t.id !== tagId)
+        this._stripTagFromAllItems(tagId)
+        if (this.tagFilter === tagId) this.tagFilter = null
+      } catch (e) {
+        this._notifyError(e)
+      }
+    },
+
+    /** Entfernt eine Tag-ID aus allen Items im Baum (nach dem Löschen). */
+    _stripTagFromAllItems(tagId: string) {
+      const walk = (items: Item[]) => {
+        for (const it of items) {
+          it.tags = it.tags.filter((t) => t !== tagId)
+          if (it.items) walk(it.items.map((ci) => ci.item))
+        }
+      }
+      walk(this.rootItems)
     },
 
     // ── Initialisation (progressive loading) ──────────────────────────────────

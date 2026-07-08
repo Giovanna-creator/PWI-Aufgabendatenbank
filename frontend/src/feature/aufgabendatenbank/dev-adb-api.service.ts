@@ -542,6 +542,10 @@ export class DevAdbApiService implements ApiAdapter {
     return { id: crypto.randomUUID(), tag: payload.tag, description: payload.description, parentTagId: payload.parentTagId }
   }
 
+  async deleteTag(tagId: string): Promise<void> {
+    log('DELETE', `/api/tags/${tagId}`)
+  }
+
   async addTagToItem(itemId: string, tagId: string): Promise<void> {
     log('POST', `/api/items/${itemId}/tags`, { tagId })
   }

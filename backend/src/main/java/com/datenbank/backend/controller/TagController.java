@@ -4,7 +4,9 @@ import com.datenbank.backend.entity.Tag;
 import com.datenbank.backend.repository.TagRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -54,6 +56,20 @@ public class TagController {
         }
         Tag saved = tagRepository.save(new Tag(body.tag().trim(), body.description(), parent));
         return toDto(saved);
+    }
+
+    /**
+     * Löscht einen Tag. Die Datenbank kümmert sich um die Folgen:
+     * Unter-Tags werden zu obersten Tags (parent_tag_id ON DELETE SET NULL),
+     * Zuordnungen zu Aufgaben/Inhalten werden entfernt (ON DELETE CASCADE).
+     */
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteTag(@PathVariable UUID id) {
+        if (!tagRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Tag nicht gefunden");
+        }
+        tagRepository.deleteById(id);
     }
 
     private static TagDto toDto(Tag t) {

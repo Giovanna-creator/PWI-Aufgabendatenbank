@@ -11,7 +11,7 @@
         class="tag-chip"
         @click:close="store.removeTagFromItem(item, tagId)"
       >
-        {{ store.tagPath(tagId) }}
+        #{{ store.tagPath(tagId) }}
       </v-chip>
       <span
         v-if="!item.tags.length"
@@ -19,23 +19,26 @@
       >Keine Tags</span>
     </div>
 
-    <div class="tags-actions">
-      <v-select
-        :model-value="null"
-        :items="availableTags"
-        item-title="path"
-        item-value="id"
-        label="Tag hinzufügen"
-        variant="outlined"
-        density="compact"
-        hide-details
-        class="tags-add"
-        @update:model-value="onAdd"
+    <div
+      v-if="store.tagTree.length"
+      class="tags-tree"
+    >
+      <AdbTagCheckNode
+        v-for="node in store.tagTree"
+        :key="node.id"
+        :node="node"
+        :depth="0"
+        :assigned="item.tags"
+        @toggle="onToggle"
       />
+    </div>
+
+    <div class="tags-actions">
       <v-btn
         variant="tonal"
         color="primary"
         prepend-icon="mdi-plus"
+        size="small"
         class="tags-new-btn"
         @click="dialog = true"
       >
@@ -106,8 +109,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import type { Item } from '@/lib/types'
+import AdbTagCheckNode from './AdbTagCheckNode.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
 
 const props = defineProps<{ item: Item }>()
@@ -118,13 +122,10 @@ const name = ref('')
 const parentId = ref<string | null>(null)
 const description = ref('')
 
-// Nur Tags anbieten, die noch nicht zugewiesen sind.
-const availableTags = computed(() =>
-  store.tagOptions.filter((o) => !props.item.tags.includes(o.id))
-)
-
-function onAdd(tagId: string | null) {
-  if (tagId) store.assignTagToItem(props.item, tagId)
+/** Häkchen an/aus -> Tag zuweisen bzw. entfernen (Exklusivität regelt der Store). */
+function onToggle(tagId: string, value: boolean) {
+  if (value) store.assignTagToItem(props.item, tagId)
+  else store.removeTagFromItem(props.item, tagId)
 }
 
 function close() {
@@ -167,14 +168,20 @@ async function confirm() {
   font-size: 0.85rem;
 }
 
+.tags-tree {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  padding: 4px 2px;
+  margin-bottom: 10px;
+  background-color: #232323;
+}
+
 .tags-actions {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.tags-add {
-  flex: 1 1 auto;
 }
 
 .tags-new-btn {
