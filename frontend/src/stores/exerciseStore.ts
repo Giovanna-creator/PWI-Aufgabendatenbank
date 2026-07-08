@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { validateTreeData } from '@/feature/aufgabendatenbank/validation'
 import { useNotificationStore } from '@/stores/useNotificationStore'
+import { ensurePurposeInXml, removePurposeFromXml, splitPurposeInXml, unsplitPurposeFromXml, escapeRegex, escapeXml } from '@/feature/aufgabendatenbank/representation/templateXml'
 import {
   type Item,
   type Collection,
@@ -22,7 +23,8 @@ import type {
   ItemTypeDTO,
   ContentTypeDTO,
   ValidatorDTO,
-  TagDTO
+  TagDTO,
+  ReprTemplateDTO
 } from '@/feature/aufgabendatenbank/api-adapter.types'
 
 /** Ein Knoten im hierarchischen Tag-Baum (für die Filter-Auswahl). */
@@ -76,6 +78,7 @@ function toFullContent(dto: ContentDTO): Content {
       jsonContent = { text: dto.jsonSerializedContent }
     }
   }
+  const mime = dto.blobMimeType ?? ''
   return {
     id: dto.itemContentId,
     license: dto.licenseName ?? null,
@@ -84,7 +87,8 @@ function toFullContent(dto: ContentDTO): Content {
     tags: dto.tagIds,
     purpose: dto.purpose ?? '',
     jsonContent,
-    blobContent: dto.hasBlobContent ? '(binary)' : '',
+    blobContent: dto.hasBlobContent ? (mime.startsWith('image/') ? '(image)' : '(binary)') : '',
+    blobMimeType: dto.blobMimeType ?? '',
     authorId: dto.authorId ?? null,
     licenseId: dto.licenseId ?? null,
     contentTypeId: dto.itemContentTypeId ?? null
@@ -143,6 +147,8 @@ interface ExerciseState {
   // Hierarchische Tags + aktiver Tag-Filter (null = kein Filter)
   tags: TagDTO[]
   tagFilter: string | null
+  // Templates für die Darstellung der Contents
+  templates: ReprTemplateDTO[]
   // Erstellungs-Dialog (von Toolbar und Collection-Kontextmenü geteilt)
   createDialogOpen: boolean
   createDialogTarget: Collection | null
@@ -151,6 +157,9 @@ interface ExerciseState {
   selectedLicenseId: string | null
   selectedItemTypeId: string | null
   selectedContentTypeId: string | null
+  // Aktuelle Live-XML aus dem Editor, damit _getTemplateXml / _ensurePurpose / _removePurpose
+  // gegen die aktuellste Version mergen und nicht gegen eine veraltete persisted template.
+  liveTemplateXml: string | null
 }
 
 // ── Store ─────────────────────────────────────────────────────────────────────
@@ -170,13 +179,15 @@ export const useExerciseStore = defineStore('exercise', {
     contentTypes: [],
     tags: [],
     tagFilter: null,
+    templates: [],
     createDialogOpen: false,
     createDialogTarget: null,
     allValidators: [],
     selectedAuthorId: null,
     selectedLicenseId: null,
     selectedItemTypeId: null,
-    selectedContentTypeId: null
+    selectedContentTypeId: null,
+    liveTemplateXml: null
   }),
 
   getters: {
@@ -282,6 +293,12 @@ export const useExerciseStore = defineStore('exercise', {
       if (!this.tagFilter) return this.rootItems
       const wanted = this.descendantTagIds(this.tagFilter)
       return this.rootItems.filter((it) => it.tags.some((tg) => wanted.has(tg)))
+    },
+
+    templateById(): (id: string | null) => string | null {
+      const map: Record<string, string | null> = {}
+      for (const t of this.templates) map[t.id] = t.template
+      return (id: string | null) => (id ? map[id] ?? null : null)
     }
   },
 
@@ -317,6 +334,15 @@ export const useExerciseStore = defineStore('exercise', {
         this.itemTypes = itemTypes
         this.contentTypes = contentTypes
         this.tags = tags
+      } catch (e) {
+        this._notifyError(e)
+      }
+    },
+
+    async loadRepresentationTemplates() {
+      if (!_adapter) return
+      try {
+        this.templates = await _adapter.getRepresentationTemplates()
       } catch (e) {
         this._notifyError(e)
       }
@@ -544,6 +570,7 @@ export const useExerciseStore = defineStore('exercise', {
     // ── Selection ─────────────────────────────────────────────────────────────
 
     selectItem(item: TreeItem) {
+      this.liveTemplateXml = null
       this.selectedItem = item
       this.variants = []
       const inner = getInnerItem(item)
@@ -552,6 +579,10 @@ export const useExerciseStore = defineStore('exercise', {
         const baseId = inner.rootItemId ?? inner.id
         this.loadVariants(baseId)
       }
+    },
+
+    setLiveTemplateXml(xml: string | null) {
+      this.liveTemplateXml = xml
     },
 
     async loadItemContent(itemId: string) {
@@ -683,6 +714,7 @@ export const useExerciseStore = defineStore('exercise', {
         contentTypeId
       }
       inner.contents.push(content)
+      this._ensurePurposeInTemplateXml(content.purpose)
       _adapter?.createContent(inner.id, {
         licenseId,
         itemContentTypeId: contentTypeId,
@@ -697,8 +729,10 @@ export const useExerciseStore = defineStore('exercise', {
     removeContentFromSelectedItem(index: number) {
       const inner = this.selectedInnerItem
       if (!inner || !inner.contents[index]) return
+      const removedPurpose = inner.contents[index].purpose
       const removedId = inner.contents[index].id
       inner.contents.splice(index, 1)
+      this._removePurposeFromTemplateXml(removedPurpose)
       if (removedId) {
         _adapter?.deleteContent(removedId).catch((e) => this._notifyError(e))
       }
@@ -722,7 +756,15 @@ export const useExerciseStore = defineStore('exercise', {
       const inner = this.selectedInnerItem
       if (!inner || !inner.contents[index]) return
       const content = inner.contents[index]
+      const oldPurpose = content.purpose
       content.purpose = purpose
+      const xml = this._getTemplateXml()
+      if (xml && xml.includes(`<purpose>${oldPurpose}</purpose>`)) {
+        this._saveTemplateXml(xml.replace(
+          new RegExp(`<purpose>${escapeRegex(oldPurpose)}</purpose>`, 'g'),
+          `<purpose>${purpose}</purpose>`
+        ))
+      }
       _adapter?.updateContent(content.id ?? '', {
         licenseId: content.licenseId ?? this.defaultLicenseId,
         itemContentTypeId: content.contentTypeId ?? this.defaultContentTypeId,
@@ -771,6 +813,89 @@ export const useExerciseStore = defineStore('exercise', {
       } catch (e) {
         this._notifyError(e)
       }
+    },
+
+    getBlobUrl(contentId: string): string {
+      if (!_adapter) return ''
+      return _adapter.getBlobUrl(contentId)
+    },
+
+    // ── Template XML Actions ─────────────────────────────────────────────────
+
+    _getTemplateXml(): string | null {
+      if (this.liveTemplateXml) return this.liveTemplateXml
+      const item = this.selectedInnerItem
+      if (!item) return null
+      const stored = this.templateById(item.representationTemplate)
+      if (stored) return stored
+      if (item.contents.length === 0) return '<layout>\n</layout>'
+      const purposes = item.contents.map(c => `  <purpose>${escapeXml(c.purpose)}</purpose>`).join('\n')
+      return `<layout>\n${purposes}\n</layout>`
+    },
+
+    async _saveTemplateXml(xml: string) {
+      const item = this.selectedInnerItem
+      if (!item) return
+
+      // Local save — update in-place to keep templateById lookup consistent
+      const localId = item.representationTemplate ?? '_' + Date.now()
+      const existing = this.templates.find(t => t.id === item.representationTemplate)
+      if (existing) {
+        existing.template = xml
+      } else {
+        this.templates.push({ id: localId, template: xml })
+      }
+      item.representationTemplate = localId
+
+      // Backend persist
+      try {
+        if (localId.startsWith('_')) {
+          const created = await _adapter!.createRepresentationTemplate({ template: xml })
+          // Update in-place so templateById never sees a gap
+          const temp = this.templates.find(t => t.id === localId)
+          if (temp) {
+            temp.id = created.id
+            temp.template = created.template
+          } else {
+            this.templates.push({ id: created.id, template: created.template })
+          }
+          this.updateItemMeta(item, { itemTemplateId: created.id })
+        } else {
+          await _adapter!.updateRepresentationTemplate(localId, { template: xml })
+        }
+      } catch (e) {
+        this._notifyError(e)
+      }
+    },
+
+    _ensurePurposeInTemplateXml(purpose: string) {
+      const xml = this._getTemplateXml()
+      if (!xml) return
+      this._saveTemplateXml(ensurePurposeInXml(xml, purpose))
+    },
+
+    _removePurposeFromTemplateXml(purpose: string) {
+      const xml = this._getTemplateXml()
+      if (!xml) return
+      this._saveTemplateXml(removePurposeFromXml(xml, purpose))
+    },
+
+    _splitPurposeInTemplateXml(purpose: string) {
+      const xml = this._getTemplateXml()
+      if (!xml) return
+      this._saveTemplateXml(splitPurposeInXml(xml, purpose))
+    },
+
+    _unsplitPurposeFromTemplateXml(purpose: string) {
+      const xml = this._getTemplateXml()
+      if (!xml) return
+      this._saveTemplateXml(unsplitPurposeFromXml(xml, purpose))
+    },
+
+    saveEditedTemplateXml(xml: string) {
+      const item = this.selectedInnerItem
+      if (!item) return
+      this._saveTemplateXml(xml)
     },
 
     // ── Variants ────────────────────────────────────────────────────────────────
@@ -1029,12 +1154,12 @@ export const useExerciseStore = defineStore('exercise', {
      * editor dropdowns. Updates the local item (incl. display labels) and
      * persists via PUT /items/{id}.
      */
-    updateItemMeta(item: Item, meta: { authorId?: string; licenseId?: string; itemTypeId?: string }) {
+    updateItemMeta(item: Item, meta: { authorId?: string; licenseId?: string; itemTypeId?: string; itemTemplateId?: string }) {
       if (meta.authorId !== undefined) item.authorId = meta.authorId
       if (meta.licenseId !== undefined) item.licenseId = meta.licenseId
       if (meta.itemTypeId !== undefined) item.itemTypeId = meta.itemTypeId
+      if (meta.itemTemplateId !== undefined) item.representationTemplate = meta.itemTemplateId
 
-      // Anzeige-Labels mitziehen, damit die UI ohne Reload stimmt
       const author = this.authors.find((a) => a.id === item.authorId)
       if (author) item.author = author.descriptor
       const license = this.licenses.find((l) => l.id === item.licenseId)
@@ -1046,6 +1171,7 @@ export const useExerciseStore = defineStore('exercise', {
         authorId: item.authorId ?? this.defaultAuthorId,
         licenseId: item.licenseId ?? this.defaultLicenseId,
         itemTypeId: item.itemTypeId ?? this.defaultItemTypeId,
+        itemTemplateId: item.representationTemplate ?? null,
         rootItemId: item.rootItemId ?? null
       }).catch((e) => this._notifyError(e))
     },

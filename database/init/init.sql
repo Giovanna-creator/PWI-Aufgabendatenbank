@@ -230,6 +230,11 @@ INSERT INTO item_type (item_type_id, item_type_name, description) VALUES
     ('e0000000-0000-0000-0000-000000000003', 'Multiple-Choice',  'Auswahl der richtigen Antwort(en) aus mehreren Optionen'),
     ('e0000000-0000-0000-0000-000000000004', 'Freitext',         'Offene Textantwort');
 
+INSERT INTO item_representation_template (template) VALUES
+  ('<layout><name>Standard-Reihenfolge</name><purpose>Aufgabenstellung</purpose><purpose>Hinweis</purpose><purpose>L\u00f6sung</purpose></layout>'),
+  ('<layout><name>Aufgabe+L\u00f6sung</name><purpose>Aufgabenstellung</purpose><purpose>L\u00f6sung</purpose></layout>'),
+  ('<layout><name>L\u00f6sung zuerst</name><purpose>L\u00f6sung</purpose><purpose>Aufgabenstellung</purpose></layout>');
+
 INSERT INTO item_content_types (item_type_id, item_content_type_id) VALUES
     ('e0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001'),
     ('e0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000002'),

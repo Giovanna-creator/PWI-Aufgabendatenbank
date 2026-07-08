@@ -9,6 +9,7 @@ export interface ContentDTO {
   purpose: string | null
   jsonSerializedContent: string | null
   hasBlobContent: boolean
+  blobMimeType: string | null
   tagIds: string[]
   createdAt: string
   updatedAt: string
@@ -81,6 +82,11 @@ export interface TagDTO {
   tag: string
   description: string | null
   parentTagId: string | null
+}
+
+export interface ReprTemplateDTO {
+  id: string
+  template: string
 }
 
 export interface CreateItemPayload {
@@ -180,6 +186,12 @@ export interface ApiAdapter {
   createContentType(payload: { name: string; description: string | null }): Promise<ContentTypeDTO>
 
   getItemsByRootId(rootItemId: string): Promise<ItemDTO[]>
+
+  // ── Representation Templates ───────────────────────────────────────────
+
+  getRepresentationTemplates(): Promise<ReprTemplateDTO[]>
+  createRepresentationTemplate(payload: { template: string }): Promise<ReprTemplateDTO>
+  updateRepresentationTemplate(id: string, payload: { template: string }): Promise<ReprTemplateDTO>
 
   // ── Validators ───────────────────────────────────────────────────────
 
