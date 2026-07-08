@@ -63,14 +63,24 @@ public class ItemController {
     }
 
     /**
-     * GET /api/items              → alle Items
-     * GET /api/items?root=true    → nur Root-Items
-     * GET /api/items?rootItemId=5 → Kinder von Item 5
+     * GET /api/items                        → alle Items
+     * GET /api/items?root=true              → nur Root-Items
+     * GET /api/items?rootItemId=5           → Kinder von Item 5
+     * GET /api/items?search=&authorId=&itemTypeId=&tag= → gefilterte Items
      */
     @GetMapping
     public ResponseEntity<List<ItemResponseDto>> getAll(
             @RequestParam(required = false) Boolean root,
-            @RequestParam(required = false) UUID rootItemId) {
+            @RequestParam(required = false) UUID rootItemId,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) UUID authorId,
+            @RequestParam(required = false) UUID itemTypeId,
+            @RequestParam(required = false) String tag) {
+
+        // Such-/Filterparameter haben Vorrang
+        if (hasText(search) || authorId != null || itemTypeId != null || hasText(tag)) {
+            return ResponseEntity.ok(itemService.searchItems(search, authorId, itemTypeId, tag));
+        }
 
         // root=true hat Vorrang
         if (Boolean.TRUE.equals(root)) {
@@ -84,6 +94,10 @@ public class ItemController {
 
         // Alle Items
         return ResponseEntity.ok(itemService.getAllItems());
+    }
+
+    private static boolean hasText(String s) {
+        return s != null && !s.trim().isEmpty();
     }
 
     // =========================================================================

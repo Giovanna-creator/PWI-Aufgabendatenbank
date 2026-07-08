@@ -6,9 +6,16 @@ import com.datenbank.backend.dto.ItemResponseDto;
 import com.datenbank.backend.dto.ValidatorResponseDto;
 import com.datenbank.backend.entity.*;
 import com.datenbank.backend.repository.*;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
@@ -163,6 +170,56 @@ public class ItemService {
     @Transactional(readOnly = true)
     public List<ItemResponseDto> getItemsByRootId(UUID rootItemId) {
         return itemRepository.findByRootItem_ItemId(rootItemId).stream()
+                .map(this::convertToResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Durchsucht und filtert Items nach verschiedenen Kriterien.
+     * Alle Parameter sind optional — nur gesetzte Filter werden angewendet.
+     */
+    @Transactional(readOnly = true)
+    public List<ItemResponseDto> searchItems(String search, UUID authorId, UUID itemTypeId, String tag) {
+        Specification<Item> spec = Specification.where(null);
+
+        if (StringUtils.hasText(search)) {
+            spec = spec.and((root, query, cb) -> {
+                Subquery<Long> subquery = query.subquery(Long.class);
+                Root<ItemContents> icRoot = subquery.from(ItemContents.class);
+                var cntJoin = icRoot.join("itemContent");
+
+                subquery.select(cb.literal(1L));
+                subquery.where(
+                    cb.equal(icRoot.get("item"), root),
+                    cb.like(cb.lower(cb.function("text", String.class,
+                            cntJoin.get("jsonSerializedContent"))),
+                            "%" + search.toLowerCase() + "%")
+                );
+
+                return cb.exists(subquery);
+            });
+        }
+
+        if (authorId != null) {
+            spec = spec.and((root, query, cb) ->
+                cb.equal(root.get("author").get("authorId"), authorId));
+        }
+
+        if (itemTypeId != null) {
+            spec = spec.and((root, query, cb) ->
+                cb.equal(root.get("itemType").get("itemTypeId"), itemTypeId));
+        }
+
+        if (StringUtils.hasText(tag)) {
+            spec = spec.and((root, query, cb) -> {
+                query.distinct(true);
+                Join<Item, Tag> tagJoin = root.join("tags", JoinType.LEFT);
+                return cb.like(cb.lower(tagJoin.get("tag")),
+                               "%" + tag.toLowerCase() + "%");
+            });
+        }
+
+        return itemRepository.findAll(spec).stream()
                 .map(this::convertToResponseDto)
                 .collect(Collectors.toList());
     }

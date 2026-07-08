@@ -134,8 +134,17 @@ export interface CreateValidatorPayload {
   validator: string
 }
 
+export interface SearchParams {
+  search?: string
+  authorId?: string
+  itemTypeId?: string
+  tag?: string
+}
+
 export interface ApiAdapter {
   getRootItems(): Promise<ItemDTO[]>
+
+  searchItems(params: SearchParams): Promise<ItemDTO[]>
 
   getCollectionItems(collectionId: string): Promise<CollectionItemDTO[]>
 
