@@ -446,13 +446,20 @@ export const useExerciseStore = defineStore('exercise', {
       let leaf: TagDTO | null = null
       for (let i = 0; i < segments.length; i++) {
         const seg = segments[i]
+        const isLeaf = i === segments.length - 1
         const existing = this.tags.find((t) => t.tag.toLowerCase() === seg.toLowerCase())
         if (existing) {
+          // Ein bereits existierender Blatt-Tag ist ein Duplikat -> Fehler.
+          // Nur Zwischenebenen (Vorfahren) werden wiederverwendet.
+          if (isLeaf) {
+            useNotificationStore().push(`Tag „${seg}" existiert bereits.`, 'error', 6000)
+            return null
+          }
           parent = existing.id
           leaf = existing
           continue
         }
-        const created = await this.createTag(seg, parent, i === segments.length - 1 ? description : '')
+        const created = await this.createTag(seg, parent, isLeaf ? description : '')
         if (!created) return null
         parent = created.id
         leaf = created
