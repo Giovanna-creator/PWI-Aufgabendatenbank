@@ -23,8 +23,16 @@ import type {
   ItemTypeDTO,
   ContentTypeDTO,
   ValidatorDTO,
+  TagDTO,
   ReprTemplateDTO
 } from '@/feature/aufgabendatenbank/api-adapter.types'
+
+/** Ein Knoten im hierarchischen Tag-Baum (für die Filter-Auswahl). */
+export interface TagNode {
+  id: string
+  tag: string
+  children: TagNode[]
+}
 
 // ── Default-UUIDs (identisch mit database/init/init.sql) ───────────────────────
 // Werden genutzt, solange der Benutzer im UI keine eigene Auswahl trifft.
@@ -136,6 +144,9 @@ interface ExerciseState {
   licenses: LicenseDTO[]
   itemTypes: ItemTypeDTO[]
   contentTypes: ContentTypeDTO[]
+  // Hierarchische Tags + aktiver Tag-Filter (null = kein Filter)
+  tags: TagDTO[]
+  tagFilter: string | null
   // Templates für die Darstellung der Contents
   templates: ReprTemplateDTO[]
   // Erstellungs-Dialog (von Toolbar und Collection-Kontextmenü geteilt)
@@ -166,6 +177,8 @@ export const useExerciseStore = defineStore('exercise', {
     licenses: [],
     itemTypes: [],
     contentTypes: [],
+    tags: [],
+    tagFilter: null,
     templates: [],
     createDialogOpen: false,
     createDialogTarget: null,
@@ -210,6 +223,78 @@ export const useExerciseStore = defineStore('exercise', {
       return coll ? coll.order === true : false
     },
 
+    // ── Tags ──────────────────────────────────────────────────────────────────
+
+    /** Lesbarer Pfad eines Tags, z. B. "Mathematik / Analysis / Ableitungen". */
+    tagPath() {
+      return (id: string): string => {
+        const parts: string[] = []
+        let cur = this.tags.find((t) => t.id === id)
+        let guard = 0
+        while (cur && guard++ < 20) {
+          parts.unshift(cur.tag)
+          const parentId = cur.parentTagId
+          cur = parentId ? this.tags.find((t) => t.id === parentId) : undefined
+        }
+        return parts.join('/')
+      }
+    },
+
+    /** Alle Tags als { id, path } für Dropdowns, nach Pfad sortiert. */
+    tagOptions(): { id: string; path: string }[] {
+      return this.tags
+        .map((t) => ({ id: t.id, path: this.tagPath(t.id) }))
+        .sort((a, b) => a.path.localeCompare(b.path))
+    },
+
+    /** Hierarchischer Tag-Baum (nur Wurzeln, mit verschachtelten Kindern). */
+    tagTree(): TagNode[] {
+      const byId = new Map<string, TagNode>()
+      for (const t of this.tags) byId.set(t.id, { id: t.id, tag: t.tag, children: [] })
+      const roots: TagNode[] = []
+      for (const t of this.tags) {
+        const node = byId.get(t.id)!
+        const parent = t.parentTagId ? byId.get(t.parentTagId) : undefined
+        if (parent) parent.children.push(node)
+        else roots.push(node)
+      }
+      const sortRec = (nodes: TagNode[]) => {
+        nodes.sort((a, b) => a.tag.localeCompare(b.tag))
+        for (const n of nodes) sortRec(n.children)
+      }
+      sortRec(roots)
+      return roots
+    },
+
+    /** Ein Tag plus alle seine Nachfahren (für den vererbenden Filter). */
+    descendantTagIds() {
+      return (id: string): Set<string> => {
+        const ids = new Set<string>([id])
+        let added = true
+        while (added) {
+          added = false
+          for (const t of this.tags) {
+            if (t.parentTagId && ids.has(t.parentTagId) && !ids.has(t.id)) {
+              ids.add(t.id)
+              added = true
+            }
+          }
+        }
+        return ids
+      }
+    },
+
+    /**
+     * Root-Items unter Berücksichtigung des Tag-Filters. Ohne Filter alle;
+     * mit Filter nur Items, deren Tags den gewählten Tag oder einen seiner
+     * Nachfahren enthalten (Vererbung).
+     */
+    visibleRootItems(): Item[] {
+      if (!this.tagFilter) return this.rootItems
+      const wanted = this.descendantTagIds(this.tagFilter)
+      return this.rootItems.filter((it) => it.tags.some((tg) => wanted.has(tg)))
+    },
+
     templateById(): (id: string | null) => string | null {
       const map: Record<string, string | null> = {}
       for (const t of this.templates) map[t.id] = t.template
@@ -237,16 +322,18 @@ export const useExerciseStore = defineStore('exercise', {
     async loadReferenceData() {
       if (!_adapter) return
       try {
-        const [authors, licenses, itemTypes, contentTypes] = await Promise.all([
+        const [authors, licenses, itemTypes, contentTypes, tags] = await Promise.all([
           _adapter.getAuthors(),
           _adapter.getLicenses(),
           _adapter.getItemTypes(),
-          _adapter.getContentTypes()
+          _adapter.getContentTypes(),
+          _adapter.getTags()
         ])
         this.authors = authors
         this.licenses = licenses
         this.itemTypes = itemTypes
         this.contentTypes = contentTypes
+        this.tags = tags
       } catch (e) {
         this._notifyError(e)
       }
@@ -314,6 +401,151 @@ export const useExerciseStore = defineStore('exercise', {
         this._notifyError(e)
         return null
       }
+    },
+
+    // ── Tags ────────────────────────────────────────────────────────────────
+
+    /** Neues Tag anlegen (optional mit Eltern-Tag) und in die Liste aufnehmen. */
+    async createTag(
+      name: string,
+      parentTagId: string | null = null,
+      description = ''
+    ): Promise<TagDTO | null> {
+      if (!_adapter || !name.trim()) return null
+      try {
+        const dto = await _adapter.createTag({
+          tag: name.trim(),
+          description: description.trim() || null,
+          parentTagId: parentTagId || null
+        })
+        this.tags.push(dto)
+        return dto
+      } catch (e) {
+        this._notifyError(e)
+        return null
+      }
+    },
+
+    /**
+     * Erstellt einen Tag aus einem Pfad "A/B/C": bestehende Segmente werden
+     * per Name wiederverwendet, fehlende neu angelegt. Leerzeichen sind
+     * verboten (auch zwischen Wörtern). Gibt den Blatt-Tag zurück.
+     */
+    async createTagPath(
+      rawName: string,
+      parentId: string | null = null,
+      description = ''
+    ): Promise<TagDTO | null> {
+      const segments = rawName.split('/').map((s) => s.trim()).filter((s) => s.length > 0)
+      if (segments.length === 0) return null
+      if (segments.some((s) => /\s/.test(s))) {
+        useNotificationStore().push('Tags dürfen keine Leerzeichen enthalten.', 'error', 6000)
+        return null
+      }
+      let parent = parentId
+      let leaf: TagDTO | null = null
+      for (let i = 0; i < segments.length; i++) {
+        const seg = segments[i]
+        const isLeaf = i === segments.length - 1
+        const existing = this.tags.find((t) => t.tag.toLowerCase() === seg.toLowerCase())
+        if (existing) {
+          // Ein bereits existierender Blatt-Tag ist ein Duplikat -> Fehler.
+          // Nur Zwischenebenen (Vorfahren) werden wiederverwendet.
+          if (isLeaf) {
+            useNotificationStore().push(`Tag „${seg}" existiert bereits.`, 'error', 6000)
+            return null
+          }
+          parent = existing.id
+          leaf = existing
+          continue
+        }
+        const created = await this.createTag(seg, parent, isLeaf ? description : '')
+        if (!created) return null
+        parent = created.id
+        leaf = created
+      }
+      return leaf
+    },
+
+    /**
+     * Tag einem Item zuordnen (optimistisch). Exklusivität: bereits
+     * zugewiesene Vorfahren oder Nachfahren desselben Astes werden entfernt,
+     * da der spezifischste Tag die übrigen Ebenen bereits impliziert.
+     */
+    assignTagToItem(item: Item, tagId: string) {
+      if (!tagId || item.tags.includes(tagId)) return
+      const related = this._relatedTagIds(tagId)
+      for (const existing of [...item.tags]) {
+        if (related.has(existing)) this.removeTagFromItem(item, existing)
+      }
+      item.tags.push(tagId)
+      _adapter?.addTagToItem(item.id, tagId).catch((e) => {
+        item.tags = item.tags.filter((t) => t !== tagId)
+        this._notifyError(e)
+      })
+    },
+
+    /** Vorfahren + Nachfahren eines Tags (ohne den Tag selbst). */
+    _relatedTagIds(tagId: string): Set<string> {
+      const related = new Set<string>()
+      let cur = this.tags.find((t) => t.id === tagId)
+      let guard = 0
+      while (cur?.parentTagId && guard++ < 50) {
+        const pid: string = cur.parentTagId
+        related.add(pid)
+        cur = this.tags.find((t) => t.id === pid)
+      }
+      for (const id of this.descendantTagIds(tagId)) {
+        if (id !== tagId) related.add(id)
+      }
+      return related
+    },
+
+    /** Tag-Zuordnung von einem Item entfernen (optimistisch). */
+    removeTagFromItem(item: Item, tagId: string) {
+      const before = item.tags
+      item.tags = item.tags.filter((t) => t !== tagId)
+      _adapter?.removeTagFromItem(item.id, tagId).catch((e) => {
+        item.tags = before
+        this._notifyError(e)
+      })
+    },
+
+    /** Aktiven Tag-Filter setzen (null = aus). */
+    setTagFilter(tagId: string | null) {
+      this.tagFilter = tagId
+    },
+
+    /**
+     * Einen Tag vollständig löschen. Backend + Datenbank räumen die Folgen auf
+     * (Unter-Tags werden zu Wurzel-Tags, Zuordnungen verschwinden). Der lokale
+     * Zustand wird passend nachgezogen.
+     */
+    async deleteTag(tagId: string) {
+      if (!_adapter) return
+      try {
+        await _adapter.deleteTag(tagId)
+        // Kinder zu Wurzeln machen (parentTagId === tagId -> null)
+        this.tags.forEach((t) => {
+          if (t.parentTagId === tagId) t.parentTagId = null
+        })
+        this.tags = this.tags.filter((t) => t.id !== tagId)
+        this._stripTagFromAllItems(tagId)
+        if (this.tagFilter === tagId) this.tagFilter = null
+      } catch (e) {
+        this._notifyError(e)
+      }
+    },
+
+    /** Entfernt eine Tag-ID aus allen Items im Baum (nach dem Löschen). */
+    _stripTagFromAllItems(tagId: string) {
+      const walk = (items: Item[]) => {
+        for (const it of items) {
+          it.tags = it.tags.filter((t) => t !== tagId)
+          if (it.items) walk(it.items.map((ci) => ci.item))
+        }
+      }
+      walk(this.rootItems)
     },
 
     // ── Initialisation (progressive loading) ──────────────────────────────────

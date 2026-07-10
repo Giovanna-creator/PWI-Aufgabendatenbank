@@ -2,6 +2,7 @@
   <div class="adb-structure-container">
     <div class="adb-structure-header">
       <span class="text-uppercase text-caption font-weight-bold">Struktur</span>
+      <AdbTagFilter />
     </div>
     <div class="adb-structure-content">
       <v-list
@@ -10,7 +11,7 @@
       >
         <AdbTreeItem
           :items="items"
-          :is-draggable="true"
+          :is-draggable="!store.tagFilter"
           @update-items="updateRootItems"
         />
       </v-list>
@@ -21,12 +22,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import AdbTreeItem from './components/AdbTreeItem.vue'
+import AdbTagFilter from './components/AdbTagFilter.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
 
 const store = useExerciseStore()
 
-/** All root-level items visible in the tree. */
-const items = computed(() => store.rootItems)
+/** Root-level items visible in the tree (respecting the active tag filter). */
+const items = computed(() => store.visibleRootItems)
 
 /** Forward a DnD reorder of root items to the store. */
 const updateRootItems = (newItems: typeof store.rootItems) => {
@@ -53,6 +55,10 @@ const updateRootItems = (newItems: typeof store.rootItems) => {
   user-select: none;
   background-color: #252526;
   border-bottom: 1px solid #333333;
+}
+
+.tag-filter {
+  margin-top: 8px;
 }
 
 .adb-structure-content {

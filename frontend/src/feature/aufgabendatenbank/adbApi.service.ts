@@ -15,6 +15,7 @@ import type {
   ContentTypeDTO,
   ValidatorDTO,
   CreateValidatorPayload,
+  TagDTO,
   ReprTemplateDTO
 } from './api-adapter.types'
 
@@ -210,6 +211,28 @@ export class AdbApiService implements ApiAdapter {
 
   async removeValidatorFromItem(itemId: string, validatorId: string): Promise<void> {
     await this.http.delete(`/items/${itemId}/validators/${validatorId}`)
+  }
+
+  async getTags(): Promise<TagDTO[]> {
+    const { data } = await this.http.get<TagDTO[]>('/tags')
+    return data
+  }
+
+  async createTag(payload: { tag: string; description: string | null; parentTagId: string | null }): Promise<TagDTO> {
+    const { data } = await this.http.post<TagDTO>('/tags', payload)
+    return data
+  }
+
+  async deleteTag(tagId: string): Promise<void> {
+    await this.http.delete(`/tags/${tagId}`)
+  }
+
+  async addTagToItem(itemId: string, tagId: string): Promise<void> {
+    await this.http.post(`/items/${itemId}/tags`, { tagId })
+  }
+
+  async removeTagFromItem(itemId: string, tagId: string): Promise<void> {
+    await this.http.delete(`/items/${itemId}/tags/${tagId}`)
   }
 }
 

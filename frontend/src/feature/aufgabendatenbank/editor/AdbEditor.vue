@@ -18,6 +18,11 @@
           />
         </div>
 
+        <AdbTagsSection
+          v-if="inner"
+          :item="inner"
+        />
+
         <AdbContentList />
         <AdbValidatorEditor />
         <AdbVariantsPanel />
@@ -45,6 +50,7 @@ import TemplateEditorPanel from './components/TemplateEditorPanel.vue'
 import PreviewDialog from './components/PreviewDialog.vue'
 import AdbContentList from './components/AdbContentList.vue'
 import AdbValidatorEditor from './components/AdbValidatorEditor.vue'
+import AdbTagsSection from './components/AdbTagsSection.vue'
 import AdbVariantsPanel from './components/AdbVariantsPanel.vue'
 import { useExerciseStore } from '@/stores/exerciseStore'
 import { getPurposesFromXml } from '../representation/templateXml'
