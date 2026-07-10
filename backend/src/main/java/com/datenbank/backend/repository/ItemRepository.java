@@ -2,13 +2,14 @@ package com.datenbank.backend.repository;
 
 import com.datenbank.backend.entity.Item;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.UUID;
 
 @Repository
 public interface ItemRepository 
-        extends JpaRepository<Item, UUID> {
+        extends JpaRepository<Item, UUID>, JpaSpecificationExecutor<Item> {
 
     // 1.1 Filter root=true → Items ohne Parent
     List<Item> findByRootItemIsNull();

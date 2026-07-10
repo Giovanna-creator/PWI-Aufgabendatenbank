@@ -1,6 +1,7 @@
 <template>
   <div class="adb-container">
     <AdbToolbar />
+    <AdbFilters />
     <div
       ref="containerRef"
       class="adb-content"
@@ -29,6 +30,7 @@ import { useExerciseStore } from '@/stores/exerciseStore'
 import AdbStructure from './structure/AdbStructure.vue'
 import AdbEditor from './editor/AdbEditor.vue'
 import AdbToolbar from './toolbar/AdbToolbar.vue'
+import AdbFilters from './toolbar/AdbFilters.vue'
 
 const store = useExerciseStore()
 const { sidebarWidth, containerRef, startResizing } = useSidebarResizer()
