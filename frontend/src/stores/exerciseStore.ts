@@ -753,9 +753,9 @@ export const useExerciseStore = defineStore('exercise', {
     /**
      * Toggle a collection's `order` flag.
      *
-     * Positions are KEPT in the data when order toggles off (the UI
-     * simply hides them). When enabling, items without a position get
-     * one assigned.
+     * When enabling, items without a position get one assigned. When
+     * disabling, positions are cleared to null to match the backend
+     * (which nulls them), so UI and DB stay in sync.
      */
     toggleCollectionOrder(collection: Collection) {
       collection.order = !collection.order
@@ -764,6 +764,12 @@ export const useExerciseStore = defineStore('exercise', {
           if (item.position == null) {
             item.position = index + 1
           }
+        })
+      } else {
+        // Backend setzt die Positionen auf NULL, wenn die Reihenfolge
+        // deaktiviert wird — lokal nachziehen, damit UI und DB nicht divergieren.
+        collection.items.forEach((item) => {
+          item.position = null
         })
       }
       if (collection.collectionId) {
@@ -1520,7 +1526,9 @@ export const useExerciseStore = defineStore('exercise', {
       this.deleteItem(collectionToDelete)
       // Enthaltene Aufgaben nicht loeschen, sondern auf die Root-Ebene heben.
       children.forEach((child) => {
-        child.rootItemId = null
+        // rootItemId NICHT anfassen: das ist der Varianten-Bezug (horizontal),
+        // orthogonal zur Kollektions-Zugehoerigkeit. Nullen wuerde die
+        // Varianten-Beziehung einer Aufgabe zerstoeren.
         if (!this.rootItems.some((ri) => ri.id === child.id)) {
           this.rootItems.push(child)
         }
