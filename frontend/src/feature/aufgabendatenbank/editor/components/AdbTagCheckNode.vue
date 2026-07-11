@@ -64,13 +64,13 @@ const checked = computed(() => props.assigned.includes(props.node.id))
 }
 
 .chevron {
-  color: #888;
+  color: var(--adb-text-tertiary);
   cursor: pointer;
   width: 18px;
   min-width: 18px;
 
   &:hover {
-    color: #ccc;
+    color: var(--adb-text-primary);
   }
 }
 
@@ -91,19 +91,19 @@ const checked = computed(() => props.assigned.includes(props.node.id))
   user-select: none;
 
   &:hover {
-    background-color: #2a2d2e;
+    background-color: var(--adb-bg-hover);
   }
 }
 
 .checkbox {
-  color: #7a7a7a;
+  color: var(--adb-text-tertiary);
 
   &.checked {
-    color: #007fd4;
+    color: var(--adb-accent);
   }
 }
 
 .tag-check-name {
-  color: #cccccc;
+  color: var(--adb-text-primary);
 }
 </style>

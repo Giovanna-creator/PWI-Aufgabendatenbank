@@ -1,0 +1,69 @@
+/* ============================================================
+   ADB Theme Variables – Dark Mode (current look)
+   ============================================================ */
+[data-theme="dark"] {
+  --adb-bg-primary: #1e1e1e;
+  --adb-bg-secondary: #252526;
+  --adb-bg-surface: #2d2d2d;
+  --adb-bg-hover: #2a2d2e;
+  --adb-bg-active: #37373d;
+  --adb-bg-field: #3c3c3c;
+  --adb-bg-card: #1e1e1e;
+  --adb-bg-dialog: #2d2d2d;
+  --adb-bg-chip: #2a2a2a;
+
+  --adb-text-primary: #cccccc;
+  --adb-text-secondary: #969696;
+  --adb-text-tertiary: #888888;
+  --adb-text-muted: #555555;
+  --adb-text-inverse: #ffffff;
+
+  --adb-border: #3c3c3c;
+  --adb-border-light: #555555;
+
+  --adb-accent: #007fd4;
+  --adb-accent-hover: #1a9aff;
+  --adb-danger: #c04040;
+  --adb-danger-hover: #e06060;
+  --adb-success: #4caf50;
+  --adb-warning: #ffc107;
+
+  --adb-icon: #888888;
+  --adb-icon-hover: #cccccc;
+  --adb-tree-connector: #5a5a5a;
+}
+
+/* ============================================================
+   ADB Theme Variables – Light Mode
+   ============================================================ */
+[data-theme="light"] {
+  --adb-bg-primary: #fafafa;
+  --adb-bg-secondary: #ffffff;
+  --adb-bg-surface: #ffffff;
+  --adb-bg-hover: #e8e8e8;
+  --adb-bg-active: #d0d0d0;
+  --adb-bg-field: #f0f0f0;
+  --adb-bg-card: #ffffff;
+  --adb-bg-dialog: #ffffff;
+  --adb-bg-chip: #e8e8e8;
+
+  --adb-text-primary: #1e1e1e;
+  --adb-text-secondary: #555555;
+  --adb-text-tertiary: #777777;
+  --adb-text-muted: #999999;
+  --adb-text-inverse: #000000;
+
+  --adb-border: #dddddd;
+  --adb-border-light: #cccccc;
+
+  --adb-accent: #007acc;
+  --adb-accent-hover: #005999;
+  --adb-danger: #d32f2f;
+  --adb-danger-hover: #b71c1c;
+  --adb-success: #388e3c;
+  --adb-warning: #f57c00;
+
+  --adb-icon: #666666;
+  --adb-icon-hover: #333333;
+  --adb-tree-connector: #bbbbbb;
+}

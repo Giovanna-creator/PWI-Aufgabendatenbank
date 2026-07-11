@@ -11,6 +11,16 @@
     </v-toolbar-title>
     <v-spacer />
     <v-btn
+      variant="text"
+      icon
+      @click="themeStore.toggle()"
+    >
+      <v-icon>{{ themeStore.isDark() ? 'mdi-white-balance-sunny' : 'mdi-moon-waning-crescent' }}</v-icon>
+      <v-tooltip activator="parent" location="bottom">
+        {{ themeStore.isDark() ? 'Helles Design' : 'Dunkles Design' }}
+      </v-tooltip>
+    </v-btn>
+    <v-btn
       v-if="isLoggedIn"
       to="/profile"
       variant="text"
@@ -134,6 +144,18 @@
         </v-tooltip>
       </v-btn>
       <v-btn
+        icon
+        @click="themeStore.toggle()"
+      >
+        <v-icon>{{ themeStore.isDark() ? 'mdi-white-balance-sunny' : 'mdi-moon-waning-crescent' }}</v-icon>
+        <v-tooltip
+          activator="parent"
+          location="bottom"
+        >
+          {{ themeStore.isDark() ? 'Helles Design' : 'Dunkles Design' }}
+        </v-tooltip>
+      </v-btn>
+      <v-btn
         v-if="isLoggedIn"
         icon
         @click="pageSettingsStore.showHeader = !pageSettingsStore.showHeader"
@@ -168,6 +190,7 @@ import IconFBS from '@/components/icons/IconFBS.vue'
 
 import { usePageSettingsStore } from '@/stores/pageSettingsStore'
 import { useAuthUserStore } from '@/stores/authUserStore'
+import { useThemeStore } from '@/stores/themeStore'
 
 import { RouterLink } from 'vue-router'
 import { computed, ref } from 'vue'
@@ -182,6 +205,7 @@ const authUserStore = useAuthUserStore()
 const isLoggedIn = computed(() => authUserStore.isLoggedIn)
 
 const pageSettingsStore = usePageSettingsStore()
+const themeStore = useThemeStore()
 
 const logout = () => {
   authUserStore.logout().then(() => {

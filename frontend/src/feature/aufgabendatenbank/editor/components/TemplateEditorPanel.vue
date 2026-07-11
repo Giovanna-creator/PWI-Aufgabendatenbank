@@ -296,7 +296,7 @@ function isHighlighted(element: DndItem): boolean {
 .template-editor-label {
   font-size: 11px;
   text-transform: uppercase;
-  color: #969696;
+  color: var(--adb-text-secondary);
   letter-spacing: 0.08em;
   user-select: none;
 }
@@ -309,12 +309,12 @@ function isHighlighted(element: DndItem): boolean {
 }
 
 .template-validation.valid {
-  color: #4caf50;
+  color: var(--adb-success);
   background: rgba(76, 175, 80, 0.1);
 }
 
 .template-validation.invalid {
-  color: #ff7a84;
+  color: var(--adb-danger);
   background: rgba(255, 122, 132, 0.1);
 }
 
@@ -327,8 +327,8 @@ function isHighlighted(element: DndItem): boolean {
 .purpose-card {
   cursor: grab;
   user-select: none;
-  background: #2a2a2a;
-  border: 1px solid #3c3c3c;
+  background: var(--adb-bg-chip);
+  border: 1px solid var(--adb-border);
   border-radius: 6px;
   transition: border-color 0.15s, background 0.15s;
 }
@@ -338,30 +338,30 @@ function isHighlighted(element: DndItem): boolean {
 }
 
 .purpose-card:hover {
-  background: #303030;
-  border-color: #555;
+  background: var(--adb-bg-hover);
+  border-color: var(--adb-border-light);
 }
 
 .purpose-card.split {
-  border-left: 3px solid #0d6efd;
-  background: #262a30;
+  border-left: 3px solid var(--adb-accent);
+  background: var(--adb-bg-surface);
 }
 
 .purpose-card.split:hover {
-  background: #2b3038;
+  background: var(--adb-bg-hover);
 }
 
 .purpose-card.highlighted {
-  border-color: #ffc107;
+  border-color: var(--adb-warning);
   box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.35);
 }
 
 .purpose-card.highlighted.split {
-  border-left-color: #ffc107;
+  border-left-color: var(--adb-warning);
 }
 
 .purpose-card.drag-active .drop-zone {
-  border-color: #0d6efd;
+  border-color: var(--adb-accent);
   background: rgba(13, 110, 253, 0.08);
 }
 
@@ -388,7 +388,7 @@ function isHighlighted(element: DndItem): boolean {
 .split-gap {
   width: 1px;
   align-self: stretch;
-  background: #3c3c3c;
+  background: var(--adb-border);
   flex-shrink: 0;
 }
 
@@ -401,13 +401,13 @@ function isHighlighted(element: DndItem): boolean {
 }
 
 .drop-zone:hover {
-  border-color: #0d6efd;
+  border-color: var(--adb-accent);
   background: rgba(13, 110, 253, 0.06);
 }
 
 .drop-label {
   font-size: 11px;
-  color: #888;
+  color: var(--adb-text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   cursor: pointer;
@@ -417,7 +417,7 @@ function isHighlighted(element: DndItem): boolean {
 .card-name {
   flex: 1;
   font-size: 13px;
-  color: #d4d4d4;
+  color: var(--adb-text-primary);
   font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
   min-width: 0;
   overflow: hidden;
@@ -426,7 +426,7 @@ function isHighlighted(element: DndItem): boolean {
 }
 
 .card-menu {
-  color: #555 !important;
+  color: var(--adb-text-muted) !important;
   opacity: 0;
   transition: opacity 0.15s, color 0.15s;
   flex-shrink: 0;
@@ -437,36 +437,36 @@ function isHighlighted(element: DndItem): boolean {
 }
 
 .card-menu:hover {
-  color: #999 !important;
+  color: var(--adb-text-tertiary) !important;
 }
 
 .purpose-ghost {
   opacity: 0.3;
-  border: 2px dashed #007fd4;
+  border: 2px dashed var(--adb-accent);
   background: rgba(0, 127, 212, 0.08);
   border-radius: 6px;
 }
 
 .template-edit-btn {
-  color: #666 !important;
+  color: var(--adb-icon) !important;
   transition: color 0.15s;
   margin-left: auto !important;
 }
 
 .template-edit-btn:hover {
-  color: #999 !important;
+  color: var(--adb-text-tertiary) !important;
 }
 
 .template-edit-btn.active {
-  color: #007fd4 !important;
+  color: var(--adb-accent) !important;
 }
 
 .template-preview-btn {
-  color: #666 !important;
+  color: var(--adb-icon) !important;
   transition: color 0.15s;
 }
 
 .template-preview-btn:hover {
-  color: #999 !important;
+  color: var(--adb-text-tertiary) !important;
 }
 </style>

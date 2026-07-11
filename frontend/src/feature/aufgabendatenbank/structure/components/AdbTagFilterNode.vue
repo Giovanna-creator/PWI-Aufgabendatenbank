@@ -65,22 +65,22 @@ const expanded = ref(false)
   display: flex;
   align-items: center;
   min-height: 28px;
-  color: #cccccc;
+  color: var(--adb-text-primary);
   font-size: 13px;
 
   &:hover {
-    background-color: #2a2d2e;
+    background-color: var(--adb-bg-hover);
   }
 }
 
 .chevron {
-  color: #888;
+  color: var(--adb-text-tertiary);
   cursor: pointer;
   width: 18px;
   min-width: 18px;
 
   &:hover {
-    color: #ccc;
+    color: var(--adb-text-primary);
   }
 }
 
@@ -98,24 +98,24 @@ const expanded = ref(false)
   user-select: none;
 
   &:hover {
-    color: #ffffff;
+    color: var(--adb-text-inverse);
   }
 
   &.active {
-    color: #007fd4;
+    color: var(--adb-accent);
     font-weight: 600;
   }
 }
 
 .tag-delete {
-  color: #7a5a5a;
+  color: var(--adb-text-tertiary);
   opacity: 0;
   cursor: pointer;
   margin-right: 6px;
   transition: opacity 0.1s;
 
   &:hover {
-    color: #e06060;
+    color: var(--adb-danger-hover);
   }
 }
 

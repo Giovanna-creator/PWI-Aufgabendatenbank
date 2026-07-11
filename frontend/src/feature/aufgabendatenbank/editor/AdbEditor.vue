@@ -137,8 +137,8 @@ watch(editedXml, (xml) => {
   width: 100%;
   border-radius: 0;
   box-shadow: none !important;
-  background-color: #1e1e1e !important;
-  color: #cccccc !important;
+  background-color: var(--adb-bg-primary) !important;
+  color: var(--adb-text-primary) !important;
 }
 
 .adb-editor-title {
@@ -146,17 +146,17 @@ watch(editedXml, (xml) => {
   font-size: 0.75rem;
   line-height: 16px;
   text-transform: uppercase;
-  color: #969696;
-  border-bottom: 1px solid #333333;
+  color: var(--adb-text-secondary);
+  border-bottom: 1px solid var(--adb-border);
   padding: 8px 16px !important;
-  background-color: #252526;
+  background-color: var(--adb-bg-secondary);
   user-select: none;
 }
 
 .adb-editor-text {
   padding: 28px 36px;
   font-size: 13px;
-  color: #cccccc;
+  color: var(--adb-text-primary);
   overflow-y: auto;
   max-height: 100%;
 }
@@ -167,12 +167,12 @@ watch(editedXml, (xml) => {
 
 :deep(.v-text-field) {
   .v-field {
-    background-color: #3c3c3c !important;
-    color: #cccccc !important;
+    background-color: var(--adb-bg-field) !important;
+    color: var(--adb-text-primary) !important;
     border-radius: 2px;
   }
   .v-label {
-    color: #969696 !important;
+    color: var(--adb-text-secondary) !important;
   }
 }
 </style>

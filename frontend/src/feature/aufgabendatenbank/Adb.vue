@@ -49,7 +49,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background-color: #1e1e1e;
+  background-color: var(--adb-bg-primary);
 }
 
 .adb-content {
@@ -85,7 +85,7 @@ onMounted(() => {
   }
 
   &:hover::after, &:active::after {
-    background-color: #007fd4;
+    background-color: var(--adb-accent);
   }
 }
 

@@ -24,11 +24,14 @@ import BreadCrumb from '@/components/BreadCrumb.vue'
 import FooterMain from '@/components/layout/FooterMain.vue'
 import HeaderMain from '@/components/layout/HeaderMain.vue'
 import NotificationToast from '@/components/NotificationToast.vue'
+import { useThemeStore } from '@/stores/themeStore'
 
 const router = useRouter()
 
 const hideBreadcrumbIn = ['Home', 'ViewLogin', 'ViewIntroduction', 'View404Page']
 const showBreadcrumb = ref(true)
+
+const themeStore = useThemeStore()
 
 watch(
   () => router.currentRoute.value.name,
@@ -43,5 +46,11 @@ watch(
   }
 )
 
-onMounted(() => {})
+onMounted(() => {
+  themeStore.init()
+})
 </script>
+
+<style>
+@import '@/styles/theme.css';
+</style>

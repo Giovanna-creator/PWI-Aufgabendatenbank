@@ -166,8 +166,8 @@ const previewGroups = computed(() => {
 
 <style scoped lang="scss">
 .preview-dialog {
-  background-color: #2d2d2d !important;
-  color: #d4d4d4;
+  background-color: var(--adb-bg-dialog) !important;
+  color: var(--adb-text-primary);
   border-radius: 16px !important;
 }
 
@@ -178,13 +178,13 @@ const previewGroups = computed(() => {
   font-size: 15px;
   font-weight: 500;
   padding: 14px 20px !important;
-  background: #252526;
-  border-bottom: 1px solid #3c3c3c;
+  background: var(--adb-bg-secondary);
+  border-bottom: 1px solid var(--adb-border);
   flex-shrink: 0;
 }
 
 .preview-title-icon {
-  color: #007fd4;
+  color: var(--adb-accent);
 }
 
 .preview-body {
@@ -209,7 +209,7 @@ const previewGroups = computed(() => {
 .preview-block-purpose {
   font-size: 10px;
   font-weight: 600;
-  color: #969696;
+  color: var(--adb-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-bottom: 6px;
@@ -220,7 +220,7 @@ const previewGroups = computed(() => {
   line-height: 1.7;
   white-space: pre-wrap;
   word-break: break-word;
-  color: #cccccc;
+  color: var(--adb-text-primary);
 }
 
 .preview-img {
@@ -235,7 +235,7 @@ const previewGroups = computed(() => {
   align-items: center;
   gap: 10px;
   padding: 12px 16px;
-  background: #1e1e1e;
+  background: var(--adb-bg-primary);
   border-radius: 12px;
 }
 
@@ -243,7 +243,7 @@ const previewGroups = computed(() => {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: #007fd4;
+  color: var(--adb-accent);
   text-decoration: none;
   font-size: 13px;
   padding: 4px 10px;
@@ -256,7 +256,7 @@ const previewGroups = computed(() => {
 }
 
 .preview-empty {
-  color: #999;
+  color: var(--adb-text-tertiary);
   text-align: center;
   padding: 60px 0;
 }

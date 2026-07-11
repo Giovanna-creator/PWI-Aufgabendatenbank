@@ -100,7 +100,7 @@ function realIndex(content: Content): number {
   min-height: 48px;
   padding: 0 16px;
   border-radius: 24px;
-  color: #888;
+  color: var(--adb-text-tertiary);
   font-size: 13px;
   cursor: pointer;
   transition:
@@ -118,7 +118,7 @@ function realIndex(content: Content): number {
   }
 
   &:hover {
-    color: #cccccc;
+    color: var(--adb-text-primary);
   }
 
   &:hover::before {
@@ -146,34 +146,34 @@ function realIndex(content: Content): number {
   transition: background-color 0.15s;
 
   background-color: transparent;
-  border: 1px solid #444;
+  border: 1px solid var(--adb-border);
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.03);
   }
 
   &.active {
-    background-color: #252526;
-    border-color: #007fd4;
+    background-color: var(--adb-bg-secondary);
+    border-color: var(--adb-accent);
   }
 }
 
 .order-icon {
-  color: #666;
+  color: var(--adb-icon);
   transition: color 0.15s;
 
   &.active {
-    color: #007fd4;
+    color: var(--adb-accent);
   }
 }
 
 .order-text {
   font-size: 13px;
-  color: #aaa;
+  color: var(--adb-text-tertiary);
   transition: color 0.15s;
 
   .order-card.active & {
-    color: #ccc;
+    color: var(--adb-text-primary);
   }
 }
 </style>

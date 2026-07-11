@@ -113,7 +113,7 @@ const updateCollectionChildren = (element: Collection, newItems: TreeItem[]) => 
 <style scoped>
 .ghost {
   opacity: 0.5;
-  background: #2a2d2e;
+  background: var(--adb-bg-hover);
 }
 
 .tree-draggable {
