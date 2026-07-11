@@ -8,76 +8,39 @@ import java.util.Set;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * DTO für die Rückgabe einer Aufgabe (Item) an das Frontend.
- *
- * Wird vom Backend an das Frontend gesendet bei:
- *  - GET  /api/items
- *  - GET  /api/items/{id}
- *  - POST /api/items (Antwort nach Erstellung)
- *  - PUT  /api/items/{id} (Antwort nach Aktualisierung)
- *
- * Enthält die itemId und die generierten Timestamps.
- * Die verknüpften Entitäten (Author, License, etc.) werden mit ihrem
- * lesbaren Namen ausgegeben, nicht nur als ID — bequemer für das Frontend.
- */
+/** DTO für die Rückgabe einer Aufgabe (Item) — mit lesbaren Namen der verknüpften Entitäten. */
 public class ItemResponseDto {
 
     private UUID itemId;
 
-    // Author
     private UUID authorId;
     private String authorDescriptor;
 
-    // License
     private UUID licenseId;
     private String licenseName;
 
-    // ItemType
     private UUID itemTypeId;
     private String itemTypeName;
 
-    // Optional: Template
     private UUID itemTemplateId;
 
-    // Optional: Ursprungs-Aufgabe
     private UUID rootItemId;
 
-    // Verknüpfte Tags, Validatoren, Modifier (nur IDs für Einfachheit)
     private Set<UUID> tagIds = new HashSet<>();
     private Set<UUID> validatorIds = new HashSet<>();
     private Set<UUID> modifierIds = new HashSet<>();
 
-    // Timestamps (vom System gesetzt)
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     
 
-    /**
-     * true wenn dieses Item eine Kollektion ist
-     * (d.h. eine ItemCollection mit parent_item_id = item_id existiert)
-     */
     private boolean isCollection;
 
-    /**
-     * Reihenfolge-Flag, falls dieses Item eine Kollektion ist.
-     * true = geordnet, false = ungeordnet, null = keine Kollektion.
-     * Damit das Frontend den Order-Status auch beim Laden über /items kennt.
-     */
     private Boolean order;
 
-    /**
-     * Die item_collection_id, falls dieses Item eine Kollektion ist (sonst null).
-     * Das Frontend braucht sie für alle /api/collections/{id}/... Aufrufe,
-     * da diese Endpunkte über die Collection-ID adressiert werden, nicht über
-     * die item_id.
-     */
     private UUID collectionId;
 
-    /**
-     * Inhalte dieses Items. Niemals null — leere Liste wenn keine vorhanden.
-     */
     private List<ContentSummaryDto> contents = new ArrayList<>();
 
     // Getter & Setter

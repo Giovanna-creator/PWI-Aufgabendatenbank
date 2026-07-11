@@ -184,7 +184,7 @@ export class AdbApiService implements ApiAdapter {
     return data
   }
 
-  // ── Validators ───────────────────────────────────────────────────────
+  // Validators
 
   async getValidators(): Promise<ValidatorDTO[]> {
     const { data } = await this.http.get<ValidatorDTO[]>('/validators')

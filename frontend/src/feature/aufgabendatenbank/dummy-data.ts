@@ -14,7 +14,7 @@ import type { Item } from '@/lib/types'
  */
 export const dummyData: { rootItems: Item[] } = {
   rootItems: [
-    // ── 1. Unordered collection ────────────────────────────────────────────
+    // 1. Unordered collection
     {
       id: 'coll-sql-basics',
       item_type: 'collection',
@@ -126,7 +126,7 @@ export const dummyData: { rootItems: Item[] } = {
       order: false
     },
 
-    // ── 2. Ordered collection (progressive difficulty) ─────────────────────
+    // 2. Ordered collection (progressive difficulty)
     {
       id: 'coll-sql-advanced',
       item_type: 'collection',
@@ -266,7 +266,7 @@ export const dummyData: { rootItems: Item[] } = {
       order: true
     },
 
-    // ── 3. Nested sub-collections ───────────────────────────────────────────
+    // 3. Nested sub-collections
     {
       id: 'coll-db-design',
       item_type: 'collection',
@@ -498,7 +498,7 @@ export const dummyData: { rootItems: Item[] } = {
       order: false
     },
 
-    // ── 4. Standalone root-level exercises ─────────────────────────────────
+    // 4. Standalone root-level exercises
     {
       id: 'item-sql-indexes',
       item_type: 'exercise',

@@ -78,8 +78,6 @@ class ItemCollectionServiceTest {
         collection.setSubItems(subItems);
     }
 
-    // ── toggleOrder ──
-
     @Test
     void toggleOrder_true_assignsSequentialPositions() {
         when(collectionRepository.findById(COLLECTION_ID)).thenReturn(Optional.of(collection));
@@ -124,8 +122,6 @@ class ItemCollectionServiceTest {
                 () -> service.toggleOrder(NOT_FOUND_ID, true));
     }
 
-    // ── updateSubItemPosition ──
-
     @Test
     void updateSubItemPosition_movesFirstToThird() {
         sub1.setPosition(1);
@@ -167,8 +163,6 @@ class ItemCollectionServiceTest {
         assertThrows(ResponseStatusException.class,
                 () -> service.updateSubItemPosition(COLLECTION_ID, NOT_FOUND_ID, 1));
     }
-
-    // ── removeItemFromCollection ──
 
     @Test
     void removeItemFromCollection_removesMiddleAndRecalculates() {

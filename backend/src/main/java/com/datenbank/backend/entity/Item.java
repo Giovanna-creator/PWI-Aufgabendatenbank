@@ -6,16 +6,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Entspricht der Tabelle "item" - die zentrale Aufgaben-Entität.
- *
- * Beziehungen:
- *  - @ManyToOne zu Author, License, ItemType, ItemRepresentationTemplate
- *  - Self-Reference: root_item_id (für Varianten)
- *  - @ManyToMany zu Tag (über item_tags)
- *  - @ManyToMany zu Validator (über item_validator)
- *  - @ManyToMany zu Modifier (über item_modifier)
- */
 @Entity
 @Table(name = "item")
 public class Item {
@@ -37,17 +27,10 @@ public class Item {
     @JoinColumn(name = "item_type_id", nullable = false)
     private ItemType itemType;
 
-    /**
-     * Optionales Template (kann null sein -> ON DELETE SET NULL im Schema).
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "item_template_id")
     private ItemRepresentationTemplate itemTemplate;
 
-    /**
-     * Self-Reference: Varianten verweisen auf ihre Ursprungs-Aufgabe.
-     * @ManyToOne weil viele Varianten dasselbe Original haben können.
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "root_item_id")
     private Item rootItem;
@@ -58,11 +41,6 @@ public class Item {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    /**
-     * @ManyToMany zu Tag über die Join-Tabelle "item_tags".
-     * Diese Join-Tabelle hat KEINE zusätzlichen Attribute,
-     * daher reicht @ManyToMany ohne eigene Entity-Klasse.
-     */
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "item_tags",

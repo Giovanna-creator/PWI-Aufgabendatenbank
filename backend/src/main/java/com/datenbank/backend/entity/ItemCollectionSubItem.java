@@ -2,16 +2,7 @@ package com.datenbank.backend.entity;
 
 import jakarta.persistence.*;
 
-/**
- * Entspricht der Tabelle "item_collection_sub_item".
- *
- * Diese Join-Tabelle hat ein zusätzliches Attribut "position"
- * (die Reihenfolge der Aufgabe in der Sequenz), daher braucht sie
- * eine eigene Entity-Klasse mit Composite Key (statt @ManyToMany).
- *
- * @MapsId verknüpft die Teile des Composite Keys mit den
- * jeweiligen @ManyToOne-Beziehungen.
- */
+/** Join-Tabelle mit zusätzl. "position"-Attribut → eigene Entity + Composite Key nötig. */
 @Entity
 @Table(name = "item_collection_sub_item")
 public class ItemCollectionSubItem {
@@ -19,10 +10,6 @@ public class ItemCollectionSubItem {
     @EmbeddedId
     private ItemCollectionSubItemId id;
 
-    /**
-     * @MapsId("itemCollectionId"): verbindet das Feld itemCollectionId
-     * des Composite Keys mit dieser Beziehung.
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("itemCollectionId")
     @JoinColumn(name = "item_collection_id")

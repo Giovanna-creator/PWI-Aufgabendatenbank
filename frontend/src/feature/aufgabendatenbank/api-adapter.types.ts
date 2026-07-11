@@ -52,7 +52,7 @@ export interface ContentSummaryDTO {
   hasBlobContent: boolean
 }
 
-// ── Referenzdaten (Lookup-Listen für Dropdowns) ──────────────────────────────
+// Referenzdaten (Lookup-Listen für Dropdowns)
 
 export interface AuthorDTO {
   id: string
@@ -196,13 +196,13 @@ export interface ApiAdapter {
 
   getItemsByRootId(rootItemId: string): Promise<ItemDTO[]>
 
-  // ── Representation Templates ───────────────────────────────────────────
+  // Representation Templates
 
   getRepresentationTemplates(): Promise<ReprTemplateDTO[]>
   createRepresentationTemplate(payload: { template: string }): Promise<ReprTemplateDTO>
   updateRepresentationTemplate(id: string, payload: { template: string }): Promise<ReprTemplateDTO>
 
-  // ── Validators ───────────────────────────────────────────────────────
+  // Validators
 
   getValidators(): Promise<ValidatorDTO[]>
 

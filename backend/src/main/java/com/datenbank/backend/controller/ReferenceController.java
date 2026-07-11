@@ -91,7 +91,7 @@ public class ReferenceController {
                 .toList();
     }
 
-    // ── Anlegen neuer Referenzdaten ──────────────────────────────────────────
+
 
     @PostMapping("/authors")
     @ResponseStatus(HttpStatus.CREATED)

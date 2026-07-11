@@ -15,14 +15,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/**
- * Service-Schicht für die Geschäftslogik der ItemCollection-Entität.
- *
- * Aufgaben:
- *  - Umwandlung zwischen DTOs (Frontend) und Entities (Datenbank)
- *  - Verwaltung von Sub-Items mit Position
- *  - CRUD-Operationen mit korrekter Fehlerbehandlung
- */
 @Service
 public class ItemCollectionService {
 
@@ -30,9 +22,6 @@ public class ItemCollectionService {
     private final ItemRepository itemRepository;
     private final ItemCollectionSubItemRepository subItemRepository;
 
-    /**
-     * Constructor-Injection: Spring übergibt automatisch die Repositories.
-     */
     public ItemCollectionService(
             ItemCollectionRepository collectionRepository,
             ItemRepository itemRepository,
@@ -43,12 +32,6 @@ public class ItemCollectionService {
     }
 
 
-    // CRUD-Operationen
-
-
-    /**
-     * Liefert alle Kollektionen als Liste von ResponseDTOs.
-     */
     @Transactional(readOnly = true)
     public List<ItemCollectionResponseDto> getAll() {
         return collectionRepository.findAll().stream()
@@ -56,9 +39,6 @@ public class ItemCollectionService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Liefert alle Root-Kollektionen (ohne Eltern-Item).
-     */
     @Transactional(readOnly = true)
     public List<ItemCollectionResponseDto> getRootCollections() {
         return collectionRepository.findByParentItemIsNull().stream()
@@ -66,19 +46,12 @@ public class ItemCollectionService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Liefert eine einzelne Kollektion als ResponseDTO.
-     * Wirft 404, falls nicht gefunden.
-     */
     @Transactional(readOnly = true)
     public ItemCollectionResponseDto getById(UUID id) {
         ItemCollection collection = findCollectionOrThrow(id);
         return convertToResponseDto(collection);
     }
 
-    /**
-     * Erstellt eine neue Kollektion aus einem CreateDTO.
-     */
     @Transactional
     public ItemCollectionResponseDto create(ItemCollectionCreateDto dto) {
         ItemCollection collection = new ItemCollection();
@@ -87,10 +60,6 @@ public class ItemCollectionService {
         return convertToResponseDto(saved);
     }
 
-    /**
-     * Aktualisiert eine existierende Kollektion.
-     * Wirft 404, falls die Kollektion nicht existiert.
-     */
     @Transactional
     public ItemCollectionResponseDto update(
             UUID id, ItemCollectionCreateDto dto) {
@@ -100,10 +69,6 @@ public class ItemCollectionService {
         return convertToResponseDto(saved);
     }
 
-    /**
-     * Löscht eine Kollektion samt Sub-Items (CASCADE).
-     * Wirft 404, falls nicht gefunden.
-     */
     @Transactional
     public void delete(UUID id) {
         if (!collectionRepository.existsById(id)) {
@@ -113,11 +78,7 @@ public class ItemCollectionService {
         collectionRepository.deleteById(id);
     }
 
-    /**
-     * Schaltet die Reihenfolge einer Kollektion um.
-     * true → geordnet (Positionen 1, 2, 3...)
-     * false → ungeordnet (Positionen null)
-     */
+    /** true → geordnet (Positionen 1, 2, 3…), false → ungeordnet (Positionen null) */
     @Transactional
     public ItemCollectionResponseDto toggleOrder(UUID collectionId, Boolean newOrder) {
         ItemCollection collection = findCollectionOrThrow(collectionId);
@@ -134,10 +95,6 @@ public class ItemCollectionService {
         return convertToResponseDto(collectionRepository.save(collection));
     }
 
-    /**
-     * Aktualisiert die Position eines SubItems in einer Kollektion.
-     * Berechnet die Positionen aller Geschwister-Items neu.
-     */
     @Transactional
     public void updateSubItemPosition(UUID collectionId, UUID itemId, Integer newPosition) {
         List<ItemCollectionSubItem> subItems = subItemRepository
@@ -170,10 +127,7 @@ public class ItemCollectionService {
         subItemRepository.saveAll(subItems);
     }
 
-    /**
-     * Fügt ein Item zu einer Kollektion hinzu.
-     * Bei geordneten Collections wird die Position automatisch vergeben.
-     */
+    /** Bei geordneten Collections wird die Position automatisch vergeben. */
     @Transactional
     public CollectionSubItemDto addItemToCollection(UUID collectionId, UUID itemId) {
         ItemCollection collection = findCollectionOrThrow(collectionId);
@@ -197,9 +151,6 @@ public class ItemCollectionService {
         return dto;
     }
 
-    /**
-     * Entfernt ein Item aus einer Kollektion.
-     */
     @Transactional
     public void removeItemFromCollection(UUID collectionId, UUID itemId) {
         List<ItemCollectionSubItem> subItems = subItemRepository
@@ -222,18 +173,10 @@ public class ItemCollectionService {
     }
 
 
-    // Hilfsmethoden
-
-
-    /**
-     * Gibt alle SubItems einer Kollektion zurück, sortiert nach Position.
-     * Wirft 404 wenn Kollektion nicht existiert.
-     */
     @Transactional(readOnly = true)
     public List<CollectionSubItemDto> getSubItemsForCollection(
             UUID collectionId) {
 
-        // Prüfen ob Collection existiert
         if (!collectionRepository.existsById(collectionId)) {
             throw new ResponseStatusException(
                 HttpStatus.NOT_FOUND, "Collection nicht gefunden");
@@ -262,9 +205,6 @@ public class ItemCollectionService {
     }
 
 
-    /**
-     * Holt eine Kollektion aus der DB oder wirft 404.
-     */
     private ItemCollection findCollectionOrThrow(UUID id) {
         return collectionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -272,10 +212,6 @@ public class ItemCollectionService {
     }
 
 
-    /**
-     * Wendet die Daten eines CreateDTO auf eine ItemCollection-Entity an.
-     * Wird sowohl bei Create als auch bei Update verwendet.
-     */
     private void applyDtoToEntity(
             ItemCollectionCreateDto dto, ItemCollection collection) {
 
@@ -318,9 +254,6 @@ public class ItemCollectionService {
         }
     }
 
-    /**
-     * Wandelt eine ItemCollection-Entity in ein ResponseDTO um.
-     */
     private ItemCollectionResponseDto convertToResponseDto(
             ItemCollection collection) {
 
@@ -353,7 +286,6 @@ public class ItemCollectionService {
             dto.setSubItems(subDtos);
         }
 
-            // Anzahl SubItems hinzufügen
         dto.setSubItemCount(
             collection.getSubItems() != null 
                 ? collection.getSubItems().size() 

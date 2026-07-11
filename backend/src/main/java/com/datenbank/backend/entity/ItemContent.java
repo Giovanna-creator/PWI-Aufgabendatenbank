@@ -8,14 +8,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Entspricht der Tabelle "item_content".
- * Inhaltsbausteine der Aufgaben (Text, JSON, Binärdaten).
- *
- * Beziehungen:
- *  - @ManyToOne zu License, ItemContentType, Author (Level-1-Entitäten)
- *  - @ManyToMany zu Tag (über item_content_tags)
- */
 @Entity
 @Table(name = "item_content")
 public class ItemContent {
@@ -25,9 +17,6 @@ public class ItemContent {
     @Column(name = "item_content_id")
     private UUID itemContentId;
 
-    /**
-     * FK auf license. @ManyToOne: viele Contents können dieselbe Lizenz haben.
-     */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "license_id", nullable = false)
     private License license;
@@ -40,21 +29,10 @@ public class ItemContent {
     @JoinColumn(name = "author_id", nullable = false)
     private Author author;
 
-    /**
-     * JSONB-Spalte. Wir mappen sie als String mit columnDefinition = "jsonb".
-     * Hibernate liest/schreibt den JSON-Text; für die meisten Anwendungsfälle
-     * ausreichend. Bei Bedarf später auf hibernate-types umstellbar.
-     */
-    
-
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "json_serialized_content", columnDefinition = "jsonb")
     private String jsonSerializedContent;
 
-    /**
-     * BYTEA-Spalte für Binärdaten (Bilder, PDFs).
-     */
-    
     @Column(name = "blob_serialized_content")
     private byte[] blobSerializedContent;
 
@@ -64,10 +42,6 @@ public class ItemContent {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    /**
-     * @ManyToMany zu Tag über die Join-Tabelle "item_content_tags".
-     * Keine zusätzlichen Attribute -> @ManyToMany ohne eigene Klasse.
-     */
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "item_content_tags",
@@ -76,9 +50,6 @@ public class ItemContent {
     )
     private Set<Tag> tags = new HashSet<>();
 
-    /**
-     * Wird automatisch vor dem Speichern gesetzt.
-     */
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

@@ -466,7 +466,7 @@ export class DevAdbApiService implements ApiAdapter {
     return dummyData.rootItems.map(toDTO)
   }
 
-  // ── Referenzdaten (gleiche Seeds wie database/init/init.sql) ───────────────
+  // Referenzdaten (gleiche Seeds wie database/init/init.sql)
 
   async getAuthors(): Promise<AuthorDTO[]> {
     log('GET', '/api/authors')
@@ -537,7 +537,7 @@ export class DevAdbApiService implements ApiAdapter {
       .map(ci => toDTO(ci.item))
   }
 
-  // ── Representation Templates ─────────────────────────────────────────
+  // Representation Templates
 
   private _templates: ReprTemplateDTO[] = [...seedTemplates]
 
@@ -561,7 +561,7 @@ export class DevAdbApiService implements ApiAdapter {
     return { ...this._templates[idx] }
   }
 
-  // ── Validators ───────────────────────────────────────────────────────
+  // Validators
 
   private _validators: ValidatorDTO[] = [...seedValidators]
 

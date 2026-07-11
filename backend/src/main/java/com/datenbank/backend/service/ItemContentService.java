@@ -46,8 +46,6 @@ public class ItemContentService {
     }
 
 
-    // CRUD
-
     @Transactional(readOnly = true)
     public List<ItemContentResponseDto> getAll() {
         return contentRepository.findAll().stream()
@@ -61,9 +59,6 @@ public class ItemContentService {
         return convertToResponseDto(content);
     }
 
-    /**
-     * Liefert alle Contents eines Items (über item_contents Join-Tabelle).
-     */
     @Transactional(readOnly = true)
     public List<ItemContentResponseDto> getContentsByItemId(UUID itemId) {
         return itemContentsRepository.findByItem_ItemId(itemId)
@@ -76,11 +71,6 @@ public class ItemContentService {
                 })
                 .collect(Collectors.toList());
     }
-    /**
-     * Liefert die Blob-Daten eines Contents direkt als byte[].
-     * Wirft 404 falls Content nicht gefunden.
-     * Wirft 404 falls keine Blob-Daten vorhanden.
-     */
     @Transactional(readOnly = true)
     public byte[] getBlobById(UUID id) {
         ItemContent content = findContentOrThrow(id);
@@ -101,10 +91,7 @@ public class ItemContentService {
         return convertToResponseDto(saved);
     }
 
-    /**
-     * Erstellt einen neuen Content und verknüpft ihn mit einem Item.
-     * Der Purpose (z. B. "Aufgabenstellung") wird im ItemContents-Join gespeichert.
-     */
+    /** Purpose (z. B. "Aufgabenstellung") wird im item_contents-Join gespeichert. */
     @Transactional
     public ItemContentResponseDto createForItem(UUID itemId, ItemContentCreateDto dto) {
         Item item = itemRepository.findById(itemId)
@@ -133,8 +120,7 @@ public class ItemContentService {
         ItemContent saved = contentRepository.save(content);
 
         // purpose lebt im item_contents-Join: nur aktualisieren wenn mitgeschickt.
-        // In dieser Iteration ist ein Content genau einem Item zugeordnet,
-        // daher werden alle Verknüpfungen dieses Contents gesetzt.
+        // In dieser Iteration ist ein Content genau einem Item zugeordnet.
         if (dto.getPurpose() != null) {
             List<ItemContents> links =
                     itemContentsRepository.findByItemContent_ItemContentId(id);
@@ -145,10 +131,6 @@ public class ItemContentService {
         return convertToResponseDto(saved);
     }
 
-    /**
-     * Speichert Blob-Daten für einen existierenden Content.
-     * Wirft 404, falls Content nicht gefunden.
-     */
     @Transactional
     public ItemContentResponseDto uploadBlob(UUID id, byte[] blob) {
         ItemContent content = findContentOrThrow(id);
@@ -168,9 +150,6 @@ public class ItemContentService {
 
         contentRepository.deleteById(id);
     }
-
-
-    // Hilfsmethoden
 
 
     private ItemContent findContentOrThrow(UUID id) {
@@ -217,10 +196,7 @@ public class ItemContentService {
         }
     }
 
-    /**
-     * Wandelt eine ItemContent-Entity in ein ResponseDTO um.
-     * Blob-Daten werden NICHT eingebettet — nur ein Flag ob vorhanden.
-     */
+    /** Blob-Daten werden NICHT eingebettet — nur ein Flag ob vorhanden. */
     private ItemContentResponseDto convertToResponseDto(ItemContent content) {
         ItemContentResponseDto dto = new ItemContentResponseDto();
 

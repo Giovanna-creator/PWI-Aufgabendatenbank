@@ -25,14 +25,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-/**
- * Service-Schicht für die Geschäftslogik der Item-Entität.
- *
- * Aufgaben:
- *  - Umwandlung zwischen DTOs (Frontend) und Entities (Datenbank)
- *  - Validierung referenzierter Entitäten (Author, License, etc.)
- *  - CRUD-Operationen mit korrekter Fehlerbehandlung
- */
 @Service
 public class ItemService {
 
@@ -47,10 +39,6 @@ public class ItemService {
     private final ItemCollectionRepository collectionRepository;
     private final ItemContentsRepository itemContentsRepository;
 
-    /**
-     * Constructor-Injection: Spring übergibt automatisch die Repositories.
-     * Modern und besser testbar als @Autowired auf Feldern.
-     */
     public ItemService(ItemRepository itemRepository,
                        AuthorRepository authorRepository,
                        LicenseRepository licenseRepository,
@@ -73,13 +61,6 @@ public class ItemService {
         this.itemContentsRepository = itemContentsRepository;
     }
 
-    // =========================================================================
-    // CRUD-Operationen
-    // =========================================================================
-
-    /**
-     * Liefert alle Items als Liste von ResponseDTOs.
-     */
     @Transactional(readOnly = true)
     public List<ItemResponseDto> getAllItems() {
         return itemRepository.findAll().stream()
@@ -87,19 +68,12 @@ public class ItemService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Liefert ein einzelnes Item als ResponseDTO.
-     * Wirft 404, falls nicht gefunden.
-     */
     @Transactional(readOnly = true)
     public ItemResponseDto getItemById(UUID id) {
         Item item = findItemOrThrow(id);
         return convertToResponseDto(item);
     }
 
-    /**
-     * Erstellt ein neues Item aus einem CreateDTO.
-     */
     @Transactional
     public ItemResponseDto createItem(ItemCreateDto dto) {
         Item item = new Item();
@@ -108,10 +82,6 @@ public class ItemService {
         return convertToResponseDto(saved);
     }
 
-    /**
-     * Aktualisiert ein existierendes Item.
-     * Wirft 404, falls das Item nicht existiert.
-     */
     @Transactional
     public ItemResponseDto updateItem(UUID id, ItemCreateDto dto) {
         Item item = findItemOrThrow(id);
@@ -120,10 +90,6 @@ public class ItemService {
         return convertToResponseDto(saved);
     }
 
-    /**
-     * Löscht ein Item.
-     * Wirft 404, falls das Item nicht existiert.
-     */
     @Transactional
     public void deleteItem(UUID id) {
         if (!itemRepository.existsById(id)) {
@@ -133,7 +99,7 @@ public class ItemService {
     }
 
     /**
-     * Hängt ein vorhandenes Tag an ein Item (item_tags). Idempotent, da Set.
+     * Idempotent, da Set.
      */
     @Transactional
     public ItemResponseDto addTag(UUID itemId, UUID tagId) {
@@ -144,9 +110,6 @@ public class ItemService {
         return convertToResponseDto(itemRepository.save(item));
     }
 
-    /**
-     * Entfernt ein Tag von einem Item (nur die Verknüpfung, das Tag bleibt).
-     */
     @Transactional
     public ItemResponseDto removeTag(UUID itemId, UUID tagId) {
         Item item = findItemOrThrow(itemId);
@@ -154,9 +117,6 @@ public class ItemService {
         return convertToResponseDto(itemRepository.save(item));
     }
 
-    /**
-    * Liefert nur Root-Items (root_item_id IS NULL)
-    */
     @Transactional(readOnly = true)
     public List<ItemResponseDto> getRootItems() {
         return itemRepository.findByRootItemIsNull().stream()
@@ -164,9 +124,6 @@ public class ItemService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Liefert alle Kinder eines Items
-     */
     @Transactional(readOnly = true)
     public List<ItemResponseDto> getItemsByRootId(UUID rootItemId) {
         return itemRepository.findByRootItem_ItemId(rootItemId).stream()
@@ -224,10 +181,6 @@ public class ItemService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Konvertiert ein Item in eine Collection.
-     * Erstellt eine ItemCollection, die auf dieses Item verweist.
-     */
     @Transactional
     public ItemResponseDto convertToCollection(UUID itemId) {
         Item item = findItemOrThrow(itemId);
@@ -239,10 +192,6 @@ public class ItemService {
 
         return convertToResponseDto(item);
     }
-
-    // =========================================================================
-    // Validator-Verknüpfungen
-    // =========================================================================
 
     @Transactional(readOnly = true)
     public List<ValidatorResponseDto> getValidatorsForItem(UUID itemId) {
@@ -281,25 +230,14 @@ public class ItemService {
         return convertToResponseDto(saved);
     }
 
-    // =========================================================================
-    // Hilfsmethoden
-    // =========================================================================
-
-    /**
-     * Holt ein Item aus der DB oder wirft 404.
-     */
     private Item findItemOrThrow(UUID id) {
         return itemRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Item nicht gefunden"));
     }
 
-    /**
-     * Wendet die Daten eines CreateDTO auf eine Item-Entity an.
-     * Wird sowohl bei Create als auch bei Update verwendet.
-     */
     private void applyDtoToEntity(ItemCreateDto dto, Item item) {
-        // Pflicht-Beziehungen (NOT NULL)
+        // NOT NULL
         item.setAuthor(authorRepository.findById(dto.getAuthorId())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Author nicht gefunden")));
@@ -368,33 +306,26 @@ public class ItemService {
         }
     }
 
-    /**
-     * Wandelt eine Item-Entity in ein ResponseDTO um.
-     */
     private ItemResponseDto convertToResponseDto(Item item) {
         ItemResponseDto dto = new ItemResponseDto();
 
         dto.setItemId(item.getItemId());
 
-        // Author
         if (item.getAuthor() != null) {
             dto.setAuthorId(item.getAuthor().getAuthorId());
             dto.setAuthorDescriptor(item.getAuthor().getDescriptor());
         }
 
-        // License
         if (item.getLicense() != null) {
             dto.setLicenseId(item.getLicense().getLicenseId());
             dto.setLicenseName(item.getLicense().getLicense());
         }
 
-        // ItemType
         if (item.getItemType() != null) {
             dto.setItemTypeId(item.getItemType().getItemTypeId());
             dto.setItemTypeName(item.getItemType().getItemTypeName());
         }
 
-        // Optionale Beziehungen
         if (item.getItemTemplate() != null) {
             dto.setItemTemplateId(item.getItemTemplate().getItemTemplateId());
         }
@@ -403,7 +334,6 @@ public class ItemService {
             dto.setRootItemId(item.getRootItem().getItemId());
         }
 
-        // Many-to-Many als IDs
         dto.setTagIds(item.getTags().stream()
                 .map(Tag::getTagId)
                 .collect(Collectors.toSet()));
@@ -416,7 +346,6 @@ public class ItemService {
                 .map(Modifier::getModifierId)
                 .collect(Collectors.toSet()));
 
-        // Timestamps
         dto.setCreatedAt(item.getCreatedAt());
         dto.setUpdatedAt(item.getUpdatedAt());
 
