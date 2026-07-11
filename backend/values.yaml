@@ -1,0 +1,31 @@
+# values.yaml – Backend (Aufgabendatenbank)
+#
+# Konfigurationsblatt fuer ArgoCD: verbindet unser in GHCR gebautes Backend-Image
+# mit dem Kubernetes-Cluster. Legt fest, wie der Service im Cluster heisst, wie
+# viele Replicas er bekommt und unter welchem Netzwerkpfad ihn das Traefik-Gateway
+# veroeffentlicht.
+#
+# Hinweis: Das genaue Schema wird noch an die Vorgabe des Infra-Teams (Gruppe 1)
+# angepasst, sobald deren Registrierungsformat final ist.
+
+name: pwi-aufgabendatenbank-backend
+
+image:
+  repository: ghcr.io/giovanna-creator/pwi-aufgabendatenbank-backend
+  tag: latest
+
+replicas: 1
+
+# Port, auf dem Spring Boot im Container lauscht.
+containerPort: 8080
+
+# Netzwerkpfad, unter dem das API-Gateway (Traefik) den Service erreichbar macht.
+route:
+  path: /api
+
+# Datenbank-Anbindung. Werte als Kubernetes-Secret hinterlegen, nicht im Klartext.
+# Offen: DB von der Plattform gestellt oder selbst deployen? -> mit Gruppe 1 klaeren.
+env:
+  DB_URL: jdbc:postgresql://<db-host>:5432/pwi_aufgabendatenbank
+  DB_USER: postgres
+  DB_PASSWORD: <secret>

@@ -1,0 +1,19 @@
+# values.yaml – Frontend (Aufgabendatenbank)
+#
+# Siehe backend/values.yaml. Zeigt auf das in GHCR gebaute Frontend-Image.
+# Hinweis: Schema wird noch an die Vorgabe von Gruppe 1 angepasst.
+
+name: pwi-aufgabendatenbank-frontend
+
+image:
+  repository: ghcr.io/giovanna-creator/pwi-aufgabendatenbank-frontend
+  tag: latest
+
+replicas: 1
+
+# Port, auf dem der Frontend-Container lauscht.
+containerPort: 8085
+
+# Frontend liegt am Wurzelpfad; /api leitet das Gateway an das Backend weiter.
+route:
+  path: /
