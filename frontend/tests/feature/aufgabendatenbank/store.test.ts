@@ -432,7 +432,7 @@ describe('toggleCollectionOrder', () => {
     expect(coll.items[1].position).toBe(2)
   })
 
-  it('disables order (keeps positions intact)', () => {
+  it('disables order (clears positions to match backend)', () => {
     const store = useExerciseStore()
     const coll: any = {
       id: 'coll-1',
@@ -448,7 +448,9 @@ describe('toggleCollectionOrder', () => {
     store.toggleCollectionOrder(coll)
 
     expect(coll.order).toBe(false)
-    expect(coll.items[0].position).toBe(1)
+    // Backend nullt die Positionen bei Deaktivierung — lokal muss es passen.
+    expect(coll.items[0].position).toBeNull()
+    expect(coll.items[1].position).toBeNull()
   })
 
   it('calls adapter.toggleCollectionOrder when collectionId is set', () => {
@@ -513,6 +515,32 @@ describe('deleteItem and deleteCollection', () => {
     // wird auf die Root-Ebene gehoben.
     expect(store.rootItems.length).toBe(1)
     expect(store.rootItems[0].id).toBe('child')
+  })
+
+  it('deleteCollection keeps a child variant relationship (rootItemId untouched)', () => {
+    const store = useExerciseStore()
+    // Das Kind ist selbst eine Variante (rootItemId gesetzt).
+    const child: any = { id: 'child', item_type: 'exercise', rootItemId: 'variant-family', contents: [], tags: [], validators: [], modifiers: [], author: 'a', representationTemplate: null, license: null }
+    const coll: any = {
+      id: 'coll-del',
+      item_type: 'collection',
+      contents: [],
+      tags: [],
+      validators: [],
+      modifiers: [],
+      author: 'a',
+      representationTemplate: null,
+      license: null,
+      items: [{ id: 'ci-del', collectionId: 'coll-del', item: child, position: null }],
+      order: false
+    }
+    store.rootItems.push(coll)
+
+    store.deleteCollection(coll)
+
+    // Das Aufloesen der Kollektion darf den Varianten-Bezug nicht zerstoeren.
+    expect(store.rootItems[0].id).toBe('child')
+    expect(store.rootItems[0].rootItemId).toBe('variant-family')
   })
 })
 
