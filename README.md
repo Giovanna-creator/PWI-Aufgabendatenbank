@@ -263,12 +263,7 @@ benötigen keine laufende PostgreSQL-Instanz.
 
 ## Dokumentation und Präsentation
 
-- Projektdokumentation: Projektdokumentation_abgabe.tex
-- erzeugtes PDF: Projektdokumentation_abgabe.pdf
-- Präsentations-Storyboard: docs/praesentation-powerpoint.md
-- Testplan: docs/testplan.md
-- Architektur und Vorführung: docs/architektur-und-vorfuehrung.md
-- Fachkonzept: docs/konzept-aufgabenbeziehungen-und-metadaten.md
+
 
 ## Projektstatus
 
