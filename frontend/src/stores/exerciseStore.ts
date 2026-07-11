@@ -1512,9 +1512,20 @@ export const useExerciseStore = defineStore('exercise', {
     },
 
     deleteCollection(collectionToDelete: Collection) {
-      const itemsToDelete = [...collectionToDelete.items]
+      // Kinder merken, BEVOR die Kollektion aus dem Baum entfernt wird.
+      const children = collectionToDelete.items.map((ci) => ci.item)
+      // Nur die Kollektion selbst loeschen. Das Backend entfernt dabei die
+      // ItemCollection und ihre Sub-Item-Verknuepfungen; die enthaltenen
+      // Aufgaben bleiben bestehen (sie koennen in anderen Kollektionen liegen).
       this.deleteItem(collectionToDelete)
-      itemsToDelete.forEach((ci) => this.deleteItem(ci.item))
+      // Enthaltene Aufgaben nicht loeschen, sondern auf die Root-Ebene heben.
+      children.forEach((child) => {
+        child.rootItemId = null
+        if (!this.rootItems.some((ri) => ri.id === child.id)) {
+          this.rootItems.push(child)
+        }
+      })
+      this.validate()
     },
 
     // ── DnD / Reorder Actions ──
