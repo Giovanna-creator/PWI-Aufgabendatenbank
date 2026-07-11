@@ -489,7 +489,7 @@ describe('deleteItem and deleteCollection', () => {
     expect(store.selectedItem).toBeNull()
   })
 
-  it('deleteCollection deletes parent and all children', () => {
+  it('deleteCollection keeps children and moves them to root', () => {
     const store = useExerciseStore()
     const child: any = { id: 'child', item_type: 'exercise', contents: [], tags: [], validators: [], modifiers: [], author: 'a', representationTemplate: null, license: null }
     const coll: any = {
@@ -509,7 +509,10 @@ describe('deleteItem and deleteCollection', () => {
 
     store.deleteCollection(coll)
 
-    expect(store.rootItems.length).toBe(0)
+    // Nur die Kollektion wird geloescht; die enthaltene Aufgabe bleibt und
+    // wird auf die Root-Ebene gehoben.
+    expect(store.rootItems.length).toBe(1)
+    expect(store.rootItems[0].id).toBe('child')
   })
 })
 
