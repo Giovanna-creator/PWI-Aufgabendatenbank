@@ -283,4 +283,170 @@ describe('checkNoDanglingRootItemId', () => {
   it('does not flag null rootItemId', () => {
     expect(checkNoDanglingRootItemId([item({ id: 'a' })])).toEqual([])
   })
+
+  it('does not flag a reference to a valid collection inside the tree', () => {
+    const data = [
+      collection({
+        id: 'coll-1',
+        items: [
+          collItem({ id: 'ci-1', collectionId: 'coll-1', item: item({ id: 'ex-1', rootItemId: 'coll-1' }) })
+        ]
+      })
+    ]
+    expect(checkNoDanglingRootItemId(data)).toEqual([])
+  })
+
+  it('flags a deeply nested dangling reference via validateTreeData', () => {
+    const data = [
+      collection({
+        id: 'coll-1',
+        items: [
+          collItem({
+            id: 'ci-1',
+            collectionId: 'coll-1',
+            item: item({ id: 'deep', rootItemId: 'missing-parent' })
+          })
+        ]
+      })
+    ]
+    const issues = validateTreeData(data)
+    expect(issues).toHaveLength(1)
+    expect(issues[0].message).toContain('deep')
+    expect(issues[0].message).toContain('missing-parent')
+  })
+})
+
+describe('checkOnlyCollectionsHaveChildren (extended)', () => {
+  it('does not flag a collection with children', () => {
+    const coll = collection({
+      id: 'c',
+      items: [collItem({ id: 'ci', collectionId: 'c', item: item({ id: 'child' }) })]
+    })
+    expect(checkOnlyCollectionsHaveChildren([coll])).toEqual([])
+  })
+
+  it('flags an exercise with children even when deeply nested', () => {
+    const bad = item({
+      id: 'deep-ex',
+      items: [
+        collItem({
+          id: 'ci-sub',
+          collectionId: 'deep-ex',
+          item: item({ id: 'nested-child' })
+        })
+      ]
+    }) as Item & { items: CollectionItem[] }
+    expect(checkOnlyCollectionsHaveChildren([bad])).toHaveLength(1)
+  })
+})
+
+describe('checkNoDuplicateItems (extended)', () => {
+  it('does not flag items that appear only once', () => {
+    const data = [
+      item({ id: 'a' }),
+      collection({
+        id: 'c',
+        items: [collItem({ id: 'ci', collectionId: 'c', item: item({ id: 'b' }) })]
+      })
+    ]
+    expect(checkNoDuplicateItems(data)).toEqual([])
+  })
+
+  it('flags an item duplicated in a nested collection', () => {
+    const dup = item({ id: 'dup' })
+    const data = [
+      dup,
+      collection({
+        id: 'root',
+        items: [
+          collItem({
+            id: 'ci-sub',
+            collectionId: 'root',
+            item: collection({
+              id: 'sub',
+              items: [collItem({ id: 'ci-deep', collectionId: 'sub', item: dup })]
+            })
+          })
+        ]
+      })
+    ]
+    const issues = checkNoDuplicateItems(data)
+    expect(issues).toHaveLength(1)
+    expect(issues[0].message).toContain('dup')
+  })
+})
+
+describe('validateTreeData composed', () => {
+  it('aggregates issues from multiple checks', () => {
+    const bad = item({
+      id: 'bad-ex',
+      item_type: 'exercise',
+      items: [collItem({ id: 'ci', collectionId: 'bad-ex', item: item({ id: 'child' }) })]
+    }) as Item & { items: CollectionItem[] }
+
+    const data = [bad, item({ id: 'orphan', rootItemId: 'ghost' })]
+    const issues = validateTreeData(data)
+    expect(issues.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('passes for a valid deeply nested structure', () => {
+    const data = [
+      collection({
+        id: 'root',
+        items: [
+          collItem({
+            id: 'ci-l1',
+            collectionId: 'root',
+            item: collection({
+              id: 'l1',
+              rootItemId: 'root',
+              items: [
+                collItem({
+                  id: 'ci-l2',
+                  collectionId: 'l1',
+                  item: item({ id: 'leaf', rootItemId: 'root' })
+                })
+              ]
+            })
+          })
+        ]
+      })
+    ]
+    expect(validateTreeData(data)).toEqual([])
+  })
+
+  it('passes for an ordered collection with valid positions', () => {
+    const data = [
+      collection({
+        id: 'ordered',
+        order: true,
+        items: [
+          collItem({ id: 'ci-1', collectionId: 'ordered', position: 1, item: item({ id: 'ex-1', rootItemId: 'ordered' }) }),
+          collItem({ id: 'ci-2', collectionId: 'ordered', position: 2, item: item({ id: 'ex-2', rootItemId: 'ordered' }) }),
+          collItem({ id: 'ci-3', collectionId: 'ordered', position: 3, item: item({ id: 'ex-3', rootItemId: 'ordered' }) })
+        ]
+      })
+    ]
+    expect(validateTreeData(data)).toEqual([])
+  })
+
+  it('handles a tree with only collections (no exercises)', () => {
+    const data = [
+      collection({
+        id: 'parent',
+        items: [
+          collItem({
+            id: 'ci-child',
+            collectionId: 'parent',
+            item: collection({
+              id: 'child',
+              rootItemId: 'parent',
+              items: []
+            })
+          })
+        ]
+      })
+    ]
+    expect(validateTreeData(data)).toEqual([])
+  })
 })
