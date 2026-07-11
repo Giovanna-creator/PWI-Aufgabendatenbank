@@ -789,3 +789,131 @@ describe('createReference', () => {
     expect(mock.createAuthor).not.toHaveBeenCalled()
   })
 })
+
+describe('resync on partial failure (create/delete)', () => {
+  function seedRefs(store: ReturnType<typeof useExerciseStore>) {
+    store.authors = [DEFAULT_AUTHOR]
+    store.itemTypes = [DEFAULT_ITEM_TYPE]
+    store.contentTypes = [DEFAULT_CONTENT_TYPE]
+  }
+
+  const collTarget = () => ({
+    id: 'coll-1',
+    collectionId: 'coll-backend-1',
+    item_type: 'collection' as const,
+    items: [] as any[],
+    order: false,
+    author: 'test',
+    representationTemplate: null,
+    license: null,
+    tags: [],
+    validators: [],
+    modifiers: [],
+    contents: [],
+    rootItemId: null
+  })
+
+  it('createItem: step-1 failure removes the phantom item', async () => {
+    const store = useExerciseStore()
+    seedRefs(store)
+    mock.createItem = vi.fn().mockRejectedValue(new Error('boom'))
+    mock.getRootItems = vi.fn().mockResolvedValue([])
+
+    store.createItem(null, true)
+    expect(store.rootItems).toHaveLength(1) // optimistisch sofort da
+
+    await vi.waitFor(() => expect(store.rootItems).toHaveLength(0)) // resynct weg
+    expect(mock.getRootItems).toHaveBeenCalled()
+  })
+
+  it('createItem: content-step failure converges rootItems to the DB', async () => {
+    const store = useExerciseStore()
+    seedRefs(store)
+    mock.createItem = vi.fn().mockResolvedValue({ itemId: 'real-id' } as ItemDTO)
+    mock.createContent = vi.fn().mockRejectedValue(new Error('boom'))
+    mock.getRootItems = vi.fn().mockResolvedValue([{ itemId: 'real-id' } as ItemDTO])
+
+    store.createItem(null, true)
+
+    await vi.waitFor(() => {
+      expect(mock.getRootItems).toHaveBeenCalled()
+      expect(store.rootItems).toHaveLength(1)
+      expect(store.rootItems[0].id).toBe('real-id')
+    })
+  })
+
+  it('createItemFromForm: add-to-collection failure resyncs the collection', async () => {
+    const store = useExerciseStore()
+    seedRefs(store)
+    mock.createItem = vi.fn().mockResolvedValue({ itemId: 'form-item' } as ItemDTO)
+    mock.addItemToCollection = vi.fn().mockRejectedValue(new Error('boom'))
+    mock.getCollectionItems = vi.fn().mockResolvedValue([])
+
+    const target = collTarget()
+    store.rootItems.push(target)
+
+    store.createItemFromForm({ text: 'x' }, target)
+    expect(target.items).toHaveLength(1) // optimistisch
+
+    await vi.waitFor(() => expect(target.items).toHaveLength(0)) // resynct
+    expect(mock.getCollectionItems).toHaveBeenCalledWith('coll-backend-1')
+  })
+
+  it('createCollection: convert failure resyncs the tree', async () => {
+    const store = useExerciseStore()
+    seedRefs(store)
+    mock.createItem = vi.fn().mockResolvedValue({ itemId: 'real-id' } as ItemDTO)
+    mock.convertItemToCollection = vi.fn().mockRejectedValue(new Error('boom'))
+    mock.getRootItems = vi.fn().mockResolvedValue([])
+
+    store.createCollection()
+    expect(store.rootItems).toHaveLength(1) // optimistisch
+
+    await vi.waitFor(() => expect(store.rootItems).toHaveLength(0)) // resynct via loadTree
+    expect(mock.getRootItems).toHaveBeenCalled()
+  })
+
+  it('addItemToCollection: link failure resyncs the collection', async () => {
+    const store = useExerciseStore()
+    seedRefs(store)
+    mock.createItem = vi.fn().mockResolvedValue({ itemId: 'new-item' } as ItemDTO)
+    mock.addItemToCollection = vi.fn().mockRejectedValue(new Error('boom'))
+    mock.getCollectionItems = vi.fn().mockResolvedValue([])
+
+    const coll = collTarget()
+    store.rootItems.push(coll)
+
+    store.addItemToCollection(coll as any)
+    expect(coll.items).toHaveLength(1) // optimistisch
+
+    await vi.waitFor(() => expect(coll.items).toHaveLength(0)) // resynct
+    expect(mock.getCollectionItems).toHaveBeenCalledWith('coll-backend-1')
+  })
+
+  it('deleteItem: delete failure restores the item from the DB', async () => {
+    const store = useExerciseStore()
+    const item: any = { id: 'x', item_type: 'exercise', contents: [], tags: [], validators: [], modifiers: [], author: 'a', representationTemplate: null, license: null }
+    store.rootItems.push(item)
+    mock.deleteItem = vi.fn().mockRejectedValue(new Error('boom'))
+    mock.getRootItems = vi.fn().mockResolvedValue([{ itemId: 'x' } as ItemDTO])
+
+    store.deleteItem(item)
+    expect(store.rootItems).toHaveLength(0) // optimistisch entfernt
+
+    await vi.waitFor(() => expect(store.rootItems).toHaveLength(1)) // wiederhergestellt
+    expect(store.rootItems[0].id).toBe('x')
+  })
+
+  it('createVariant: content-step failure resyncs variants instead of orphaning', async () => {
+    const store = useExerciseStore()
+    seedRefs(store)
+    mock.createItem = vi.fn().mockResolvedValue({ itemId: 'variant-real' } as ItemDTO)
+    mock.createContent = vi.fn().mockRejectedValue(new Error('boom'))
+    mock.getItemsByRootId = vi.fn().mockResolvedValue([])
+
+    await store.createVariant('base')
+
+    expect(mock.getItemsByRootId).toHaveBeenCalledWith('base')
+    expect(store.variants).toHaveLength(0)
+  })
+})
