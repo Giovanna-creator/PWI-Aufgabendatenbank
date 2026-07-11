@@ -1548,7 +1548,6 @@ export const useExerciseStore = defineStore('exercise', {
             }
           }
         }
-        inner.rootItemId = collection.rootItemId ?? null
         if (isCollectionItem(item)) {
           return { ...item, collectionId: collection.id, position: collection.order ? index + 1 : null } as CollectionItem
         }
