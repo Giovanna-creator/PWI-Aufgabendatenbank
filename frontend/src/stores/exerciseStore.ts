@@ -674,9 +674,9 @@ export const useExerciseStore = defineStore('exercise', {
     /**
      * Toggle a collection's `order` flag.
      *
-     * Positions are KEPT in the data when order toggles off (the UI
-     * simply hides them). When enabling, items without a position get
-     * one assigned.
+     * When enabling, items without a position get one assigned. When
+     * disabling, positions are cleared to null to match the backend
+     * (which nulls them), so UI and DB stay in sync.
      */
     toggleCollectionOrder(collection: Collection) {
       collection.order = !collection.order
@@ -685,6 +685,12 @@ export const useExerciseStore = defineStore('exercise', {
           if (item.position == null) {
             item.position = index + 1
           }
+        })
+      } else {
+        // Backend setzt die Positionen auf NULL, wenn die Reihenfolge
+        // deaktiviert wird — lokal nachziehen, damit UI und DB nicht divergieren.
+        collection.items.forEach((item) => {
+          item.position = null
         })
       }
       if (collection.collectionId) {
@@ -1008,6 +1014,10 @@ export const useExerciseStore = defineStore('exercise', {
       } catch (e) {
         this._notifyError(e)
         this.variants = this.variants.filter((v) => v !== variant)
+        // Konvergiert zur DB-Wahrheit: falls Stufe 1 (createItem) doch
+        // durchlief und erst createContent scheiterte, taucht das Item hier
+        // wieder auf, statt als Waise zu verschwinden.
+        await this.loadVariants(baseItemId)
       }
     },
 
@@ -1120,6 +1130,11 @@ export const useExerciseStore = defineStore('exercise', {
       return null
     },
 
+    /** Nach fehlgeschlagenem optimistischen Write Teilbaum mit DB-Stand abgleichen. */
+    _resyncAggregate(target?: Collection | null): Promise<void> {
+      if (target?.collectionId) return this._loadChildrenRecursively([target])
+      return this.loadTree()
+    },
 
     _createItemData(rootItemId: string | null = null): Item {
       const now = Date.now().toString()
@@ -1203,31 +1218,36 @@ export const useExerciseStore = defineStore('exercise', {
     createItem(rootItemId: string | null = null, addToRoot = true, onCreated?: (realId: string) => void): Item {
       const item = this._createItemData(rootItemId)
       if (addToRoot) this.rootItems.push(item)
-      _adapter?.createItem({
-        authorId: item.authorId ?? this.defaultAuthorId,
-        licenseId: item.licenseId ?? this.defaultLicenseId,
-        itemTypeId: item.itemTypeId ?? this.defaultItemTypeId,
-        rootItemId: item.rootItemId ?? null
-      }).then((dto) => {
-        if (dto) {
+      void (async () => {
+        try {
+          const dto = await _adapter!.createItem({
+            authorId: item.authorId ?? this.defaultAuthorId,
+            licenseId: item.licenseId ?? this.defaultLicenseId,
+            itemTypeId: item.itemTypeId ?? this.defaultItemTypeId,
+            rootItemId: item.rootItemId ?? null
+          })
           item.id = dto.itemId
           onCreated?.(dto.itemId)
           if (item.contents.length > 0) {
             const c0 = item.contents[0]
-            _adapter?.createContent(dto.itemId, {
+            const contentDto = await _adapter!.createContent(dto.itemId, {
               licenseId: c0.licenseId ?? this.defaultLicenseId,
               itemContentTypeId: c0.contentTypeId ?? this.defaultContentTypeId,
               authorId: c0.authorId ?? this.defaultAuthorId,
               purpose: c0.purpose,
               jsonSerializedContent: JSON.stringify(c0.jsonContent)
-            }).then((contentDto) => {
-              if (contentDto && item.contents[0]) {
-                item.contents[0].id = contentDto.itemContentId
-              }
-            }).catch((e) => this._notifyError(e))
+            })
+            if (contentDto && item.contents[0]) {
+              item.contents[0].id = contentDto.itemContentId
+            }
           }
+        } catch (e) {
+          // Bei Teilfehler den Baum wieder mit dem DB-Stand abgleichen,
+          // damit kein Geister-Item mit Temp-ID zurückbleibt.
+          this._notifyError(e)
+          await this.loadTree()
         }
-      }).catch((e) => this._notifyError(e))
+      })()
       this.validate()
       return item
     },
@@ -1265,29 +1285,34 @@ export const useExerciseStore = defineStore('exercise', {
         this.rootItems.push(item)
       }
 
-      _adapter?.createItem({
-        authorId: item.authorId ?? this.defaultAuthorId,
-        licenseId: item.licenseId ?? this.defaultLicenseId,
-        itemTypeId: item.itemTypeId ?? this.defaultItemTypeId,
-        rootItemId: item.rootItemId ?? null
-      }).then((dto) => {
-        if (!dto) return
-        item.id = dto.itemId
-        _adapter?.createContent(dto.itemId, {
-          licenseId: c0.licenseId ?? this.defaultLicenseId,
-          itemContentTypeId: c0.contentTypeId ?? this.defaultContentTypeId,
-          authorId: c0.authorId ?? this.defaultAuthorId,
-          purpose: c0.purpose,
-          jsonSerializedContent: JSON.stringify(c0.jsonContent)
-        }).then((contentDto) => {
+      void (async () => {
+        try {
+          const dto = await _adapter!.createItem({
+            authorId: item.authorId ?? this.defaultAuthorId,
+            licenseId: item.licenseId ?? this.defaultLicenseId,
+            itemTypeId: item.itemTypeId ?? this.defaultItemTypeId,
+            rootItemId: item.rootItemId ?? null
+          })
+          item.id = dto.itemId
+          const contentDto = await _adapter!.createContent(dto.itemId, {
+            licenseId: c0.licenseId ?? this.defaultLicenseId,
+            itemContentTypeId: c0.contentTypeId ?? this.defaultContentTypeId,
+            authorId: c0.authorId ?? this.defaultAuthorId,
+            purpose: c0.purpose,
+            jsonSerializedContent: JSON.stringify(c0.jsonContent)
+          })
           if (contentDto) c0.id = contentDto.itemContentId
-        }).catch((e) => this._notifyError(e))
-        if (target && target.collectionId) {
-          _adapter?.addItemToCollection(target.collectionId, dto.itemId)
-            .catch((e) => this._notifyError(e))
+          if (target?.collectionId) {
+            await _adapter!.addItemToCollection(target.collectionId, dto.itemId)
+          }
+          this.selectItem(collectionItem ?? item)
+        } catch (e) {
+          // Schlägt eine der Stufen fehl, den betroffenen Aggregat-Teilbaum
+          // (Ziel-Kollektion oder Baum) wieder mit dem DB-Stand abgleichen.
+          this._notifyError(e)
+          await this._resyncAggregate(target)
         }
-        this.selectItem(collectionItem ?? item)
-      }).catch((e) => this._notifyError(e))
+      })()
 
       if (target) this._syncOrderedCollectionItems(target)
       this.validate()
@@ -1332,22 +1357,26 @@ export const useExerciseStore = defineStore('exercise', {
       // Backend-Modell: erst eine Item anlegen, dann zur Kollektion machen
       // (POST /items → POST /items/{id}/collection). So taucht die Kollektion
       // beim Neuladen über GET /items?root=true wieder auf.
-      _adapter?.createItem({
-        authorId,
-        licenseId,
-        itemTypeId,
-        rootItemId: null
-      })
-        .then((dto) => {
-          if (!dto) return
+      void (async () => {
+        try {
+          const dto = await _adapter!.createItem({
+            authorId,
+            licenseId,
+            itemTypeId,
+            rootItemId: null
+          })
           collection.id = dto.itemId
-          return _adapter?.convertItemToCollection(dto.itemId)
-        })
-        .then((collDto) => {
           // item_collection_id merken — nötig für alle weiteren Collection-Calls
-          if (collDto) collection.collectionId = collDto.collectionId ?? null
-        })
-        .catch((e) => this._notifyError(e))
+          const collDto = await _adapter!.convertItemToCollection(dto.itemId)
+          collection.collectionId = collDto.collectionId ?? null
+        } catch (e) {
+          // Schlägt das Anlegen oder das Umwandeln fehl, bleibt collectionId
+          // null (alle weiteren Collection-Calls würden still übersprungen) —
+          // daher den Baum wieder mit dem DB-Stand abgleichen.
+          this._notifyError(e)
+          await this.loadTree()
+        }
+      })()
       this.validate()
       return collection
     },
@@ -1357,7 +1386,12 @@ export const useExerciseStore = defineStore('exercise', {
       const item = this.createItem(rootId, false, (realId) => {
         if (collection.collectionId) {
           _adapter?.addItemToCollection(collection.collectionId, realId)
-            .catch((e) => this._notifyError(e))
+            .catch(async (e) => {
+              // Verknüpfung fehlgeschlagen → Kollektion mit dem DB-Stand
+              // abgleichen (das lokal eingefügte Item wieder entfernen).
+              this._notifyError(e)
+              await this._resyncAggregate(collection)
+            })
         }
       })
       const collectionItem: CollectionItem = {
@@ -1392,7 +1426,14 @@ export const useExerciseStore = defineStore('exercise', {
       if (this.selectedItem && getInnerItem(this.selectedItem).id === itemId) {
         this.selectedItem = null
       }
-      _adapter?.deleteItem(itemId).catch((e) => this._notifyError(e))
+      // Parent VOR dem async-Gap merken (nach _detachItem ist das Item schon
+      // aus dem lokalen Baum entfernt).
+      const parentForResync = parentId ? this._findCollectionById(parentId) : null
+      _adapter?.deleteItem(itemId).catch(async (e) => {
+        // Löschen fehlgeschlagen → das Item wieder aus dem DB-Stand herstellen.
+        this._notifyError(e)
+        await this._resyncAggregate(parentForResync)
+      })
       if (parentId) {
         const parent = this._findCollectionById(parentId)
         if (parent) this._syncOrderedCollectionItems(parent)
@@ -1401,9 +1442,22 @@ export const useExerciseStore = defineStore('exercise', {
     },
 
     deleteCollection(collectionToDelete: Collection) {
-      const itemsToDelete = [...collectionToDelete.items]
+      // Kinder merken, BEVOR die Kollektion aus dem Baum entfernt wird.
+      const children = collectionToDelete.items.map((ci) => ci.item)
+      // Nur die Kollektion selbst loeschen. Das Backend entfernt dabei die
+      // ItemCollection und ihre Sub-Item-Verknuepfungen; die enthaltenen
+      // Aufgaben bleiben bestehen (sie koennen in anderen Kollektionen liegen).
       this.deleteItem(collectionToDelete)
-      itemsToDelete.forEach((ci) => this.deleteItem(ci.item))
+      // Enthaltene Aufgaben nicht loeschen, sondern auf die Root-Ebene heben.
+      children.forEach((child) => {
+        // rootItemId NICHT anfassen: das ist der Varianten-Bezug (horizontal),
+        // orthogonal zur Kollektions-Zugehoerigkeit. Nullen wuerde die
+        // Varianten-Beziehung einer Aufgabe zerstoeren.
+        if (!this.rootItems.some((ri) => ri.id === child.id)) {
+          this.rootItems.push(child)
+        }
+      })
+      this.validate()
     },
 
 
@@ -1437,7 +1491,6 @@ export const useExerciseStore = defineStore('exercise', {
             }
           }
         }
-        inner.rootItemId = collection.rootItemId ?? null
         if (isCollectionItem(item)) {
           return { ...item, collectionId: collection.id, position: collection.order ? index + 1 : null } as CollectionItem
         }

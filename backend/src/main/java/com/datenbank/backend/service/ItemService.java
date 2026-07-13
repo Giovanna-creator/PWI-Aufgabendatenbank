@@ -185,10 +185,14 @@ public class ItemService {
     public ItemResponseDto convertToCollection(UUID itemId) {
         Item item = findItemOrThrow(itemId);
 
-        ItemCollection collection = new ItemCollection();
-        collection.setParentItem(item);
-        collection.setCollectionOrder(false);
-        collectionRepository.save(collection);
+        // Idempotent: hat das Item bereits eine Kollektion, wird keine zweite
+        // angelegt (verhindert Duplikate bei Doppelklick bzw. Doppel-Request).
+        if (!collectionRepository.existsByParentItem_ItemId(itemId)) {
+            ItemCollection collection = new ItemCollection();
+            collection.setParentItem(item);
+            collection.setCollectionOrder(false);
+            collectionRepository.save(collection);
+        }
 
         return convertToResponseDto(item);
     }

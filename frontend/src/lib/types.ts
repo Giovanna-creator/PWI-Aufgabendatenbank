@@ -62,9 +62,9 @@ export function getInnerItem(element: TreeItem): Item {
 }
 
 export function isCollection(object: any): object is Collection {
-  return object && typeof object.id === 'string' && object.item_type === 'collection'
+  return !!object && typeof object.id === 'string' && object.item_type === 'collection'
 }
 
 export function isCollectionItem(object: any): object is CollectionItem {
-  return object && typeof object.id === 'string' && 'collectionId' in object && 'item' in object
+  return !!object && typeof object.id === 'string' && 'collectionId' in object && 'item' in object
 }
