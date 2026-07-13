@@ -1,0 +1,44 @@
+services:
+
+  db:
+    image: postgres:16-alpine
+    env_file: .env
+    environment:
+      POSTGRES_DB: pwi_aufgabendatenbank
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: always
+
+  backend:
+    image: ghcr.io/giovanna-creator/pwi-aufgabendatenbank-backend:latest
+    env_file: .env
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/pwi_aufgabendatenbank
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+
+  frontend:
+    image: ghcr.io/giovanna-creator/pwi-aufgabendatenbank-frontend:latest
+    env_file: .env
+    environment:
+      VITE_PROXY_TARGET: http://backend:8080
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: always
+
+volumes:
+  pgdata:
