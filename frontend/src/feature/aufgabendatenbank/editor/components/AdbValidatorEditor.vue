@@ -140,7 +140,7 @@ function cancelCreate() {
 .validator-section {
   margin-top: 24px;
   padding-top: 20px;
-  border-top: 1px solid #333;
+  border-top: 1px solid var(--adb-border);
 }
 
 .section-header {
@@ -153,13 +153,13 @@ function cancelCreate() {
 .section-title {
   font-size: 13px;
   font-weight: 600;
-  color: #969696;
+  color: var(--adb-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .add-btn {
-  color: #007fd4 !important;
+  color: var(--adb-accent) !important;
 }
 
 .validators-list {
@@ -173,8 +173,8 @@ function cancelCreate() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #2a2a2a;
-  border: 1px solid #444;
+  background-color: var(--adb-bg-chip);
+  border: 1px solid var(--adb-border);
   border-radius: 4px;
   padding: 8px 10px;
   gap: 8px;
@@ -189,24 +189,24 @@ function cancelCreate() {
 
 .validator-desc {
   font-size: 13px;
-  color: #cccccc;
+  color: var(--adb-text-primary);
   font-weight: 500;
 }
 
 .validator-rule {
   font-size: 11px;
-  color: #888;
+  color: var(--adb-text-tertiary);
   font-family: monospace;
 }
 
 .remove-btn {
-  color: #c04040 !important;
+  color: var(--adb-danger) !important;
   flex-shrink: 0;
 }
 
 .empty-hint {
   font-size: 12px;
-  color: #666;
+  color: var(--adb-text-muted);
   font-style: italic;
   padding: 4px 0;
 }
@@ -217,7 +217,7 @@ function cancelCreate() {
 
 .available-label {
   font-size: 11px;
-  color: #777;
+  color: var(--adb-text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.3px;
   display: block;
@@ -232,9 +232,9 @@ function cancelCreate() {
 
 .available-chip {
   font-size: 12px;
-  color: #aaa;
-  background-color: #252525;
-  border: 1px dashed #555;
+  color: var(--adb-text-tertiary);
+  background-color: var(--adb-bg-chip);
+  border: 1px dashed var(--adb-border-light);
   border-radius: 4px;
   padding: 4px 10px;
   cursor: pointer;
@@ -242,18 +242,18 @@ function cancelCreate() {
 }
 
 .available-chip:hover {
-  color: #007fd4;
-  border-color: #007fd4;
-  background-color: #0d2b45;
+  color: var(--adb-accent);
+  border-color: var(--adb-accent);
+  background-color: var(--adb-bg-active);
 }
 
 .dialog-card {
-  background-color: #1e1e1e !important;
-  color: #cccccc !important;
+  background-color: var(--adb-bg-primary) !important;
+  color: var(--adb-text-primary) !important;
 }
 
 .dialog-title {
-  color: #cccccc;
+  color: var(--adb-text-primary);
   font-size: 16px;
   font-weight: 600;
 }
@@ -267,10 +267,10 @@ function cancelCreate() {
 }
 
 .cancel-btn {
-  color: #969696 !important;
+  color: var(--adb-text-secondary) !important;
 }
 
 .save-btn {
-  color: #007fd4 !important;
+  color: var(--adb-accent) !important;
 }
 </style>

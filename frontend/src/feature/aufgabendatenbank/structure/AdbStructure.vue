@@ -123,21 +123,21 @@ const updateRootItems = (newItems: typeof store.rootItems) => {
 .adb-structure-container {
   height: 100%;
   width: 100%;
-  background-color: #252526;
+  background-color: var(--adb-bg-secondary);
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #333333;
-  color: #cccccc;
+  border-right: 1px solid var(--adb-border);
+  color: var(--adb-text-primary);
 }
 
 .adb-structure-header {
   padding: 8px 16px;
   font-size: 0.75rem;
   line-height: 16px;
-  color: #969696;
+  color: var(--adb-text-secondary);
   user-select: none;
-  background-color: #252526;
-  border-bottom: 1px solid #333333;
+  background-color: var(--adb-bg-secondary);
+  border-bottom: 1px solid var(--adb-border);
 }
 
 .tag-filter {
@@ -165,33 +165,33 @@ const updateRootItems = (newItems: typeof store.rootItems) => {
   align-items: center;
   padding: 10px 16px;
   font-size: 13px;
-  color: #969696;
+  color: var(--adb-text-secondary);
 }
 
 .adb-filter-result-item {
-  color: #cccccc !important;
+  color: var(--adb-text-primary) !important;
 
   &:hover {
-    background-color: #2a2d2e !important;
+    background-color: var(--adb-bg-hover) !important;
   }
 
   &.v-list-item--active {
-    background-color: #37373d !important;
+    background-color: var(--adb-bg-active) !important;
   }
 }
 
 .adb-filter-result-item :deep(.v-list-item-title) {
-  color: #cccccc !important;
+  color: var(--adb-text-primary) !important;
   font-size: 13px;
 }
 
 .adb-filter-result-item :deep(.v-list-item-subtitle) {
-  color: #8a8a8a !important;
+  color: var(--adb-text-tertiary) !important;
   font-size: 11px;
   opacity: 1;
 }
 
 .adb-filter-result-item :deep(.v-icon) {
-  color: #b0b0b0 !important;
+  color: var(--adb-text-tertiary) !important;
 }
 </style>

@@ -40,14 +40,14 @@ function onChange(value: string) {
 }
 
 .xml-codemirror {
-  border: 1px solid #3c3c3c;
+  border: 1px solid var(--adb-border);
   border-radius: 8px;
   overflow: hidden;
   transition: border-color 0.15s;
 }
 
 .xml-codemirior:focus-within {
-  border-color: #007fd4;
+  border-color: var(--adb-accent);
 }
 
 .xml-codemirror {

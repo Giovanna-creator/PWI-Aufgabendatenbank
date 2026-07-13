@@ -85,7 +85,7 @@ function onAddVariant() {
 .variants-panel {
   margin-top: 32px;
   padding-top: 24px;
-  border-top: 1px solid #333;
+  border-top: 1px solid var(--adb-border);
 }
 
 .variants-header {
@@ -98,14 +98,14 @@ function onAddVariant() {
 .variants-title {
   font-size: 15px;
   font-weight: 600;
-  color: #ccc;
+    color: var(--adb-text-primary);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 
 .variants-count {
-  background: #3c3c3c;
-  color: #999;
+  background: var(--adb-bg-field);
+  color: var(--adb-text-tertiary);
   font-size: 11px;
   font-weight: 600;
   padding: 1px 8px;
@@ -120,8 +120,8 @@ function onAddVariant() {
 }
 
 .variant-card {
-  background: #252526;
-  border: 1px solid #3c3c3c;
+  background: var(--adb-bg-secondary);
+  border: 1px solid var(--adb-border);
   border-radius: 16px;
   padding: 12px;
 }
@@ -132,18 +132,18 @@ function onAddVariant() {
   justify-content: space-between;
   margin-bottom: 10px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--adb-border);
 }
 
 .variant-label {
   font-size: 13px;
   font-weight: 600;
-  color: #aaa;
+    color: var(--adb-text-tertiary);
 }
 
 .variant-id {
   font-size: 10px;
-  color: #555;
+  color: var(--adb-text-muted);
   font-family: monospace;
 }
 
@@ -162,16 +162,16 @@ function onAddVariant() {
   min-height: 36px;
   padding: 0 12px;
   border-radius: 16px;
-  color: #666;
+  color: var(--adb-text-muted);
   font-size: 12px;
   cursor: pointer;
   transition: all 0.15s;
-  border: 1px dashed #444;
+  border: 1px dashed var(--adb-border);
   margin-top: 4px;
 
   &:hover {
-    color: #aaa;
-    border-color: #666;
+  color: var(--adb-text-tertiary);
+    border-color: var(--adb-icon);
     background: rgba(255, 255, 255, 0.02);
   }
 }
@@ -183,15 +183,15 @@ function onAddVariant() {
   min-height: 44px;
   padding: 0 16px;
   border-radius: 22px;
-  color: #888;
+  color: var(--adb-text-tertiary);
   font-size: 13px;
   cursor: pointer;
   transition: all 0.15s;
-  border: 1px dashed #555;
+  border: 1px dashed var(--adb-border-light);
 
   &:hover {
-    color: #ccc;
-    border-color: #888;
+  color: var(--adb-text-primary);
+    border-color: var(--adb-text-tertiary);
     background: rgba(255, 255, 255, 0.02);
   }
 }

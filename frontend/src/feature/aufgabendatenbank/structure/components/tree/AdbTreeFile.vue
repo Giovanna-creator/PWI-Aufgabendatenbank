@@ -171,12 +171,12 @@ const onDeleteConfirmed = () => {
   margin-bottom: 0 !important;
   border-radius: 0 !important;
   transition: none !important;
-  color: #cccccc !important;
+  color: var(--adb-text-primary) !important;
   position: relative;
   z-index: 5;
 
   &:hover {
-    background-color: #2a2d2e !important;
+    background-color: var(--adb-bg-hover) !important;
 
     .action-btn {
       opacity: 1;
@@ -184,8 +184,8 @@ const onDeleteConfirmed = () => {
   }
 
   &.v-list-item--active {
-    background-color: #37373d !important;
-    color: #ffffff !important;
+    background-color: var(--adb-bg-active) !important;
+    color: var(--adb-text-inverse) !important;
 
     &::before {
       opacity: 0 !important;
@@ -203,7 +203,7 @@ const onDeleteConfirmed = () => {
   width: 16px;
   height: 16px;
   margin-right: 4px;
-  color: #cccccc;
+  color: var(--adb-text-primary);
 }
 
 .bullet-icon {
@@ -211,7 +211,7 @@ const onDeleteConfirmed = () => {
   width: 8px;
   min-width: 8px;
   margin-right: 10px;
-  color: #888888;
+  color: var(--adb-text-tertiary);
 }
 
 .position-number {
@@ -224,12 +224,12 @@ const onDeleteConfirmed = () => {
   margin-right: 4px;
   font-size: 11px;
   font-weight: 600;
-  color: #007fd4;
+  color: var(--adb-accent);
   line-height: 1;
 }
 
 .type-icon {
-  color: #cccccc;
+  color: var(--adb-text-primary);
 }
 
 .tree-node-title {
@@ -238,7 +238,7 @@ const onDeleteConfirmed = () => {
 }
 
 .position-label {
-  color: #cccccc;
+  color: var(--adb-text-primary);
   font-weight: 600;
   margin-right: 4px;
 }
@@ -250,6 +250,6 @@ const onDeleteConfirmed = () => {
 
 .drop-target {
   background-color: rgba(0, 127, 212, 0.1);
-  box-shadow: inset 0 0 0 1px #007fd4;
+  box-shadow: inset 0 0 0 1px var(--adb-accent);
 }
 </style>

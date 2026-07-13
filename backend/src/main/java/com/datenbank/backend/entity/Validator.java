@@ -3,10 +3,6 @@ package com.datenbank.backend.entity;
 import jakarta.persistence.*;
 import java.util.UUID;
 
-/**
- * Entspricht der Tabelle "validator".
- * Validatoren für Aufgaben (z.B. "muss INNER JOIN enthalten").
- */
 @Entity
 @Table(name = "validator")
 public class Validator {

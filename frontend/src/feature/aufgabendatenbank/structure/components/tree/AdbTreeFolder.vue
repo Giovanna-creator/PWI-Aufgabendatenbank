@@ -187,12 +187,12 @@ const onSelect = () => {
   border-radius: 0 !important;
   transition: none !important;
   cursor: pointer;
-  color: #cccccc !important;
+  color: var(--adb-text-primary) !important;
   position: relative;
   z-index: 5;
 
   &:hover {
-    background-color: #2a2d2e !important;
+    background-color: var(--adb-bg-hover) !important;
 
     .action-btn {
       opacity: 1;
@@ -200,8 +200,8 @@ const onSelect = () => {
   }
 
   &.v-list-item--active {
-    background-color: #37373d !important;
-    color: #ffffff !important;
+    background-color: var(--adb-bg-active) !important;
+    color: var(--adb-text-inverse) !important;
 
     &::before {
       opacity: 0 !important;
@@ -220,7 +220,7 @@ const onSelect = () => {
   height: 16px;
   margin-left: -2px;
   margin-right: 6px;
-  color: #cccccc;
+  color: var(--adb-text-primary);
 }
 
 .position-number {
@@ -233,12 +233,12 @@ const onSelect = () => {
   margin-right: 4px;
   font-size: 11px;
   font-weight: 600;
-  color: #007fd4;
+  color: var(--adb-accent);
   line-height: 1;
 }
 
 .type-icon {
-  color: #cccccc;
+  color: var(--adb-text-primary);
 }
 
 .tree-node-title {
@@ -247,7 +247,7 @@ const onSelect = () => {
 }
 
 .position-label {
-  color: #cccccc;
+  color: var(--adb-text-primary);
   font-weight: 600;
   margin-right: 4px;
 }
@@ -267,7 +267,7 @@ const onSelect = () => {
     top: 0;
     bottom: 0;
     width: 1px;
-    background-color: #5a5a5a;
+    background-color: var(--adb-tree-connector);
     pointer-events: none;
     z-index: 10;
   }
@@ -280,7 +280,7 @@ const onSelect = () => {
 
 .drop-target {
   background-color: rgba(0, 127, 212, 0.1);
-  box-shadow: inset 0 0 0 1px #007fd4;
+  box-shadow: inset 0 0 0 1px var(--adb-accent);
 }
 
 .loading-spinner {
@@ -288,7 +288,7 @@ const onSelect = () => {
   align-items: center;
   gap: 8px;
   padding: 8px 16px 8px 48px;
-  color: #888;
+  color: var(--adb-text-tertiary);
   font-size: 12px;
 }
 

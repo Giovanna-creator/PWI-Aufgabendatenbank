@@ -266,8 +266,8 @@ function onImgError() {
 
 <style scoped lang="scss">
 .content-card {
-  background: #2d2d2d;
-  border: 1px solid #3c3c3c;
+  background: var(--adb-bg-surface);
+  border: 1px solid var(--adb-border);
   border-radius: 24px;
   padding: 12px 16px;
   margin-bottom: 10px;
@@ -299,7 +299,7 @@ function onImgError() {
 
 .purpose-badge {
   display: inline-block;
-  color: #cccccc;
+  color: var(--adb-text-primary);
   font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.01em;
@@ -317,7 +317,7 @@ function onImgError() {
   left: 12px;
   font-size: 8px;
   line-height: 1;
-  color: #555;
+  color: var(--adb-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   pointer-events: none;
@@ -332,17 +332,17 @@ function onImgError() {
   display: block;
   width: 100%;
   padding: 11px 8px 2px 12px;
-  color: #cccccc;
+  color: var(--adb-text-primary);
   font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.01em;
-  border-bottom: 1px solid #007fd4;
+  border-bottom: 1px solid var(--adb-accent);
   outline: none;
   box-sizing: border-box;
 }
 
 .edit-hint {
-  color: #555;
+  color: var(--adb-text-muted);
   flex-shrink: 0;
   opacity: 0;
   transition: opacity 0.15s;
@@ -364,12 +364,12 @@ function onImgError() {
 .card-divider {
   height: 0;
   border: none;
-  border-bottom: 1px solid #3c3c3c;
+  border-bottom: 1px solid var(--adb-border);
   margin: 6px -16px 8px;
 }
 
 .delete-btn {
-  color: #666 !important;
+  color: var(--adb-icon) !important;
   opacity: 0.7;
   transition:
     opacity 0.15s,
@@ -378,7 +378,7 @@ function onImgError() {
 
   &:hover {
     opacity: 1;
-    color: #ff7a84 !important;
+    color: var(--adb-danger) !important;
   }
 }
 
@@ -404,7 +404,7 @@ function onImgError() {
   gap: 6px;
   font-size: 15px;
   line-height: 1.6;
-  color: #cccccc;
+  color: var(--adb-text-primary);
   cursor: pointer;
   padding: 8px 10px;
   margin: 0 -10px;
@@ -430,9 +430,9 @@ function onImgError() {
   box-sizing: border-box;
   font-size: 15px;
   line-height: 1.6;
-  color: #cccccc;
-  background: #1e1e1e;
-  border: 1px solid #007fd4;
+  color: var(--adb-text-primary);
+  background: var(--adb-bg-primary);
+  border: 1px solid var(--adb-accent);
   border-radius: 8px;
   padding: 14px 12px 6px 12px;
   resize: vertical;
@@ -440,7 +440,7 @@ function onImgError() {
   font-family: inherit;
 
   &::placeholder {
-    color: #666;
+    color: var(--adb-text-muted);
   }
 }
 
@@ -456,7 +456,7 @@ function onImgError() {
   align-items: flex-start;
   gap: 8px;
   padding: 8px 10px;
-  background: #1e1e1e;
+  background: var(--adb-bg-primary);
   border-radius: 12px;
 }
 
@@ -476,7 +476,7 @@ function onImgError() {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: #007fd4;
+  color: var(--adb-accent);
   text-decoration: none;
   font-size: 13px;
   padding: 4px 10px;
@@ -493,13 +493,13 @@ function onImgError() {
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  background: #1e1e1e;
+  background: var(--adb-bg-primary);
   border-radius: 12px;
 }
 
 .blob-filename {
   font-size: 13px;
-  color: #ccc;
+  color: var(--adb-text-primary);
   flex: 1;
 }
 
@@ -516,17 +516,17 @@ function onImgError() {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #888;
+  color: var(--adb-text-tertiary);
   font-size: 13px;
   cursor: pointer;
   padding: 6px 12px;
   border-radius: 12px;
-  border: 1px dashed #555;
+  border: 1px dashed var(--adb-border-light);
   transition: all 0.15s;
 
   &:hover {
-    color: #ccc;
-    border-color: #888;
+    color: var(--adb-text-primary);
+    border-color: var(--adb-text-tertiary);
     background: rgba(255, 255, 255, 0.03);
   }
 }

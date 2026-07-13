@@ -114,21 +114,21 @@ function confirmDelete() {
 <style scoped>
 .tag-filter-field {
   margin-top: 8px;
-  border: 1px solid #555;
+  border: 1px solid var(--adb-border-light);
   border-radius: 4px;
   padding: 4px 8px 5px;
-  background-color: #3c3c3c;
+  background-color: var(--adb-bg-field);
   cursor: pointer;
 
   &:hover {
-    border-color: #777;
+    border-color: var(--adb-text-tertiary);
   }
 }
 
 .tag-filter-caption {
   display: block;
   font-size: 10px;
-  color: #969696;
+  color: var(--adb-text-secondary);
   line-height: 12px;
 }
 
@@ -141,31 +141,31 @@ function confirmDelete() {
 .tag-filter-value {
   flex: 1;
   font-size: 13px;
-  color: #cccccc;
+  color: var(--adb-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 
   &.placeholder {
-    color: #888;
+    color: var(--adb-text-tertiary);
   }
 }
 
 .tag-filter-clear {
-  color: #888;
+  color: var(--adb-text-tertiary);
 
   &:hover {
-    color: #ccc;
+    color: var(--adb-text-primary);
   }
 }
 
 .tag-filter-arrow {
-  color: #969696;
+  color: var(--adb-text-secondary);
 }
 
 .tag-filter-menu {
-  background-color: #252526;
-  border: 1px solid #454545;
+  background-color: var(--adb-bg-secondary);
+  border: 1px solid var(--adb-border-light);
   border-radius: 4px;
   padding: 4px 0;
   min-width: 220px;
@@ -176,29 +176,29 @@ function confirmDelete() {
 .tag-menu-all {
   padding: 4px 12px;
   font-size: 13px;
-  color: #cccccc;
+  color: var(--adb-text-primary);
   cursor: pointer;
 
   &:hover {
-    background-color: #2a2d2e;
+    background-color: var(--adb-bg-hover);
   }
 
   &.active {
-    color: #007fd4;
+    color: var(--adb-accent);
     font-weight: 600;
   }
 }
 
 .tag-menu-divider {
   height: 1px;
-  background-color: #3a3a3a;
+  background-color: var(--adb-border);
   margin: 4px 0;
 }
 
 .tag-menu-empty {
   padding: 6px 12px;
   font-size: 12px;
-  color: #6a6a6a;
+  color: var(--adb-text-tertiary);
   font-style: italic;
 }
 </style>

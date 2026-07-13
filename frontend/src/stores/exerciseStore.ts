@@ -28,34 +28,25 @@ import type {
   SearchParams
 } from '@/feature/aufgabendatenbank/api-adapter.types'
 
-/** Ein Knoten im hierarchischen Tag-Baum (für die Filter-Auswahl). */
 export interface TagNode {
   id: string
   tag: string
   children: TagNode[]
 }
 
-// ── Default-UUIDs (identisch mit database/init/init.sql) ───────────────────────
-// Werden genutzt, solange der Benutzer im UI keine eigene Auswahl trifft.
-
+// Default-UUIDs identisch mit database/init/init.sql
 const DEFAULT_AUTHOR_ID = 'd0000000-0000-0000-0000-000000000001'
 const DEFAULT_LICENSE_ID = 'b0000000-0000-0000-0000-000000000001'
 const DEFAULT_ITEM_TYPE_ID = 'e0000000-0000-0000-0000-000000000001'
 const DEFAULT_CONTENT_TYPE_ID = 'a0000000-0000-0000-0000-000000000003'
 
-// ── Adapter injection ─────────────────────────────────────────────────────────
-
 let _adapter: ApiAdapter | null = null
 
-/**
- * Inject the API adapter into the exercise store.
- * Must be called before `useExerciseStore()` is invoked.
- */
 export function setApiAdapter(adapter: ApiAdapter): void {
   _adapter = adapter
 }
 
-// ── DTO → Store type mappers ──────────────────────────────────────────────────
+
 
 function toContent(dto: ContentSummaryDTO): Content {
   return {
@@ -108,9 +99,6 @@ function toItem(dto: ItemDTO): Item {
     modifiers: dto.modifierIds ?? [],
     rootItemId: dto.rootItemId ?? null,
     contents: (dto.contents ?? []).map(toContent),
-    // Eine Kollektion hat IMMER ein items-Array (zunächst leer, bis die
-    // Kinder via _loadChildrenRecursively nachgeladen werden). Sonst
-    // crasht z. B. die Validierung mit undefined.flatMap(...).
     items: dto.items?.map(toCollectionItem) ?? (dto.isCollection ? [] : undefined),
     order: dto.order,
     collectionId: dto.collectionId ?? null,
@@ -130,7 +118,7 @@ function toCollectionItem(dto: CollectionItemDTO): CollectionItem {
   }
 }
 
-// ── State ─────────────────────────────────────────────────────────────────────
+
 
 interface ExerciseState {
   rootItems: Item[]
@@ -140,17 +128,13 @@ interface ExerciseState {
   loadingContent: boolean
   error: string | null
   loadingChildrenIds: string[]
-  // Referenzdaten für Dropdowns (Autor/Lizenz/Typ/Content-Typ)
   authors: AuthorDTO[]
   licenses: LicenseDTO[]
   itemTypes: ItemTypeDTO[]
   contentTypes: ContentTypeDTO[]
-  // Hierarchische Tags + aktiver Tag-Filter (null = kein Filter)
   tags: TagDTO[]
   tagFilter: string | null
-  // Templates für die Darstellung der Contents
   templates: ReprTemplateDTO[]
-  // Erstellungs-Dialog (von Toolbar und Collection-Kontextmenü geteilt)
   createDialogOpen: boolean
   createDialogTarget: Collection | null
   allValidators: ValidatorDTO[]
@@ -158,10 +142,7 @@ interface ExerciseState {
   selectedLicenseId: string | null
   selectedItemTypeId: string | null
   selectedContentTypeId: string | null
-  // Aktuelle Live-XML aus dem Editor, damit _getTemplateXml / _ensurePurpose / _removePurpose
-  // gegen die aktuellste Version mergen und nicht gegen eine veraltete persisted template.
   liveTemplateXml: string | null
-  // Such-/Filterzustand
   searchQuery: string
   filterAuthorId: string | null
   filterItemTypeId: string | null
@@ -170,11 +151,11 @@ interface ExerciseState {
   filtering: boolean
 }
 
-// ── Debounce timer (module-level, nicht im Store-State) ──────────────────────
+
 
 let _filterTimer: ReturnType<typeof setTimeout> | null = null
 
-// ── Store ─────────────────────────────────────────────────────────────────────
+
 
 export const useExerciseStore = defineStore('exercise', {
   state: (): ExerciseState => ({
@@ -219,8 +200,6 @@ export const useExerciseStore = defineStore('exercise', {
       return getInnerItem(state.selectedItem)
     },
 
-    // Default-IDs für die Erstellung: erster Eintrag der jeweiligen
-    // Referenzliste, Fallback auf die festen Seed-UUIDs (falls Liste leer).
     defaultAuthorId: (state): string => state.authors[0]?.id ?? DEFAULT_AUTHOR_ID,
     defaultLicenseId: (state): string => state.licenses[0]?.id ?? DEFAULT_LICENSE_ID,
     defaultItemTypeId: (state): string => state.itemTypes[0]?.id ?? DEFAULT_ITEM_TYPE_ID,
@@ -241,9 +220,6 @@ export const useExerciseStore = defineStore('exercise', {
       return coll ? coll.order === true : false
     },
 
-    // ── Tags ──────────────────────────────────────────────────────────────────
-
-    /** Lesbarer Pfad eines Tags, z. B. "Mathematik / Analysis / Ableitungen". */
     tagPath() {
       return (id: string): string => {
         const parts: string[] = []
@@ -258,14 +234,12 @@ export const useExerciseStore = defineStore('exercise', {
       }
     },
 
-    /** Alle Tags als { id, path } für Dropdowns, nach Pfad sortiert. */
     tagOptions(): { id: string; path: string }[] {
       return this.tags
         .map((t) => ({ id: t.id, path: this.tagPath(t.id) }))
         .sort((a, b) => a.path.localeCompare(b.path))
     },
 
-    /** Hierarchischer Tag-Baum (nur Wurzeln, mit verschachtelten Kindern). */
     tagTree(): TagNode[] {
       const byId = new Map<string, TagNode>()
       for (const t of this.tags) byId.set(t.id, { id: t.id, tag: t.tag, children: [] })
@@ -284,7 +258,6 @@ export const useExerciseStore = defineStore('exercise', {
       return roots
     },
 
-    /** Ein Tag plus alle seine Nachfahren (für den vererbenden Filter). */
     descendantTagIds() {
       return (id: string): Set<string> => {
         const ids = new Set<string>([id])
@@ -302,11 +275,6 @@ export const useExerciseStore = defineStore('exercise', {
       }
     },
 
-    /**
-     * Root-Items unter Berücksichtigung des Tag-Filters. Ohne Filter alle;
-     * mit Filter nur Items, deren Tags den gewählten Tag oder einen seiner
-     * Nachfahren enthalten (Vererbung).
-     */
     visibleRootItems(): Item[] {
       if (!this.tagFilter) return this.rootItems
       const wanted = this.descendantTagIds(this.tagFilter)
@@ -330,9 +298,6 @@ export const useExerciseStore = defineStore('exercise', {
   },
 
   actions: {
-    // ── Notifications ─────────────────────────────────────────────────────────
-
-    /** Push an API error string to the global notification store. */
     _notifyError(e: unknown) {
       const notifStore = useNotificationStore()
       const msg = (e as any)?.response?.data?.message || (e as any)?.response?.data || String(e)
@@ -340,12 +305,8 @@ export const useExerciseStore = defineStore('exercise', {
       notifStore.push(status + JSON.stringify(msg), 'error', 12000)
     },
 
-    // ── Referenzdaten ─────────────────────────────────────────────────────────
 
-    /**
-     * Load reference lists (authors, licenses, item types, content types)
-     * used to populate the editor dropdowns. Called once on mount.
-     */
+
     async loadReferenceData() {
       if (!_adapter) return
       try {
@@ -375,12 +336,7 @@ export const useExerciseStore = defineStore('exercise', {
       }
     },
 
-    /**
-     * Neue Referenzdaten anlegen (Autor/Lizenz/Typ/Inhaltstyp). Legt sie per
-     * POST an, hängt sie an die passende Liste und gibt den neuen Datensatz
-     * zurück, damit die UI ihn direkt auswählen kann.
-     * `primary` = Name/Descriptor, `secondary` = Mail (Autor) bzw. Beschreibung.
-     */
+    /** Neue Referenzdaten anlegen, an die Liste anhängen und zurückgeben. */
     async createReference(
       type: 'author' | 'license' | 'itemType' | 'contentType',
       primary: string,
@@ -430,9 +386,6 @@ export const useExerciseStore = defineStore('exercise', {
       }
     },
 
-    // ── Tags ────────────────────────────────────────────────────────────────
-
-    /** Neues Tag anlegen (optional mit Eltern-Tag) und in die Liste aufnehmen. */
     async createTag(
       name: string,
       parentTagId: string | null = null,
@@ -453,11 +406,7 @@ export const useExerciseStore = defineStore('exercise', {
       }
     },
 
-    /**
-     * Erstellt einen Tag aus einem Pfad "A/B/C": bestehende Segmente werden
-     * per Name wiederverwendet, fehlende neu angelegt. Leerzeichen sind
-     * verboten (auch zwischen Wörtern). Gibt den Blatt-Tag zurück.
-     */
+    /** Erstellt Tag aus Pfad "A/B/C": bestehende Segmente werden wiederverwendet, fehlende neu angelegt. */
     async createTagPath(
       rawName: string,
       parentId: string | null = null,
@@ -476,8 +425,7 @@ export const useExerciseStore = defineStore('exercise', {
         const isLeaf = i === segments.length - 1
         const existing = this.tags.find((t) => t.tag.toLowerCase() === seg.toLowerCase())
         if (existing) {
-          // Ein bereits existierender Blatt-Tag ist ein Duplikat -> Fehler.
-          // Nur Zwischenebenen (Vorfahren) werden wiederverwendet.
+          // Nur Zwischenebenen werden wiederverwendet, doppelte Blätter sind ein Fehler.
           if (isLeaf) {
             useNotificationStore().push(`Tag „${seg}" existiert bereits.`, 'error', 6000)
             return null
@@ -494,11 +442,7 @@ export const useExerciseStore = defineStore('exercise', {
       return leaf
     },
 
-    /**
-     * Tag einem Item zuordnen (optimistisch). Exklusivität: bereits
-     * zugewiesene Vorfahren oder Nachfahren desselben Astes werden entfernt,
-     * da der spezifischste Tag die übrigen Ebenen bereits impliziert.
-     */
+    /** Tag optimistisch zuordnen. Entfernt Vorfahren/Nachfahren desselben Astes. */
     assignTagToItem(item: Item, tagId: string) {
       if (!tagId || item.tags.includes(tagId)) return
       const related = this._relatedTagIds(tagId)
@@ -543,11 +487,7 @@ export const useExerciseStore = defineStore('exercise', {
       this.tagFilter = tagId
     },
 
-    /**
-     * Einen Tag vollständig löschen. Backend + Datenbank räumen die Folgen auf
-     * (Unter-Tags werden zu Wurzel-Tags, Zuordnungen verschwinden). Der lokale
-     * Zustand wird passend nachgezogen.
-     */
+    /** Tag vollständig löschen. Unter-Tags werden zu Wurzel-Tags. */
     async deleteTag(tagId: string) {
       if (!_adapter) return
       try {
@@ -575,15 +515,6 @@ export const useExerciseStore = defineStore('exercise', {
       walk(this.rootItems)
     },
 
-    // ── Initialisation (progressive loading) ──────────────────────────────────
-
-    /**
-     * Load the exercise tree progressively.
-     *
-     * Phase 1: `getRootItems()` — roots appear in the UI immediately.
-     * Phase 2: `_loadChildrenRecursively()` — each collection's children
-     * load in the background with a per-node spinner in the tree view.
-     */
     async loadTree() {
       this.loading = true
       this.error = null
@@ -593,7 +524,7 @@ export const useExerciseStore = defineStore('exercise', {
           this.loadValidators()
         ])
         this.rootItems = dtos.map(toItem)
-        // Fire background recursive loading — no await so UI shows roots now
+        // No await — UI shows roots immediately, children load in background
         this._loadChildrenRecursively(this.rootItems)
       } catch (e) {
         this.error = String(e)
@@ -603,22 +534,12 @@ export const useExerciseStore = defineStore('exercise', {
       }
     },
 
-    /**
-     * Recursively load children for every collection in `items`.
-     *
-     * Each collection is flagged in `loadingChildrenIds` while its
-     * children are being fetched. Sub-collections inside the loaded
-     * children trigger their own fetch. All siblings at the same depth
-     * load in parallel.
-     */
     async _loadChildrenRecursively(items: Item[]) {
       const promises = items
         .filter((item) => item.item_type === 'collection' || checkIsCollection(item))
         .map(async (item) => {
           const collection = item as Collection
-          // Kollektion-Endpunkte brauchen die item_collection_id, nicht die item_id.
-          // Fehlt sie (z. B. optimistisch angelegt, Backend-Antwort noch unterwegs),
-          // überspringen — der Reload liefert sie später.
+          // Collection endpoints need item_collection_id, not item_id.
           if (!collection.collectionId) return
           this.loadingChildrenIds = [...this.loadingChildrenIds, collection.id]
           try {
@@ -635,7 +556,7 @@ export const useExerciseStore = defineStore('exercise', {
       await Promise.all(promises)
     },
 
-    // ── Search / Filters ──────────────────────────────────────────────────────
+
 
     setSearchQuery(query: string) {
       this.searchQuery = query
@@ -697,7 +618,7 @@ export const useExerciseStore = defineStore('exercise', {
       }
     },
 
-    // ── Selection ─────────────────────────────────────────────────────────────
+
 
     selectItem(item: TreeItem) {
       this.liveTemplateXml = null
@@ -779,7 +700,7 @@ export const useExerciseStore = defineStore('exercise', {
       this._syncOrderedCollectionItems(collection)
     },
 
-    // ── Validator Actions ────────────────────────────────────────────────────
+
 
     async loadValidators() {
       try {
@@ -827,7 +748,7 @@ export const useExerciseStore = defineStore('exercise', {
       }
     },
 
-    // ── Content Actions ───────────────────────────────────────────────────────
+
 
     addContentToSelectedItem() {
       const inner = this.selectedInnerItem
@@ -956,7 +877,7 @@ export const useExerciseStore = defineStore('exercise', {
       return _adapter.getBlobUrl(contentId)
     },
 
-    // ── Template XML Actions ─────────────────────────────────────────────────
+
 
     _getTemplateXml(): string | null {
       if (this.liveTemplateXml) return this.liveTemplateXml
@@ -1034,7 +955,7 @@ export const useExerciseStore = defineStore('exercise', {
       this._saveTemplateXml(xml)
     },
 
-    // ── Variants ────────────────────────────────────────────────────────────────
+
 
     /**
      * Zählt die Varianten eines Items (Items mit root_item_id === itemId),
@@ -1178,12 +1099,8 @@ export const useExerciseStore = defineStore('exercise', {
         this._notifyError(e)
       }
     },
-    // ── Tree helpers ──
 
-    /**
-     * Remove an item from all collections and from rootItems.
-     * @returns The ID of the parent collection the item was removed from, or null.
-     */
+
     _detachItem(itemId: string, excludeId?: string): string | null {
       let parentId: string | null = null
       const removeFromCollections = (collections: Collection[]) => {
@@ -1200,9 +1117,6 @@ export const useExerciseStore = defineStore('exercise', {
       return parentId
     },
 
-    /**
-     * Walk the tree to find a collection by ID.
-     */
     _findCollectionById(id: string, items?: Item[]): Collection | null {
       const searchItems = items ?? this.rootItems
       for (const item of searchItems) {
@@ -1216,17 +1130,12 @@ export const useExerciseStore = defineStore('exercise', {
       return null
     },
 
-    /**
-     * Nach einem fehlgeschlagenen optimistischen Write den betroffenen
-     * Teilbaum wieder mit dem DB-Stand abgleichen. Bevorzugt der schmale
-     * Reload einer Kollektion; Fallback: kompletter Baum-Reload.
-     */
+    /** Nach fehlgeschlagenem optimistischen Write Teilbaum mit DB-Stand abgleichen. */
     _resyncAggregate(target?: Collection | null): Promise<void> {
       if (target?.collectionId) return this._loadChildrenRecursively([target])
       return this.loadTree()
     },
 
-    /** Build a minimal Item object with a unique ID and single Content block. */
     _createItemData(rootItemId: string | null = null): Item {
       const now = Date.now().toString()
       const authorId = this.defaultAuthorId
@@ -1269,21 +1178,6 @@ export const useExerciseStore = defineStore('exercise', {
       }
     },
 
-    /**
-     * After a mutation to an ordered collection, diff the current
-     * positions against their expected sequential order and push
-     * any changes to the API.
-     *
-     * Only fires when `collection.order === true`.
-     */
-    /**
-     * Persist positions for an ordered collection.
-     *
-     * @param collection - The collection to sync.
-     * @param force - When `true`, call the API for every item regardless
-     * of whether its local position already matches. Used after DnD reorder
-     * where positions are pre-set in `.map()` but still need to be persisted.
-     */
     _syncOrderedCollectionItems(collection: Collection, force = false) {
       if (!collection.order || !_adapter || !collection.collectionId) return
       const collectionId = collection.collectionId
@@ -1297,13 +1191,8 @@ export const useExerciseStore = defineStore('exercise', {
       })
     },
 
-    // ── CRUD Actions ──
 
-    /**
-     * Update an item's metadata (author / license / item-type) from the
-     * editor dropdowns. Updates the local item (incl. display labels) and
-     * persists via PUT /items/{id}.
-     */
+
     updateItemMeta(item: Item, meta: { authorId?: string; licenseId?: string; itemTypeId?: string; itemTemplateId?: string }) {
       if (meta.authorId !== undefined) item.authorId = meta.authorId
       if (meta.licenseId !== undefined) item.licenseId = meta.licenseId
@@ -1363,11 +1252,6 @@ export const useExerciseStore = defineStore('exercise', {
       return item
     },
 
-    /**
-     * Create an item from the creation form. Uses the chosen Typ/Autor/Lizenz
-     * (or defaults when left empty — the form is not strict) and the entered
-     * task text as the first content. Selects the new item afterwards.
-     */
     createItemFromForm(
       form: { itemTypeId?: string; authorId?: string; licenseId?: string; text?: string },
       target: Collection | null = null
@@ -1435,7 +1319,7 @@ export const useExerciseStore = defineStore('exercise', {
       return item
     },
 
-    // ── Erstellungs-Dialog (geteilter Zustand) ──
+    // Create dialog (shared state)
     openCreateDialog(target: Collection | null = null) {
       this.createDialogTarget = target
       this.createDialogOpen = true
@@ -1576,7 +1460,7 @@ export const useExerciseStore = defineStore('exercise', {
       this.validate()
     },
 
-    // ── DnD / Reorder Actions ──
+
 
     updateCollectionItems(collection: Collection, newItems: TreeItem[]) {
       collection.items = newItems.map((item, index) => {
@@ -1640,7 +1524,7 @@ export const useExerciseStore = defineStore('exercise', {
       this.validate()
     },
 
-    // ── Validation ──
+
 
     validate() {
       const issues = validateTreeData(this.rootItems)

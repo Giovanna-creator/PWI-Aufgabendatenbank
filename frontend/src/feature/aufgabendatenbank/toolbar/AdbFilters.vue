@@ -108,8 +108,8 @@ function clearAll() {
   align-items: center;
   gap: 8px;
   padding: 6px 16px;
-  background-color: #1e1e1e;
-  border-bottom: 1px solid #333333;
+  background-color: var(--adb-bg-primary);
+  border-bottom: 1px solid var(--adb-border);
   flex-wrap: wrap;
 }
 
@@ -137,8 +137,8 @@ function clearAll() {
 }
 
 :deep(.v-field) {
-  background-color: #2d2d2d !important;
-  color: #cccccc !important;
+  background-color: var(--adb-bg-surface) !important;
+  color: var(--adb-text-primary) !important;
   border-radius: 4px;
 }
 
@@ -149,16 +149,16 @@ function clearAll() {
 }
 
 :deep(.v-field__input) {
-  color: #cccccc !important;
+  color: var(--adb-text-primary) !important;
   font-size: 0.8125rem;
 }
 
 :deep(.v-field__input::placeholder) {
-  color: #9a9a9a !important;
+  color: var(--adb-text-tertiary) !important;
   opacity: 1 !important;
 }
 
 :deep(.v-field--variant-outlined .v-field__outline) {
-  color: #555555 !important;
+  color: var(--adb-border-light) !important;
 }
 </style>

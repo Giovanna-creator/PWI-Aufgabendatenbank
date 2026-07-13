@@ -141,7 +141,7 @@ function onMeta(meta: { authorId?: string; licenseId?: string; itemTypeId?: stri
 
 .order-hint {
   font-size: 11px;
-  color: #777;
+  color: var(--adb-text-tertiary);
   user-select: none;
   white-space: nowrap;
 }
@@ -153,8 +153,8 @@ function onMeta(meta: { authorId?: string; licenseId?: string; itemTypeId?: stri
   line-height: 0;
 
   &.visible {
-    background-color: #0d2b45;
-    box-shadow: 0 0 0 1px #007fd4;
+    background-color: var(--adb-bg-active);
+    box-shadow: 0 0 0 1px var(--adb-accent);
   }
 }
 
@@ -162,8 +162,8 @@ function onMeta(meta: { authorId?: string; licenseId?: string; itemTypeId?: stri
   border-radius: 4px;
   padding: 0 14px;
   line-height: 0;
-  background-color: #4a1a1a;
-  box-shadow: 0 0 0 1px #c04040;
+  background-color: var(--adb-bg-active);
+  box-shadow: 0 0 0 1px var(--adb-danger);
   display: flex;
   align-items: center;
   height: 32px;
@@ -171,7 +171,7 @@ function onMeta(meta: { authorId?: string; licenseId?: string; itemTypeId?: stri
 }
 
 .delete-btn {
-  color: #c04040 !important;
+  color: var(--adb-danger) !important;
   font-size: 13px;
   font-weight: 600;
   text-transform: none;
@@ -193,12 +193,12 @@ function onMeta(meta: { authorId?: string; licenseId?: string; itemTypeId?: stri
   }
 
   &:hover {
-    color: #e06060 !important;
+    color: var(--adb-danger-hover) !important;
   }
 }
 
 .order-btn {
-  color: #666 !important;
+  color: var(--adb-icon) !important;
   transition: color 0.15s;
   margin: 0 !important;
   padding: 1rem !important;
@@ -220,14 +220,14 @@ function onMeta(meta: { authorId?: string; licenseId?: string; itemTypeId?: stri
   }
 
   &:hover {
-    color: #999 !important;
+    color: var(--adb-text-tertiary) !important;
   }
 
   &.active {
-    color: #007fd4 !important;
+    color: var(--adb-accent) !important;
 
     &:hover {
-      color: #1a9aff !important;
+      color: var(--adb-accent-hover) !important;
     }
   }
 }

@@ -160,7 +160,7 @@ async function confirm() {
 
 .tags-label {
   font-size: 0.75rem;
-  color: #969696;
+  color: var(--adb-text-secondary);
 }
 
 .tags-chips {
@@ -171,18 +171,18 @@ async function confirm() {
 }
 
 .tags-empty {
-  color: #6a6a6a;
+  color: var(--adb-text-tertiary);
   font-size: 0.85rem;
 }
 
 .tags-tree {
   max-height: 220px;
   overflow-y: auto;
-  border: 1px solid #3a3a3a;
+  border: 1px solid var(--adb-border);
   border-radius: 4px;
   padding: 4px 2px;
   margin-bottom: 10px;
-  background-color: #232323;
+  background-color: var(--adb-bg-chip);
 }
 
 .tags-actions {
@@ -196,21 +196,21 @@ async function confirm() {
 }
 
 .tag-card {
-  background-color: #1e1e1e !important;
-  color: #cccccc !important;
+  background-color: var(--adb-bg-primary) !important;
+  color: var(--adb-text-primary) !important;
 }
 
 .tag-title {
-  color: #cccccc;
+  color: var(--adb-text-primary);
   font-size: 15px;
   font-weight: 600;
 }
 
 .cancel-btn {
-  color: #969696 !important;
+  color: var(--adb-text-secondary) !important;
 }
 
 .confirm-btn {
-  color: #007fd4 !important;
+  color: var(--adb-accent) !important;
 }
 </style>

@@ -70,21 +70,21 @@ function onCancel() {
 
 <style scoped lang="scss">
 .confirm-dialog-card {
-  background-color: #1e1e1e !important;
-  color: #cccccc !important;
-  border: 1px solid #333;
+  background-color: var(--adb-bg-primary) !important;
+  color: var(--adb-text-primary) !important;
+  border: 1px solid var(--adb-border);
 }
 
 .confirm-dialog-title {
   font-size: 16px;
   font-weight: 600;
-  color: #e0e0e0;
+  color: var(--adb-text-primary);
   padding: 20px 24px 8px;
 }
 
 .confirm-dialog-text {
   font-size: 13px;
-  color: #999;
+  color: var(--adb-text-tertiary);
   padding: 8px 24px 16px;
   line-height: 1.5;
   white-space: pre-line;
@@ -95,23 +95,23 @@ function onCancel() {
 }
 
 .cancel-btn {
-  color: #999 !important;
+  color: var(--adb-text-tertiary) !important;
   text-transform: none;
   font-weight: 500;
 
   &:hover {
-    color: #ccc !important;
+    color: var(--adb-text-primary) !important;
   }
 }
 
 .confirm-btn {
-  background-color: #007fd4 !important;
-  color: #fff !important;
+  background-color: var(--adb-accent) !important;
+  color: var(--adb-text-inverse) !important;
   text-transform: none;
   font-weight: 600;
 
   &:hover {
-    background-color: #1a9aff !important;
+    background-color: var(--adb-accent-hover) !important;
   }
 }
 </style>

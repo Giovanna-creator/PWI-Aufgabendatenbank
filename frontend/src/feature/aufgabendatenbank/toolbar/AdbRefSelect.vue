@@ -149,21 +149,21 @@ async function confirm() {
 }
 
 .ref-card {
-  background-color: #1e1e1e !important;
-  color: #cccccc !important;
+  background-color: var(--adb-bg-primary) !important;
+  color: var(--adb-text-primary) !important;
 }
 
 .ref-title {
-  color: #cccccc;
+  color: var(--adb-text-primary);
   font-size: 15px;
   font-weight: 600;
 }
 
 .cancel-btn {
-  color: #969696 !important;
+  color: var(--adb-text-secondary) !important;
 }
 
 .confirm-btn {
-  color: #007fd4 !important;
+  color: var(--adb-accent) !important;
 }
 </style>

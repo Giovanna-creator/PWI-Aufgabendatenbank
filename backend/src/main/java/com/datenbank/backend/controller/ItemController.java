@@ -12,9 +12,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * REST-Controller für die Item-Entität.
- */
 @RestController
 @RequestMapping("/api/items")
 @CrossOrigin(origins = "*")
@@ -26,19 +23,16 @@ public class ItemController {
         this.itemService = itemService;
     }
 
-    // GET /api/items/{id}
     @GetMapping("/{id}")
     public ResponseEntity<ItemResponseDto> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(itemService.getItemById(id));
     }
 
-    // POST /api/items
     @PostMapping
     public ResponseEntity<ItemResponseDto> create(@Valid @RequestBody ItemCreateDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(itemService.createItem(dto));
     }
 
-    // PUT /api/items/{id}
     @PutMapping("/{id}")
     public ResponseEntity<ItemResponseDto> update(
             @PathVariable UUID id,
@@ -46,28 +40,17 @@ public class ItemController {
         return ResponseEntity.ok(itemService.updateItem(id, dto));
     }
 
-    // DELETE /api/items/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         itemService.deleteItem(id);
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Konvertiert ein Item in eine Collection.
-     * POST /api/items/{id}/collection → 200 OK
-     */
     @PostMapping("/{id}/collection")
     public ResponseEntity<ItemResponseDto> convertToCollection(@PathVariable UUID id) {
         return ResponseEntity.ok(itemService.convertToCollection(id));
     }
 
-    /**
-     * GET /api/items                        → alle Items
-     * GET /api/items?root=true              → nur Root-Items
-     * GET /api/items?rootItemId=5           → Kinder von Item 5
-     * GET /api/items?search=&authorId=&itemTypeId=&tag= → gefilterte Items
-     */
     @GetMapping
     public ResponseEntity<List<ItemResponseDto>> getAll(
             @RequestParam(required = false) Boolean root,
@@ -100,24 +83,12 @@ public class ItemController {
         return s != null && !s.trim().isEmpty();
     }
 
-    // =========================================================================
-    // Validator-Verknüpfungen
-    // =========================================================================
-
-    /**
-     * Liefert alle Validatoren, die mit einem Item verknüpft sind.
-     * GET /api/items/{itemId}/validators
-     */
     @GetMapping("/{itemId}/validators")
     public ResponseEntity<List<ValidatorResponseDto>> getValidatorsForItem(
             @PathVariable UUID itemId) {
         return ResponseEntity.ok(itemService.getValidatorsForItem(itemId));
     }
 
-    /**
-     * Verknüpft einen Validator mit einem Item.
-     * POST /api/items/{itemId}/validators/{validatorId}
-     */
     @PostMapping("/{itemId}/validators/{validatorId}")
     public ResponseEntity<ItemResponseDto> addValidatorToItem(
             @PathVariable UUID itemId,
@@ -125,10 +96,6 @@ public class ItemController {
         return ResponseEntity.ok(itemService.addValidatorToItem(itemId, validatorId));
     }
 
-    /**
-     * Entfernt die Verknüpfung eines Validators von einem Item.
-     * DELETE /api/items/{itemId}/validators/{validatorId}
-     */
     @DeleteMapping("/{itemId}/validators/{validatorId}")
     public ResponseEntity<Void> removeValidatorFromItem(
             @PathVariable UUID itemId,
@@ -137,11 +104,6 @@ public class ItemController {
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Tag an ein Item hängen bzw. wieder entfernen.
-     * POST   /api/items/{id}/tags         Body { "tagId": "..." }
-     * DELETE /api/items/{id}/tags/{tagId}
-     */
     public record TagAssign(UUID tagId) {}
 
     @PostMapping("/{id}/tags")

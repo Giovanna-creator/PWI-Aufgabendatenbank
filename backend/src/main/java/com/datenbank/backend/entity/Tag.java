@@ -13,10 +13,6 @@ public class Tag {
     @Column(name = "tag_id")
     private UUID tagId;
 
-    /**
-     * Self-Reference: ein Tag kann ein Eltern-Tag haben.
-     * @ManyToOne weil viele Tags dasselbe Eltern-Tag haben können.
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_tag_id")
     private Tag parentTag;
