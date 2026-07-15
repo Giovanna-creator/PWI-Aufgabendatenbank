@@ -639,6 +639,16 @@ describe('validator actions', () => {
     await store.linkValidatorToSelectedItem('v-1')
     expect(mock.addValidatorToItem).not.toHaveBeenCalled()
   })
+
+  it('does not link a validator to a collection', async () => {
+    const store = useExerciseStore()
+    store.selectedItem = { id: 'coll-x', item_type: 'collection', validators: [], items: [], order: false, contents: [], tags: [], modifiers: [], author: 'a', representationTemplate: null, license: null } as any
+
+    await store.linkValidatorToSelectedItem('v-1')
+
+    // Validatoren gelten nicht fuer Kollektionen.
+    expect(mock.addValidatorToItem).not.toHaveBeenCalled()
+  })
 })
 
 describe('variant actions', () => {
@@ -656,6 +666,17 @@ describe('variant actions', () => {
 
     expect(store.variants).toHaveLength(1)
     expect(store.variants[0].rootItemId).toBe('base-item')
+  })
+
+  it('setVariantValidators adds and removes validators on a variant', async () => {
+    const store = useExerciseStore()
+    store.variants = [{ id: 'variant-id', rootItemId: 'base', validators: ['v-1'] }] as any
+
+    await store.setVariantValidators(0, ['v-2'])
+
+    expect(mock.addValidatorToItem).toHaveBeenCalledWith('variant-id', 'v-2')
+    expect(mock.removeValidatorFromItem).toHaveBeenCalledWith('variant-id', 'v-1')
+    expect(store.variants[0].validators).toEqual(['v-2'])
   })
 
   it('loadVariants sets variants from adapter', async () => {

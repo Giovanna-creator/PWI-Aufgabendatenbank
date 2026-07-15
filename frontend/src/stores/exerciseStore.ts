@@ -723,7 +723,8 @@ export const useExerciseStore = defineStore('exercise', {
 
     async linkValidatorToSelectedItem(validatorId: string) {
       const inner = this.selectedInnerItem
-      if (!inner) return
+      // Validatoren gelten fuer Aufgaben (Items) und Varianten, NICHT fuer Kollektionen.
+      if (!inner || checkIsCollection(inner)) return
       if (inner.validators.includes(validatorId)) return
       inner.validators.push(validatorId)
       try {
@@ -1018,6 +1019,27 @@ export const useExerciseStore = defineStore('exercise', {
         // durchlief und erst createContent scheiterte, taucht das Item hier
         // wieder auf, statt als Waise zu verschwinden.
         await this.loadVariants(baseItemId)
+      }
+    },
+
+    // Setzt die Validatoren einer Variante (optimistisch, mit Resync bei Fehler).
+    async setVariantValidators(variantIndex: number, validatorIds: string[]) {
+      const variant = this.variants[variantIndex]
+      if (!variant?.rootItemId) return
+      const previousIds = [...variant.validators]
+      const nextIds = [...new Set(validatorIds)]
+      variant.validators = nextIds
+      try {
+        const addedIds = nextIds.filter((id) => !previousIds.includes(id))
+        const removedIds = previousIds.filter((id) => !nextIds.includes(id))
+        await Promise.all([
+          ...addedIds.map((id) => _adapter!.addValidatorToItem(variant.id, id)),
+          ...removedIds.map((id) => _adapter!.removeValidatorFromItem(variant.id, id))
+        ])
+      } catch (e) {
+        variant.validators = previousIds
+        this._notifyError(e)
+        await this.loadVariants(variant.rootItemId)
       }
     },
 
