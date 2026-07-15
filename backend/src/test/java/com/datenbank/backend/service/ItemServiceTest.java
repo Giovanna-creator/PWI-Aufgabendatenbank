@@ -481,6 +481,16 @@ class ItemServiceTest {
     }
 
     @Test
+    void addValidatorToCollection_throws400() {
+        when(itemRepository.findById(ITEM_ID)).thenReturn(Optional.of(item));
+        when(collectionRepository.existsByParentItem_ItemId(ITEM_ID)).thenReturn(true);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> service.addValidatorToItem(ITEM_ID, VALIDATOR_ID));
+        assertEquals(400, ex.getStatusCode().value());
+    }
+
+    @Test
     void removeValidatorFromItem_removesValidator() {
         when(itemRepository.findById(ITEM_ID)).thenReturn(Optional.of(item));
         when(itemRepository.save(any(Item.class))).thenReturn(item);

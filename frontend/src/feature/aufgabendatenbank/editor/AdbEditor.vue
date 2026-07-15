@@ -24,7 +24,7 @@
         />
 
         <AdbContentList />
-        <AdbValidatorEditor />
+        <AdbValidatorEditor v-if="!store.isCollectionSelected" />
         <AdbVariantsPanel />
 
         <PreviewDialog

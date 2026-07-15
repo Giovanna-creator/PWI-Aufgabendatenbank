@@ -214,6 +214,11 @@ public class ItemService {
     @Transactional
     public ItemResponseDto addValidatorToItem(UUID itemId, UUID validatorId) {
         Item item = findItemOrThrow(itemId);
+        // Validatoren gelten fuer Aufgaben und Varianten, aber nicht fuer Kollektionen.
+        if (collectionRepository.existsByParentItem_ItemId(itemId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Validatoren duerfen keiner Kollektion zugeordnet werden");
+        }
         Validator validator = validatorRepository.findById(validatorId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Validator nicht gefunden"));

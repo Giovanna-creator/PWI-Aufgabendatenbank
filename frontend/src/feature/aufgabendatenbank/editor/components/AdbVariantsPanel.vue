@@ -24,6 +24,21 @@
         </div>
 
         <div class="variant-contents">
+          <v-select
+            :model-value="variant.validators"
+            :items="store.allValidators"
+            item-title="description"
+            item-value="validatorId"
+            label="Validatoren der Variante"
+            multiple
+            chips
+            closable-chips
+            density="compact"
+            variant="outlined"
+            hide-details
+            @update:model-value="(ids) => store.setVariantValidators(vi, ids)"
+          />
+
           <AdbContentEditor
             v-for="(content, ci) in variant.contents"
             :key="content.id ?? ci"

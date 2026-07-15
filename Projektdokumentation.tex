@@ -1,0 +1,713 @@
+\documentclass[11pt,a4paper]{article}
+
+% ── Leichtes Preamble: kompiliert schnell und lokal (MiKTeX/pdflatex) ──
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[ngerman]{babel}
+\usepackage{lmodern}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{parskip}
+\usepackage{url}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\setlist[itemize]{leftmargin=1.4em,itemsep=2pt,topsep=3pt}
+\setlist[enumerate]{leftmargin=1.6em,itemsep=2pt,topsep=3pt}
+
+% Platzhalter fuer Screenshots: das Dokument kompiliert OHNE Bilddateien.
+% Spaeter einfach durch \includegraphics{...} ersetzen.
+\newcommand{\platzhalter}[1]{%
+  \begin{center}%
+  \setlength{\fboxsep}{10pt}%
+  \fbox{\parbox[c][3.2cm][c]{0.86\linewidth}{\centering\itshape #1}}%
+  \end{center}%
+}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\begin{document}
+
+% ── Titelseite ────────────────────────────────────────────────────────────────
+\begin{titlepage}
+\centering
+\vspace*{2.2cm}
+{\Large\scshape Technische Hochschule Mittelhessen}\\[2pt]
+{\normalsize Fachbereich Mathematik, Naturwissenschaften und Informatik (MNI)}\\[0.4cm]
+{\normalsize Praktikum Wirtschaftsinformatik --- Sommersemester 2026}\\[3.0cm]
+
+\rule{\linewidth}{1pt}\\[8pt]
+{\Huge\bfseries Aufgabendatenbank}\\[10pt]
+{\LARGE Projektdokumentation}\\[8pt]
+\rule{\linewidth}{1pt}\\[1.2cm]
+
+{\large Ein Werkzeug zum Beschreiben, Strukturieren und Speichern\\von Lernaufgaben}\\[2.6cm]
+
+\begin{tabular}{rl}
+\textbf{Betreuung:} & Prof.\ Dr.\ Markus Siepermann\\
+ & Johannes Kunz\\[6pt]
+\textbf{Projektteam:} & [Vorname Nachname] \textit{(Projektleitung)}\\
+ & [Vorname Nachname]\\
+ & [Vorname Nachname]\\[6pt]
+\textbf{Gruppe:} & [Gruppennummer]\\[6pt]
+\textbf{Abgabe:} & 14.\ Juli 2026\\
+\end{tabular}
+
+\vfill
+{\footnotesize Quelltext: GitHub-Repository \texttt{PWI-Aufgabendatenbank}}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Kurze Zusammenfassung}
+
+Ausgangspunkt des Projekts war ein vorgegebenes relationales Datenbankschema für
+eine \emph{Aufgabendatenbank}. Ziel war es, auf dieser Grundlage eine
+vollständige, lauffähige Webanwendung zu entwickeln, mit der Lehrende Aufgaben
+strukturiert erfassen, mit Metadaten versehen und untereinander in Beziehung
+setzen können.
+
+Umgesetzt wurde eine Drei-Schichten-Anwendung aus einem Vue-Frontend, einem
+Spring-Boot-Backend und einer PostgreSQL-Datenbank. Alle zentralen fachlichen
+Konzepte des Schemas sind implementiert: Aufgaben mit Metadaten (Autor, Lizenz,
+Typ), Inhaltsbausteine in mehreren Formaten (Text, Bild, PDF), geordnete und
+ungeordnete Kollektionen, horizontale Varianten, Validatoren, hierarchische Tags
+mit Filter- und Suchfunktion sowie Darstellungs-Templates. Für den Betrieb auf
+der E-Learning-Plattform der Hochschule wurde eine automatisierte Build-Pipeline
+(CI\,$\rightarrow$\,GHCR) samt Konfigurationsdateien vorbereitet.
+
+Das Projektteam bestand zu Beginn aus fünf Personen und wurde nach dem Ausstieg
+zweier Mitglieder in der Anfangsphase auf drei Personen verkleinert; der
+Funktionsumfang wurde vollständig auf dieses Team umverteilt und umgesetzt. Nicht
+realisiert wurden das eigentliche Cluster-Deployment (das zuständige
+Infrastruktur-Team stellte seine Arbeit ein) sowie eine reale Authentifizierung
+und eine ursprünglich angedachte KI-Funktion (siehe Kapitel~\ref{sec:grenzen}).
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Aufgabenstellung und Zielsetzung}
+
+\subsection{Aufgabenstellung}
+Die Aufgabe bestand darin, aus einem vorgegebenen relationalen Datenmodell eine
+funktionsfähige Anwendung zu entwickeln. Das Schema definierte die zentralen
+Entitäten und ihre Beziehungen; die konkrete Anwendung --- Frontend, Backend und
+Persistenzschicht --- war vom Team zu entwerfen und zu implementieren. Es
+handelte sich also nicht um ein Projekt „auf der grünen Wiese``, sondern um die
+fachlich korrekte Umsetzung einer vorgegebenen Datenstruktur in eine benutzbare
+Software.
+
+\subsection{Abgrenzung des Funktionsumfangs}
+Eine frühe, für das gesamte Projekt prägende Klärung mit dem Betreuer betraf die
+Abgrenzung: Die Anwendung ist ausdrücklich ein \textbf{Autoren- und
+Verwaltungswerkzeug} und \emph{kein} Lern- oder Prüfungssystem. Sie unterstützt
+das Erstellen und Organisieren von Aufgaben, nicht deren Bearbeitung durch
+Lernende.
+
+\begin{itemize}
+  \item \textbf{Im Verantwortungsbereich:} Aufgaben erfassen, mit Metadaten
+  versehen, in Sequenzen und Varianten in Beziehung setzen sowie Prüfregeln
+  (Validatoren) \emph{definieren und speichern}.
+  \item \textbf{Nicht im Verantwortungsbereich:} das eigentliche Lösen oder
+  Korrigieren von Aufgaben sowie die automatische Erzeugung von Varianten. Diese
+  Ausführung übernimmt ein separater Dienst der Plattform.
+  \item \textbf{Zugriffsmodell:} In dieser Iteration gibt es bewusst keine
+  Rechteeinschränkung; jeder Nutzer kann alles anlegen und bearbeiten. Eine
+  spätere zentrale Anmeldung (THM-CAS) kann darauf aufsetzen.
+\end{itemize}
+
+\subsection{Zielsetzung}
+Angestrebt wurde eine fachlich korrekte, technisch saubere und erweiterbare
+Umsetzung des Datenmodells mit einer benutzerfreundlichen Oberfläche: alle
+Kern-Metadatenkonzepte abbilden, die beiden im Schema angelegten Beziehungsarten
+(vertikal und horizontal) unterstützen und die Anwendung für den Betrieb auf der
+Hochschulplattform vorbereiten.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Ausgangssituation und Recherche}
+
+\subsection{Ausgangssituation}
+Zu Projektbeginn lagen das relationale Schema und eine grobe fachliche
+Beschreibung vor. Die erste Aufgabe war daher weniger das Programmieren als das
+\emph{Verstehen} des Modells. Zwei Punkte erwiesen sich als zentral und mussten
+im Team gemeinsam erarbeitet werden:
+
+\begin{itemize}
+  \item \textbf{Eine Kollektion ist selbst ein Item.} Es gibt keine getrennte
+  „Sammlung`` neben der „Aufgabe``; über \texttt{parent\_item\_id} \emph{ist}
+  eine Kollektion zugleich ein Item und teilt sich dessen Metadaten und
+  Verknüpfungen.
+  \item \textbf{Es gibt zwei getrennte Beziehungsarten.} Das Schema kennt eine
+  \emph{vertikale} (geordnete Sequenzen) und eine \emph{horizontale} (Varianten
+  über ein gemeinsames Wurzel-Item) Beziehung. Beide dürfen nicht vermischt
+  werden --- eine Erkenntnis, die später eine wichtige Entwurfsentscheidung nach
+  sich zog (Abschnitt~\ref{sec:beziehungen}).
+\end{itemize}
+
+\subsection{Technologieauswahl und Begründung}\label{sec:tech}
+Auf Basis dieses Verständnisses wurden geeignete Technologien recherchiert. Die
+Auswahl orientierte sich an drei Kriterien: Eignung für die fachliche Aufgabe,
+durchgängige Typsicherheit sowie gute Container- und Cluster-Tauglichkeit, da die
+Plattform der Hochschule auf Kubernetes aufbaut. Neben der reinen Eignung waren
+zwei praktische Gründe ausschlaggebend: der Betreuer stellte eine
+\textbf{Vue-Vorlage} als Startpunkt bereit, und das Team hatte bereits
+\textbf{Vorerfahrung} mit dem gewählten Stack (Vue, Spring Boot, PostgreSQL).
+
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}l l Y@{}}
+\toprule
+\textbf{Technologie} & \textbf{Version} & \textbf{Eingesetzt für} \\
+\midrule
+Vue (Composition API) & 3.5.34 & reaktives Komponenten-Frontend \\
+Vuetify & 4.0.7 & Material-Design-UI (Formulare, Dialoge) \\
+Pinia & 3.0.4 & zentraler, typisierter Zustand (Store) \\
+vuedraggable & 4.1.0 & Drag-and-Drop im Strukturbaum \\
+CodeMirror 6 (vue-codemirror) & 6.x & XML-Editor für Darstellungs-Templates \\
+axios & 1.6 & HTTP-Kommunikation mit dem Backend \\
+Vite / Vitest & 8.0.12 / 4.1.6 & Build-Werkzeug / Test-Framework \\
+TypeScript & 6.0 & Typsicherheit über alle Frontend-Schichten \\
+Spring Boot & 3.2.5 & REST-Backend (Controller/Service/Repository) \\
+Java & 21 & Backend-Sprache \\
+Spring Data JPA & (Boot 3.2.5) & deklarative Persistenz auf dem Schema \\
+PostgreSQL & 16 & relationale Datenbank \\
+Docker Compose & --- & reproduzierbarer lokaler Start \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\textbf{Frontend --- Vue, Vuetify, Pinia.} Vue~3 mit der Composition API bietet
+ein reaktives Komponentenmodell, das sich gut für die zentrale Baum-/Editor-
+Ansicht eignet. Ausschlaggebend waren zusätzlich die vom Betreuer bereitgestellte
+Vue-Vorlage und die vorhandene Team-Erfahrung. Vuetify liefert eine konsistente
+Komponentenbibliothek und reduziert den Aufwand für Formulare und Dialoge; Pinia
+hält den gesamten Anwendungszustand in einem typisierten Store. Für zwei
+spezielle Anforderungen kamen dedizierte Bibliotheken zum Einsatz:
+\textbf{vuedraggable} für die Drag-and-Drop-Umsortierung im Strukturbaum und
+\textbf{CodeMirror~6} (über \texttt{vue-codemirror}) als Editor für die
+XML-Darstellungs-Templates. Alternativen wie React oder Angular wurden verworfen:
+React hätte mehr manuelle Zustandsarchitektur erfordert, Angular wäre für den
+Projektumfang überdimensioniert gewesen --- und beide hätten weder die Vorlage
+noch die Vorerfahrung genutzt.
+
+\textbf{Backend --- Spring Boot, Java 21.} Die Wahl von Spring Boot war eine
+bewusste, auf die konkrete Anwendung zugeschnittene Entscheidung: Das Schema ist
+klar relational, und Spring Boot bietet mit der konventionsbasierten Struktur
+(Controller\,$\rightarrow$\,Service\,$\rightarrow$\,Repository) und \textbf{Spring
+Data JPA} eine deklarative Persistenzschicht, die die vorgegebenen Tabellen
+direkt auf Entitäten abbildet. \textbf{Spring Validation} sichert Eingaben auf
+Controller-Ebene ab. Auch hier war die Vorerfahrung des Teams ein Vorteil, sodass
+sich die Arbeit auf die Fachlogik konzentrieren konnte statt auf Boilerplate.
+
+\textbf{Datenbank --- PostgreSQL.} PostgreSQL war durch das Schema faktisch
+vorgezeichnet und passte fachlich sehr gut: native \texttt{UUID}-Primärschlüssel,
+der \texttt{JSONB}-Typ (mit GIN-Index) für flexible Inhaltsbausteine sowie
+\texttt{BYTEA} für Binärdaten (Bilder, PDF). Auch mit PostgreSQL hatte das Team
+bereits Erfahrung.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Anforderungen und Rahmenbedingungen}\label{sec:anf}
+
+\subsection{Funktionale Anforderungen}
+\begin{enumerate}[label=\textbf{F\arabic*}]
+  \item Aufgaben über ein Formular mit bewusster Bestätigung erstellen.
+  \item Inhaltsbausteine unterschiedlicher Formate (Text, Bild, PDF) hinzufügen
+  und anzeigen.
+  \item Aufgaben zu geordneten Sequenzen (Lernpfaden) und ungeordneten
+  Sammlungen (Kollektionen) zusammenfassen.
+  \item Horizontale Varianten einer Aufgabe über ein gemeinsames Wurzel-Item
+  darstellen.
+  \item Validatoren (Restriktionen) definieren, speichern und Aufgaben zuweisen.
+  \item Referenzdaten (Autor, Lizenz, Typ, Inhaltstyp) auswählen und neu anlegen.
+  \item Hierarchische Tags zuweisen, anzeigen sowie zur Filterung und Suche
+  nutzen.
+  \item Darstellungs-Templates (XML) je Aufgabe bearbeiten und in einer Vorschau
+  prüfen.
+\end{enumerate}
+
+\subsection{Nicht-funktionale Anforderungen}
+\begin{enumerate}[label=\textbf{N\arabic*}]
+  \item \textbf{Datenintegrität:} referentielle Konsistenz auf Datenbankebene.
+  \item \textbf{Typsicherheit:} durchgehend typisierte Schnittstellen zwischen
+  Frontend und Backend.
+  \item \textbf{Wartbarkeit:} klare Schichtung, austauschbare Datenzugriffsschicht.
+  \item \textbf{Reaktionsfreudigkeit:} optimistische UI-Aktualisierung für einen
+  flüssigen Arbeitsablauf.
+  \item \textbf{Portabilität:} reproduzierbarer Start über Container, vorbereitet
+  für den Cluster-Betrieb.
+\end{enumerate}
+
+\subsection{Rahmenbedingungen}
+\begin{itemize}
+  \item \textbf{Plattform:} Die Anwendung soll auf der E-Learning-Plattform der
+  THM laufen. Diese integriert Dienste über Kubernetes; der Zugriff erfolgt über
+  ein zentrales API-Gateway (Traefik), die Images liegen in der GitHub Container
+  Registry (GHCR).
+  \item \textbf{Authentifizierung:} nach Plattform-Vorgabe zunächst zu
+  \emph{mocken}; eine globale Anmeldung (THM-CAS) sollte später folgen.
+  \item \textbf{Vorgegebenes Datenmodell:} Das Schema war gesetzt und durfte in
+  seiner Grundstruktur nicht verändert werden.
+  \item \textbf{Team und Zusammenarbeit:} Entwicklung im Team mit geschütztem
+  Hauptzweig; jede Änderung wird über Pull-Requests begutachtet.
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Konzept und Entwurf}\label{sec:konzept}
+
+\subsection{Systemarchitektur}
+Die Anwendung folgt einer klassischen Drei-Schichten-Architektur mit klarer
+Trennung von Präsentation, Geschäftslogik und Persistenz. Frontend (Port 8085)
+und Backend (Port 8080) kommunizieren zustandslos über HTTP/JSON; das Backend
+greift über JPA auf die PostgreSQL-Datenbank (Port 5432) zu.
+
+\begin{verbatim}
+Adb.vue (Wurzel)
+ |- AdbToolbar.vue      Aktionen (Aufgabe/Kollektion erstellen)
+ |- AdbStructure.vue    Strukturbaum + Filterleiste (oben/links)
+ |   \- AdbTreeItem.vue  rekursive Baum-Knoten (Ordner = Kollektion,
+ |                       Datei = Aufgabe)
+ \- AdbEditor.vue       Detailansicht (rechts)
+     |- AdbTagsSection.vue      Tags der Aufgabe
+     |- AdbContentList.vue      Inhaltsbausteine (Text/Bild/PDF)
+     |- AdbValidatorEditor.vue  Validatoren
+     \- AdbVariantsPanel.vue    horizontale Varianten
+
+exerciseStore.ts (Pinia)  ->  ApiAdapter (Interface)
+                                |- AdbApiService     (axios, echte API)
+                                \- DevAdbApiService  (lokale Mock-Daten)
+\end{verbatim}
+
+\textbf{Adapter-Muster als Entkopplung.} Ein zentrales Entwurfselement ist das
+Adapter-Muster: Der Store spricht ausschließlich gegen die Schnittstelle
+\texttt{ApiAdapter}. Zwei Implementierungen erfüllen diesen Vertrag ---
+\texttt{AdbApiService} für echte HTTP-Aufrufe und \texttt{DevAdbApiService} mit
+lokalen Mock-Daten. Dadurch lässt sich das Frontend vollständig ohne laufendes
+Backend entwickeln und vorführen (Dummy-Modus). Die Auswahl erfolgt zur Startzeit
+über eine Umgebungsvariable. Das Backend ist spiegelbildlich in drei Ebenen
+gegliedert: \textbf{Controller} (REST-Endpunkte, Eingabevalidierung),
+\textbf{Service} (Geschäftslogik, Transaktionsgrenzen) und \textbf{Repository}
+(Spring Data JPA). Die Datenübertragung erfolgt über typisierte DTOs; eine
+gemeinsame Typdatei im Frontend spiegelt die Vertragsstruktur, sodass Abweichungen
+zwischen Client und Server bereits zur Übersetzungszeit auffallen.
+
+\subsection{Datenmodell: die Entitäten}
+Das Schema umfasst 18 Tabellen in drei logischen Ebenen. Jede wird im Frontend
+über den Store und die Editor-Komponenten bedient und im Backend durch eine
+JPA-Entität, ein Repository und (soweit fachlich nötig) einen Service abgebildet.
+
+\subsubsection{Referenz-Entitäten (Nachschlagelisten)}
+Diese Tabellen liefern die auswählbaren Stammdaten. Im Backend sind es einfache
+Entitäten mit Repository; im Frontend werden sie als Auswahllisten geladen.
+\begin{itemize}
+  \item \texttt{author} --- Autor eines Items oder Inhalts (Anzeige-Deskriptor,
+  optional Mail).
+  \item \texttt{license} --- Lizenz (z.\,B.\ CC-BY), an Item und Inhalt hängbar.
+  \item \texttt{item\_type} --- Typ einer Aufgabe (fachliche Kategorie).
+  \item \texttt{item\_content\_type} --- Typ eines Inhaltsbausteins (Text, Bild,
+  PDF\,\ldots).
+  \item \texttt{item\_representation\_template} --- XML-Vorlage, die beschreibt,
+  wie die Inhalte einer Aufgabe angeordnet dargestellt werden.
+  \item \texttt{tag} --- hierarchisches Schlagwort (Selbstreferenz
+  \texttt{parent\_tag\_id}).
+  \item \texttt{validator} --- methodische Restriktion (z.\,B.\ „muss INNER JOIN
+  enthalten``).
+  \item \texttt{modifier} --- Regel zur (automatischen) Variantenerzeugung
+  \emph{(modelliert, in dieser Iteration ohne UI --- siehe
+  Kapitel~\ref{sec:grenzen})}.
+\end{itemize}
+
+\subsubsection{Kern-Entitäten}
+\textbf{\texttt{item} (Aufgabe).} Jede Aufgabe ist ein \texttt{item} mit
+Pflichtbezügen zu Autor, Lizenz und Typ. Bemerkenswert: es gibt \emph{kein}
+eigenes Titelfeld --- der Titel lebt als Inhaltsbaustein und ist über die
+Verknüpfung mit einem \texttt{purpose} (z.\,B.\ „Aufgabenstellung``) zugeordnet.
+Die Selbstreferenz \texttt{root\_item\_id} verbindet zusammengehörige Varianten.
+Im Frontend ist ein Item ein Knoten im Strukturbaum; im Backend kapselt
+\texttt{ItemService} das Anlegen, Ändern, Löschen und die Umwandlung in eine
+Kollektion.
+
+\textbf{\texttt{item\_content} (Inhaltsbaustein).} Trägt entweder strukturierte
+Daten (\texttt{JSONB}) oder Binärdaten (\texttt{BYTEA}, für Bild/PDF) und besitzt
+eigene Lizenz, Typ und Autor. Im Frontend wird ein Inhalt im
+\texttt{AdbContentEditor} bearbeitet; Binärdaten werden per Multipart-Upload
+übertragen.
+
+\textbf{\texttt{item\_collection} (Kollektion).} Gruppiert Items. Das boolesche
+Feld \texttt{"order"} unterscheidet geordnete Sequenzen (Sub-Items mit
+\texttt{position} 1, 2, 3\,\ldots) von ungeordneten Sammlungen (\texttt{position}
+= \texttt{NULL}). Über \texttt{parent\_item\_id} \emph{ist} eine Kollektion
+zugleich ein Item und besitzt keine eigene Metadaten-Kopie.
+
+\subsubsection{Verknüpfungs-Entitäten (n:m-Beziehungen)}
+\begin{itemize}
+  \item \texttt{item\_contents} --- ordnet einem Item seine Inhaltsbausteine mit
+  \texttt{purpose} zu (eigene Verknüpfungsentität mit zusammengesetztem Schlüssel).
+  \item \texttt{item\_collection\_sub\_item} --- ordnet einer Kollektion ihre
+  Kind-Items samt \texttt{position} zu (die vertikale Beziehung).
+  \item \texttt{item\_tags} / \texttt{item\_content\_tags} --- Tags an Items bzw.\
+  an Inhalte.
+  \item \texttt{item\_validator} --- Validatoren an Items.
+  \item \texttt{item\_modifier} --- Modifikatoren an Items \emph{(vorbereitet)}.
+  \item \texttt{item\_content\_types} --- erlaubte Inhaltstypen je Item.
+\end{itemize}
+
+\subsection{Beziehungskonzept: vertikal und horizontal}\label{sec:beziehungen}
+Das Schema kennt bewusst \emph{zwei orthogonale} Beziehungsarten, die im Projekt
+klar getrennt behandelt werden:
+
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}l l Y@{}}
+\toprule
+ & \textbf{Vertikal (Sequenz)} & \textbf{Horizontal (Variante)} \\
+\midrule
+Bedeutung & aufeinander aufbauende, \emph{verschiedene} Aufgaben in fester
+Reihenfolge & \emph{dieselbe} Aufgabe in mehreren Ausprägungen \\
+Mechanismus & geordnete \texttt{item\_collection} + \texttt{position} &
+gemeinsames \texttt{root\_item\_id} \\
+Rolle des Items & Behälter (Lernpfad) & einzelne Aufgabe \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Diese Trennung ist eine tragende Entwurfsentscheidung: Ein Item spielt zu einem
+Zeitpunkt genau \emph{eine} Rolle. Beim Umwandeln einer Aufgabe mit Varianten in
+eine Kollektion warnt die Anwendung daher ausdrücklich, statt beide
+Beziehungsarten stillschweigend zu vermischen. Konsequent dazu lässt das Löschen
+einer Kollektion die enthaltenen Aufgaben unberührt (sie werden nur aus der
+Kollektion gelöst) und tastet ihren Varianten-Bezug nicht an.
+
+\subsection{Referentielle Integrität}
+Die Fremdschlüssel setzen bewusst unterschiedliche Löschstrategien ein:
+
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}l l Y@{}}
+\toprule
+\textbf{Beziehung} & \textbf{Strategie} & \textbf{Wirkung} \\
+\midrule
+\texttt{item} $\rightarrow$ author/license/type & \texttt{RESTRICT} &
+Stammdaten sind gegen Löschen geschützt \\
+\texttt{item.root\_item\_id} $\rightarrow$ item & \texttt{SET NULL} & Varianten
+überleben das Löschen des Wurzel-Items \\
+\texttt{tag.parent\_tag\_id} $\rightarrow$ tag & \texttt{SET NULL} & Unter-Tags
+werden zu Wurzel-Tags \\
+\texttt{item\_collection.parent\_item\_id} $\rightarrow$ item & \texttt{CASCADE}
+& die Kollektion verschwindet mit ihrem Item \\
+\texttt{item\_tags}, \texttt{item\_contents}, \ldots & \texttt{CASCADE} &
+Verknüpfungen werden mit Item/Content aufgeräumt \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Umsetzung}\label{sec:umsetzung}
+
+Dieser Abschnitt beschreibt die umgesetzten Funktionen und --- wo es das
+Verständnis fördert --- was bei einer Aktion zwischen Frontend, Backend und
+Datenbank tatsächlich passiert.
+
+\subsection{Aufgabe erstellen (durchgängiger Ablauf)}
+Statt eine Aufgabe sofort beim Klick anzulegen, öffnet die Anwendung einen
+Formular-Dialog (Typ, Autor, Lizenz, Aufgabentext). Erst mit „Erstellen`` startet
+der Ablauf: Der \textbf{Store} legt die Aufgabe \emph{optimistisch} sofort lokal
+im Baum an (die UI reagiert unmittelbar) und ruft über den \textbf{Adapter}
+nacheinander \texttt{POST /items} (Item anlegen), \texttt{POST /items/\{id\}/}
+\texttt{contents} (Aufgabentext als Inhalt) und --- falls in einer Kollektion ---
+\texttt{POST /collections/\{id\}/items} (Zuordnung) auf. Im \textbf{Backend}
+nehmen \texttt{ItemController} und \texttt{ItemContentController} die Anfragen
+entgegen, die zugehörigen Services führen die Fachlogik aus und die Repositories
+schreiben in PostgreSQL. Die Antwort liefert die echten IDs, die der Store gegen
+die temporären optimistischen IDs austauscht. Schlägt ein Schritt fehl, gleicht
+der Store den betroffenen Teilbaum wieder mit dem Datenbankstand ab, sodass keine
+„Geister-Aufgabe`` zurückbleibt.
+
+\subsection{Inhalte in mehreren Formaten}
+Inhaltsbausteine unterstützen Text (JSON), Bilder und PDF. Binärdaten werden per
+Multipart-Upload übertragen und im Feld \texttt{blob\_serialized\_content}
+abgelegt; Bilder erscheinen als Vorschau, PDFs als Download-Link. Jeder Baustein
+trägt einen \texttt{purpose} und eigene Metadaten (Typ, Lizenz).
+
+\subsection{Kollektionen und Reihenfolge}
+Aufgaben lassen sich in Kollektionen gruppieren. Ein Umschalter überführt eine
+Kollektion zwischen geordnet und ungeordnet; beim Einschalten vergibt das Backend
+fortlaufende Positionen, beim Ausschalten werden sie auf \texttt{NULL} gesetzt
+(Frontend und Backend werden dabei konsistent gehalten). Die Umsortierung
+innerhalb einer geordneten Kollektion erfolgt per Drag-and-Drop
+(\texttt{vuedraggable}); die Positionen werden serverseitig neu berechnet.
+
+\subsection{Horizontale Varianten}
+Varianten einer Aufgabe teilen sich ein \texttt{root\_item\_id} und werden im
+\texttt{AdbVariantsPanel} angezeigt. Beim Auswählen einer Aufgabe lädt die
+Anwendung automatisch alle Geschwister-Varianten des gemeinsamen Wurzel-Items.
+Der oben genannte Warnhinweis verhindert, dass eine Aufgabe versehentlich
+gleichzeitig Variante und Kollektion wird.
+
+\subsection{Validatoren}
+Validatoren beschreiben methodische Restriktionen. Sie werden gemäß der
+Projektabgrenzung nur \emph{definiert, gespeichert und Aufgaben zugewiesen}; die
+Ausführung erfolgt extern. Umgesetzt sind Anlegen, Bearbeiten, Löschen und
+Zuordnung (\texttt{AdbValidatorEditor} $\rightarrow$ \texttt{ValidatorController}).
+
+\subsection{Referenzdaten auswählen und anlegen}
+Autor, Lizenz, Typ und Inhaltstyp werden aus dem Backend geladen und im Editor
+über Auswahllisten gesetzt. Über eine „+~Neu``-Funktion lassen sie sich direkt
+neu anlegen; doppelte Namen werden server- und clientseitig abgefangen.
+
+\subsection{Hierarchische Tags, Filter und Suche}
+Tags sind über \texttt{parent\_tag\_id} hierarchisch und werden in
+Pfadschreibweise dargestellt (z.\,B.\ \texttt{Mathematik/Analysis/Ableitungen}).
+Die Zuweisung erfolgt über einen aufklappbaren Baum mit Mehrfachauswahl; feste
+Regeln gelten beim Anlegen (global eindeutig, keine Leerzeichen, genau ein
+Elternknoten, kein gleichzeitiges Markieren von Tag und Vorfahr/Nachfahr). Eine
+gemeinsame obere Filterleiste kombiniert den Tag-Filter (\emph{mit Vererbung}:
+ein Eltern-Tag findet auch Aufgaben mit Nachfahr-Tags) mit der Text- und
+Attributsuche (Typ, Autor).
+
+\subsection{Darstellungs-Templates}
+Je Aufgabe kann ein XML-Template die Anordnung der Inhalte beschreiben. Es wird im
+\textbf{CodeMirror}-Editor bearbeitet, gegen die vorhandenen \texttt{purpose}s
+validiert (fehlende/überzählige Bausteine werden gemeldet) und in einer Vorschau
+geprüft.
+
+\subsection{Qualitätssicherung}
+Die Qualitätssicherung ruht auf drei Säulen:
+\begin{itemize}
+  \item \textbf{Statische Typprüfung:} \texttt{vue-tsc} im Frontend und der
+  Java-Compiler im Backend fangen Vertragsverletzungen früh ab.
+  \item \textbf{Automatisierte Tests:} Unit-Tests mit \texttt{vitest} (Frontend,
+  u.\,a.\ für Store-Logik und die neu abgesicherten Fehlerfälle) sowie
+  Mockito-basierte Service- und Controller-Tests im Backend --- ohne Bedarf an
+  einer laufenden Datenbank.
+  \item \textbf{Strukturvalidierung:} eine reine Funktion prüft den geladenen
+  Baum gegen fachliche Regeln (nur Kollektionen dürfen Kinder haben, jede
+  \texttt{root\_item\_id} muss auflösbar sein).
+\end{itemize}
+
+\subsection{Grundlage für den Cluster-Betrieb}
+Für den Betrieb auf der Hochschulplattform ist die Anwendung als klassischer,
+synchroner Microservice ausgelegt. Eine CI/CD-Pipeline (GitHub Actions) baut bei
+jedem erfolgreichen Merge in den Hauptzweig die Container-Images für Backend und
+Frontend und veröffentlicht sie in der GitHub Container Registry (GHCR). Je
+Anwendung beschreibt eine \texttt{values.yaml}, wie der Dienst im Cluster heißt,
+wie viele Repliken er benötigt und über welchen Netzwerkpfad er erreichbar ist;
+\textbf{ArgoCD} sollte diese Konfiguration mit dem Cluster synchronisieren (zum
+tatsächlichen Deployment siehe Kapitel~\ref{sec:grenzen}).
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Projektorganisation}\label{sec:orga}
+
+\subsection{Vorgehen und Versionsverwaltung}
+Die Entwicklung erfolgte git-basiert mit Feature-Zweigen und Pull-Requests. Der
+Hauptzweig ist gegen direkte Pushes geschützt; jede Änderung wurde vor dem
+Zusammenführen von einem anderen Teammitglied begutachtet. Die Arbeit wurde über
+ein \textbf{GitHub-Project-Board} organisiert, auf dem Aufgaben als Tickets durch
+die Spalten \emph{In Progress}, \emph{Reviewed} und \emph{Closed} wanderten ---
+so waren Stand und Zuständigkeiten jederzeit sichtbar.
+
+\platzhalter{[Screenshot: GitHub-Project-Board (Spalten In Progress / Reviewed /
+Closed) hier einfügen]}
+
+\subsection{Zusammenarbeit im Team}
+Über die reine Werkzeugnutzung hinaus prägten regelmäßige Absprachen die
+Zusammenarbeit:
+\begin{itemize}
+  \item \textbf{Meetings ein- bis zweimal pro Woche} --- je nach Fortschritt und
+  offenen Fragen. Sie dienten der Abstimmung, der Klärung von Schnittstellen und
+  der gemeinsamen Priorisierung.
+  \item \textbf{Zwei Pair-Programming-Sitzungen} --- für besonders verzahnte oder
+  kniffelige Aufgaben, bei denen gemeinsames Arbeiten Fehler früh vermied und
+  Wissen im Team verteilte.
+\end{itemize}
+Wiederkehrende Herausforderung war das Zusammenführen länger laufender
+Feature-Zweige, da mehrere Funktionen dieselben zentralen Dateien (Store, Adapter,
+Typen) berührten. Als Konsequenz wurde ein Arbeitsablauf mit häufiger,
+frühzeitiger Integration und konsequenter Typ- und Testprüfung nach jedem Merge
+etabliert.
+
+\subsection{Projektplanung: Phasen und Meilensteine}
+Das Projekt lief von Ende April bis zur Abgabe am 14.\ Juli 2026 (Aktivitäts-
+schwerpunkt im Juni).
+
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}l l Y@{}}
+\toprule
+\textbf{Phase} & \textbf{Zeitraum} & \textbf{Inhalt} \\
+\midrule
+Konzeption \& Einarbeitung & Ende Apr.\ -- Mitte Mai & Team-Aufbau, Analyse des
+Schemas, Technologieauswahl, Projektstruktur \\
+Neuausrichtung & Mitte Mai & Ausstieg zweier Mitglieder, Umverteilung auf drei
+Personen \\
+Grundgerüst & Mai & Drei-Schichten-Aufbau, DB-Schema, Docker-Compose,
+Adapter-Muster, Baum-/Editor-Ansicht \\
+Kernfunktionen & Juni & Inhalte, Kollektionen/Reihenfolge, Varianten,
+Validatoren, Referenzdaten, Frontend-Backend-Anbindung \\
+Erweiterung \& Integration & Juli & hierarchische Tags + Filter, Suche,
+Repräsentations-Templates, CI\,$\rightarrow$\,GHCR, Robustheits-Fixes \\
+Abgabe & 14.\ Juli & Dokumentation, Tests, finale Bereinigung \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Wesentliche Meilensteine: die abgestimmte fachliche Konzeption, die erste
+durchgängige Frontend-Backend-Anbindung, die fachliche Vollständigkeit der
+Kernfunktionen sowie die einsatzbereite Build-Pipeline mit veröffentlichten
+Images in GHCR.
+
+\subsection{Aufgabenverteilung}
+Die Arbeit war zunächst nach Schwerpunkten aufgeteilt, verlief zum Projektende hin
+aber zunehmend übergreifend:
+
+\begin{center}
+\begin{tabularx}{\linewidth}{@{}l Y@{}}
+\toprule
+\textbf{Person} & \textbf{Schwerpunkt} \\
+\midrule
+{}[Vorname Nachname] \textit{(Projektleitung)} & Datenbank und Backend zu großen
+Teilen, Deployment (CI/CD, GHCR, \texttt{values.yaml}) eigenständig,
+Koordination; gegen Ende zusätzlich Frontend \\
+{}[Vorname Nachname] & Schwerpunkt Frontend (Baum, Editor, UI-Komponenten); gegen
+Ende auch Backend-Aufgaben \\
+{}[Vorname Nachname] & Schwerpunkt Backend (Endpunkte, Persistenz); gegen Ende
+auch Frontend-Aufgaben \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Anfangs bearbeitete eine Person überwiegend das Frontend und berührte das Backend
+nicht, während eine andere überwiegend im Backend arbeitete; die Projektleitung
+verantwortete Datenbank, Backend und das gesamte Deployment eigenständig. Im
+weiteren Verlauf lösten sich diese Grenzen auf --- teils als Folge der
+verkleinerten Teamgröße, was zugleich dazu führte, dass alle drei Personen ein
+gutes Gesamtverständnis des Systems erlangten.
+
+\subsection{Abweichungen vom ursprünglichen Plan}
+Das Projekt startete mit \textbf{fünf} Personen. Nach etwa drei Wochen stiegen
+zwei Mitglieder aus, sodass die verbleibende Arbeit auf \textbf{drei} Personen neu
+verteilt werden musste. Das erhöhte die Last pro Person spürbar und war der
+wesentliche Grund für die spätere schichtübergreifende Arbeitsweise. Weitere
+inhaltliche Abweichungen sind in Kapitel~\ref{sec:grenzen} zusammengefasst.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Grenzen und Ausblick}\label{sec:grenzen}
+
+Die folgende ehrliche Bestandsaufnahme trennt, was umgesetzt wurde, was bewusst
+zurückgestellt und was aus externen Gründen nicht realisiert werden konnte.
+
+\subsection{Nicht realisiert (mit Begründung)}
+\begin{itemize}
+  \item \textbf{Cluster-Deployment.} Die Build-Pipeline (CI\,$\rightarrow$\,GHCR)
+  und die \texttt{values.yaml} je App sind fertig. Das eigentliche Ausrollen im
+  Cluster kam jedoch nicht zustande: Auf die Anfrage, uns in ArgoCD einzutragen,
+  teilte das zuständige Infrastruktur-Team (Gruppe~1) mit, dass es das Projekt
+  \emph{nicht weiterführt}. Ohne diese Registrierung war ein Deployment nicht
+  möglich --- ein externer, nicht vom Team zu verantwortender Umstand.
+  \item \textbf{Authentifizierung.} Nach Plattform-Vorgabe sollte die
+  Authentifizierung zunächst gemockt und später zentral (THM-CAS) angebunden
+  werden. Die dafür nötigen Vorgaben bzw.\ das Datenschema wurden von der
+  zuständigen Stelle nicht bereitgestellt, sodass die Umsetzung nicht
+  weiterverfolgt wurde; die Anwendung bleibt ohne Rechteeinschränkung.
+  \item \textbf{KI-Funktion.} Eine im Lastenheft angedachte KI-Unterstützung
+  wurde im Projektverlauf --- mit Blick auf Umfang und die verkleinerte
+  Teamgröße --- nicht implementiert.
+\end{itemize}
+
+\subsection{Bewusst zurückgestellt}
+\begin{itemize}
+  \item \textbf{Modifikatoren.} Die Entität und Verknüpfung (\texttt{modifier},
+  \texttt{item\_modifier}) sind im Datenmodell vorhanden, es gibt aber bewusst
+  \emph{keine} UI. Auf Wunsch des Betreuers wurden die Modifikatoren zunächst
+  ausgeklammert, da noch nicht abschließend geklärt ist, wie die automatische
+  Variantenerzeugung fachlich ausgestaltet sein soll.
+\end{itemize}
+
+\subsection{Bekannte technische Grenzen}
+\begin{itemize}
+  \item \textbf{Ein Kollektions-Elternteil je Item.} Die zugrunde liegende
+  Tabelle \texttt{item\_collection\_sub\_item} erlaubt theoretisch, dass ein Item
+  in mehreren Kollektionen liegt. Die Baum-Oberfläche stellt ein Item jedoch an
+  genau einer Stelle dar und setzt damit praktisch einen einzigen
+  Kollektions-Elternteil voraus.
+  \item \textbf{Umfang des zentralen Stores.} Der Pinia-Store ist mit der Zeit
+  stark gewachsen. Eine Aufteilung in fachliche Composables (Baum/Kollektionen,
+  Inhalte, Tags, Suche) würde die Wartbarkeit weiter verbessern.
+\end{itemize}
+
+\subsection{Ausblick}
+Für kommende Iterationen bieten sich an: das vollständige Cluster-Deployment
+(sobald eine Infrastruktur bereitsteht), die zentrale Anmeldung (THM-CAS) mit
+darauf aufbauendem Rechtemodell, die Ausgestaltung der Modifikatoren, ein
+weiterer Ausbau der automatisierten Testabdeckung sowie die Modularisierung des
+Stores.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Fazit}
+
+Das Projekt setzt das vorgegebene Datenmodell in einer vollständig lauffähigen
+Drei-Schichten-Anwendung um. Die zentralen fachlichen Konzepte --- Metadaten,
+Inhalte in mehreren Formaten, geordnete und ungeordnete Kollektionen, horizontale
+Varianten, Validatoren, hierarchische Tags mit Suche sowie Darstellungs-Templates
+--- sind implementiert und über eine benutzerfreundliche Oberfläche zugänglich.
+Tragende Entwurfsentscheidungen, insbesondere die saubere Trennung von vertikalen
+und horizontalen Beziehungen und die Entkopplung der Datenzugriffsschicht über
+ein Adapter-Muster, sorgen für fachliche Klarheit und Erweiterbarkeit. Mit der
+durchgehenden Typsicherheit, der regelbasierten Strukturvalidierung und der
+Container-Grundlage besteht eine solide Basis, auf der --- sobald die externen
+Voraussetzungen (Infrastruktur, Auth-Vorgaben) gegeben sind --- die verbleibenden
+Punkte aufsetzen können.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\begin{thebibliography}{9}
+\bibitem{vue} Vue.js --- The Progressive JavaScript Framework. \url{https://vuejs.org}
+\bibitem{vuetify} Vuetify --- Vue Component Framework. \url{https://vuetifyjs.com}
+\bibitem{pinia} Pinia --- The Vue Store. \url{https://pinia.vuejs.org}
+\bibitem{vuedraggable} Vue.Draggable. \url{https://github.com/SortableJS/vue.draggable.next}
+\bibitem{codemirror} CodeMirror 6. \url{https://codemirror.net}
+\bibitem{vite} Vite --- Next Generation Frontend Tooling. \url{https://vitejs.dev}
+\bibitem{spring} Spring Boot Reference Documentation. \url{https://spring.io/projects/spring-boot}
+\bibitem{postgres} PostgreSQL 16 Documentation. \url{https://www.postgresql.org/docs/16/}
+\bibitem{k8s} Kubernetes Documentation. \url{https://kubernetes.io/docs/}
+\bibitem{argocd} Argo CD Documentation. \url{https://argo-cd.readthedocs.io}
+\bibitem{traefik} Traefik Proxy Documentation. \url{https://doc.traefik.io/traefik/}
+\bibitem{thm} THM E-Learning-Plattform --- Onboarding-Leitfaden (internes Dokument).
+\end{thebibliography}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\newpage
+\section*{Anhang}
+\addcontentsline{toc}{section}{Anhang}
+
+\subsection*{A. Lokale Ausführung}
+\begin{verbatim}
+docker compose up --build
+# Frontend: http://localhost:8085   Backend: 8080 (intern)   DB: 5432
+# Dummy-Modus (ohne Backend):  npm run dev:dummy
+\end{verbatim}
+
+\subsection*{B. Deployment-Konfiguration (Auszug values.yaml, Backend)}
+\begin{verbatim}
+name: pwi-aufgabendatenbank-backend
+image:
+  repository: ghcr.io/.../pwi-aufgabendatenbank-backend
+  tag: latest
+replicas: 1
+containerPort: 8080
+route:
+  path: /api
+\end{verbatim}
+
+\subsection*{C. Screenshots der Anwendung}
+\platzhalter{[Screenshot: Strukturbaum mit Kollektionen und Aufgaben]}
+\platzhalter{[Screenshot: Editor mit Inhalten, Tags und Varianten]}
+\platzhalter{[Screenshot: obere Filterleiste (Tag-Filter + Suche)]}
+
+\subsection*{D. Weiteres}
+\begin{itemize}
+  \item ER-Diagramm des Datenmodells \textit{(hier einfügen)}.
+  \item GitHub-Repository: \texttt{PWI-Aufgabendatenbank}.
+\end{itemize}
+
+% Hinweis: Screenshots einfuegen -> \platzhalter{...} ersetzen durch z. B.
+% \begin{figure}[h]\centering\includegraphics[width=0.9\linewidth]{bild.png}
+% \caption{...}\end{figure}
+
+\end{document}
